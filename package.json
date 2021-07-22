@@ -1,0 +1,26 @@
+{
+  "name": "com.blacktundra.foundation",
+  "version": "2.0.0",
+  "displayName": "Foundation",
+  "description": "A package containing fundamental game mechanics.",
+  "unity": "2020.1",
+  "type": "library",
+  "hideInEditor": false,
+  "keywords": [
+    "core",
+    "utility",
+    "console"
+  ],
+  "author": {
+    "name": "Black Tundra",
+    "email": "contact@blacktundra.com",
+    "url": "https://blacktundra.com"
+  },
+  "samples": [
+	{
+		"displayName": "Console Window Settings",
+		"description": "Pre-configured settings for the console window, including a font.",
+		"path": "Samples~/ConsoleWindowSettings"
+	}
+  ]
+}
