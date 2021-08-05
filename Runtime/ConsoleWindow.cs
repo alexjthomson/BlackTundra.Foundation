@@ -631,6 +631,15 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
+        #region ClearCommandHistory
+
+        public void ClearCommandHistory() {
+            for (int i = inputHistoryBuffer.Length - 1; i >= 0; i--) inputHistoryBuffer[i] = null;
+            inputHistoryIndex = 0;
+        }
+
+        #endregion
+
         #region OnControlGained
 #if ENABLE_INPUT_SYSTEM
 

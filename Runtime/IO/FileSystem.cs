@@ -66,6 +66,11 @@ namespace BlackTundra.Foundation.IO {
             LocalSavesDirectory
         };
 
+        /// <summary>
+        /// Extension (including the '.' character) of config files.
+        /// </summary>
+        public const string ConfigExtension = ".config";
+
         #endregion
 
         #region variable
@@ -320,7 +325,7 @@ namespace BlackTundra.Foundation.IO {
             if (configuration == null) throw new ArgumentNullException("configuration");
             return UpdateConfiguration(
                 new FileSystemReference(
-                    string.Concat(LocalConfigDirectory, name, ".config"),
+                    string.Concat(LocalConfigDirectory, name, ConfigExtension),
                     true, // is local
                     false // is not a directory
                 ),
@@ -357,7 +362,7 @@ namespace BlackTundra.Foundation.IO {
             if (name.IsNullOrWhitespace() || !StringUtility.Matches(name, FileNameRegexPattern)) throw new ArgumentException("Invalid name.");
             return LoadConfiguration(
                 new FileSystemReference(
-                    string.Concat(LocalConfigDirectory, name, ".config"),
+                    string.Concat(LocalConfigDirectory, name, ConfigExtension),
                     true, // is local
                     false // is not a directory
                 ),

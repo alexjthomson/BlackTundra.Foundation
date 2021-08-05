@@ -37,6 +37,39 @@ namespace BlackTundra.Foundation.System {
 #endif
         #endregion
 
+        #region GetDecoratedTypes
+
+        /// <returns>
+        /// Returns every <see cref="Type"/> that is decorated with an annotation of type
+        /// <typeparamref name="T"/> as an <see cref="IEnumerable{T}"/>.
+        /// </returns>
+        public static IEnumerable<Type> GetDecoratedTypes<T>() where T : Attribute {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            Type context = typeof(T);
+            foreach (Type type in assembly.GetTypes()) {
+                if (type.GetCustomAttributes(context, true).Length > 0)
+                    yield return type;
+            }
+        }
+
+        #endregion
+
+        #region GetImplementations
+
+        /// <returns>
+        /// Returns all objects that inherit from <typeparamref name="T"/>.
+        /// </returns>
+        public static IEnumerable<Type> GetImplementations<T>() where T : class {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            Type context = typeof(T);
+            foreach (Type type in assembly.GetTypes()) {
+                if (type.IsClass && type.IsSubclassOf(context))
+                    yield return type;
+            }
+        }
+
+        #endregion
+
         #region GetMethods
 
         public static IEnumerable<MethodInfo> GetMethods<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute => AppDomain.CurrentDomain.GetAssemblies() // return all currently loaded assemblies

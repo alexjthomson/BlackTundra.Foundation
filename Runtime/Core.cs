@@ -529,7 +529,7 @@ namespace BlackTundra.Foundation {
     /// </summary>
     internal static class CoreConsoleCommands {
 
-        #region ConsoleHelpCommand
+        #region HelpCommand
 
         [Command(
             "help",
@@ -539,38 +539,30 @@ namespace BlackTundra.Foundation {
             "\nhelp {commands...}" +
             "\n\tcommands: Each argument should be an individual command you want a help message for."
         )]
-        private static bool ConsoleHelpCommand(in Console.Command command, in string[] args) {
-
+        private static bool HelpCommand(in CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
-
-            if (args.Length == 0) { // all commands
-
+            int argumentCount = info.args.Count;
+            if (argumentCount == 0) { // all commands
                 Console.Command[] commands = Console.GetCommands();
-                string[,] elements = new string[3, commands.Length];
+                string[,] elements = new string[2, commands.Length];
                 for (int r = 0; r < commands.Length; r++) {
                     elements[0, r] = commands[r].name;
                     elements[1, r] = $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(commands[r].description)}</color>";
-                    elements[2, r] = $"<color=#{Colour.DarkGray.hex}>{ConsoleUtility.Escape(commands[r].usage)}</color>";
                 }
                 console.PrintTable(elements);
-
             } else { // list of commands
-
-                List<string> rows = new List<string>(args.Length);
-                for (int r = 0; r < args.Length; r++) {
-
-                    string value = args[r];
+                List<string> rows = new List<string>(argumentCount);
+                for (int r = 0; r < argumentCount; r++) {
+                    string value = info.args[r];
                     if (value.IsNullOrWhitespace()) continue;
-                    Console.Command cmd = Console.GetCommand(value);
-                    rows.Add(
-                        cmd != null
-                            ? $"{cmd.name}¬<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(cmd.description)}</color>¬<color=#{Colour.DarkGray.hex}>{ConsoleUtility.Escape(cmd.usage)}</color>"
-                            : $"<color=#{Colour.Red.hex}>{ConsoleUtility.Escape(value)}</color>¬<color=#{Colour.Gray.hex}><i>Command not found</i></color>¬"
-                    );
-
+                    Console.Command command = Console.GetCommand(value);
+                    rows.Add($"<b>{command.name}</b>");
+                    rows.Add($"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(command.description)}</color>");
+                    rows.Add("\nUsage:");
+                    rows.Add($"<color=#{Colour.DarkGray.hex}>{ConsoleUtility.Escape(command.usage)}</color>");
+                    if (r != argumentCount - 1) rows.Add("\n");
                 }
-                console.PrintTable(rows.ToArray(), '¬');
-
+                console.Print(rows.ToArray());
             }
 
             return true;
@@ -579,13 +571,13 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
-        #region ConsoleHistoryCommand
+        #region HistoryCommand
 
         [Command("history", "Prints the command history buffer to the console.")]
-        private static bool ConsoleHistoryCommand(in Console.Command command, in string[] args) {
+        private static bool HistoryCommand(in CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
-            if (args.Length > 0) {
-                console.Print(ConsoleUtility.UnknownArgumentMessage(args));
+            if (info.args.Count > 0) {
+                console.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
             string[] history = console.CommandHistory; // get command history
@@ -595,31 +587,32 @@ namespace BlackTundra.Foundation {
                 if (value == null) continue;
                 console.Print(console.DecorateCommand(value, new StringBuilder())); // print the command to the console
             }
+            if (info.HasFlag('c', "clear")) console.ClearCommandHistory(); // clear the command history
             return true;
         }
 
         #endregion
 
-        #region ConsoleClearCommand
+        #region ClearCommand
 
         [Command("clear", "Clears the console.")]
-        private static bool ConsoleClearCommand(in Console.Command command, in string[] args) {
+        private static bool ClearCommand(in CommandInfo info) {
             Core.consoleWindow.Clear();
             return true;
         }
 
         #endregion
 
-        #region ConsoleEchoCommand
+        #region EchoCommand
 
         [Command("echo", "Prints a message to the console.", "echo \"{message}\"")]
-        private static bool ConsoleEchoCommand(in Console.Command command, in string[] args) {
-            if (args.Length == 0) return false;
-            StringBuilder stringBuilder = new StringBuilder(args.Length * 5);
-            stringBuilder.Append(ConsoleUtility.Escape(args[0]));
-            for (int i = 1; i < args.Length; i++) {
+        private static bool EchoCommand(in CommandInfo info) {
+            if (info.args.Count == 0) return false;
+            StringBuilder stringBuilder = new StringBuilder(info.args.Count * 5);
+            stringBuilder.Append(ConsoleUtility.Escape(info.args[0]));
+            for (int i = 1; i < info.args.Count; i++) {
                 stringBuilder.Append(' ');
-                stringBuilder.Append(ConsoleUtility.Escape(args[i]));
+                stringBuilder.Append(ConsoleUtility.Escape(info.args[i]));
             }
             Core.consoleWindow.Print(stringBuilder.ToString());
             return true;
@@ -627,13 +620,13 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
-        #region ConsoleCoreCommand
+        #region CoreCommand
 
         [Command("core", "Displays core and basic system information to the console.")]
-        private static bool ConsoleCoreCommand(in Console.Command command, in string[] args) {
+        private static bool CoreCommand(in CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
-            if (args.Length > 0) {
-                console.Print(ConsoleUtility.UnknownArgumentMessage(args));
+            if (info.args.Count > 0) {
+                console.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
             console.PrintTable(
@@ -697,12 +690,12 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
-        #region ConsoleQuitCommand
+        #region QuitCommand
 
         [Command("quit", "Force quits the game.")]
-        private static bool ConsoleQuitCommand(in Console.Command command, in string[] args) {
-            if (args.Length > 0) {
-                Core.consoleWindow.Print(ConsoleUtility.UnknownArgumentMessage(args));
+        private static bool QuitCommand(in CommandInfo info) {
+            if (info.args.Count > 0) {
+                Core.consoleWindow.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
             Core.Quit(QuitReason.UserConsole);
@@ -711,14 +704,14 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
-        #region ConsoleTimeCommand
+        #region TimeCommand
 
         [Command("time")]
-        private static bool ConsoleTimeCommand(in Console.Command command, in string[] args) => true;
+        private static bool TimeCommand(in CommandInfo info) => true;
 
         #endregion
 
-        #region ConsoleConfigCommand
+        #region ConfigCommand
 
         [Command(
             "config",
@@ -738,22 +731,31 @@ namespace BlackTundra.Foundation {
                 "\n\tkey: Name of the entry in the configuration file to edit." +
                 "\n\tvalue: New value to assign to the configuration entry."
         )]
-        private static bool ConsoleConfigCommand(in Console.Command command, in string[] args) {
+        private static bool ConfigCommand(in CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
-            if (args.Length == 0) console.Print(FileSystem.GetFiles("*.config"));
-            else {
-                string customPattern = '*' + args[0];
-                if (!args[0].EndsWith(".config")) customPattern += ".config";
+            int argumentCount = info.args.Count;
+            if (argumentCount == 0) {
+                const string ConfigSearchPattern = "*" + FileSystem.ConfigExtension;
+                console.Print(FileSystem.GetFiles(ConfigSearchPattern)); // no arguments specified, list all config files
+            } else { // a config file was specified
+                #region search for files
+                string customPattern = '*' + info.args[0]; // create a custom pattern for matching against the requested file
+                if (!info.args[0].EndsWith(FileSystem.ConfigExtension)) // check for config extension
+                    customPattern = string.Concat(customPattern, FileSystem.ConfigExtension); // ensure the pattern ends with the config extension
                 string[] files = FileSystem.GetFiles(customPattern);
+                #endregion
                 if (files.Length == 0) // multiple files found
-                    console.Print($"No configuration entry found for \"{ConsoleUtility.Escape(args[0])}\".");
+                    console.Print($"No configuration entry found for \"{ConsoleUtility.Escape(info.args[0])}\".");
                 else if (files.Length > 1) { // multiple files found
-                    console.Print($"Multiple configuration files found for \"{ConsoleUtility.Escape(args[0])}\":");
+                    console.Print($"Multiple configuration files found for \"{ConsoleUtility.Escape(info.args[0])}\":");
                     console.Print(files);
                 } else { // only one file found (this is what the user wants)
-                    FileSystemReference fsr = new FileSystemReference(files[0], false, false);
+                    #region load config
+                    FileSystemReference fsr = new FileSystemReference(files[0], false, false); // get file system reference to config file
                     Configuration configuration = FileSystem.LoadConfiguration(fsr); // load the target configuration
-                    if (args.Length == 1) { // no further arguments; therefore, display every configuration entry to the console
+                    #endregion
+                    if (argumentCount == 1) { // no further arguments; therefore, display every configuration entry to the console
+                        #region list config entries
                         int entryCount = configuration.Length;
                         string[,] elements = new string[3, entryCount];
                         ConfigurationEntry entry;
@@ -765,27 +767,34 @@ namespace BlackTundra.Foundation {
                         }
                         console.Print(ConsoleUtility.Escape(fsr.AbsolutePath));
                         console.PrintTable(elements);
+                        #endregion
                     } else { // an additional argument, this sepecifies an entry to target
-                        string targetEntry = args[1];
-                        if (args.Length == 2) { // no further arguments; therefore, display the value of the target entry
+                        string targetEntry = info.args[1]; // get the entry to edit
+                        if (argumentCount == 2) { // no further arguments; therefore, display the value of the target entry
+                            #region display target value
                             var entry = configuration[targetEntry];
                             console.Print(entry != null
                                 ? ConsoleUtility.Escape(entry.ToString())
-                                : $"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(args[0])}\"."
+                                : $"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(info.args[0])}\"."
                             );
-                        } else if (configuration[targetEntry] != null) { // more arguments, further arguments should specify the value of the entry
-                            StringBuilder valueBuilder = new StringBuilder((args.Length - 2) * 7);
-                            valueBuilder.Append(args[2]);
-                            for (int i = 3; i < args.Length; i++) {
+                            #endregion
+                        } else if (configuration[targetEntry] != null) { // more arguments, further arguments should override the value of the entry
+                            #region construct new value
+                            StringBuilder valueBuilder = new StringBuilder((argumentCount - 2) * 7);
+                            valueBuilder.Append(info.args[2]); // append the first argument
+                            for (int i = 3; i < argumentCount; i++) { // there are more arguments
                                 valueBuilder.Append(' ');
-                                valueBuilder.Append(args[3]);
+                                valueBuilder.Append(info.args[i]);
                             }
                             string finalValue = valueBuilder.ToString();
+                            #endregion
+                            #region override target value
                             configuration[targetEntry] = finalValue;
                             FileSystem.UpdateConfiguration(fsr, configuration);
                             console.Print(ConsoleUtility.Escape(configuration[targetEntry]));
+                            #endregion
                         } else {
-                            console.Print($"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(args[0])}\".");
+                            console.Print($"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(info.args[0])}\".");
                         }
                     }
                 }
@@ -793,6 +802,29 @@ namespace BlackTundra.Foundation {
             return true;
         }
 
+        #endregion
+
+        #region CommandDebugCommand
+#if UNITY_EDITOR
+
+        [Command("cdebug", "Prints the information about a command. This is used to test the command parsing system works correctly.")]
+        private static bool CommandDebugCommand(in CommandInfo info) {
+            ConsoleWindow console = Core.consoleWindow;
+            List<string> table = new List<string>() {
+                $"<b>Command</b>¬{info.command.name}",
+                $"<color=#{Colour.Gray.hex}>Description</color>¬{info.command.description}",
+                $"<color=#{Colour.Gray.hex}>Usage</color>¬{info.command.usage}",
+                $"<color=#{Colour.Gray.hex}>Callback</color>¬{info.command.callback.GetMethodInfo().Name}",
+                $"<b>Arguments</b>¬{info.args.Count}"
+            };
+            for (int i = 0; i < info.args.Count; i++) table.Add($"{i}¬{info.args[i]}");
+            table.Add($"<b>Flags</b>¬{info.flags.Count}");
+            for (int i = 0; i < info.flags.Count; i++) table.Add($"{i}¬{info.flags[i]}");
+            console.PrintTable(table.ToArray(), '¬');
+            return true;
+        }
+
+#endif
         #endregion
 
     }

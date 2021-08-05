@@ -27,7 +27,7 @@ namespace BlackTundra.Foundation {
         /// <summary>
         /// Commands that the console can run.
         /// </summary>
-        private static readonly Dictionary<string, Command> Commands = new Dictionary<string, Command>();
+        internal static readonly Dictionary<string, Command> Commands = new Dictionary<string, Command>();
 
         /// <summary>
         /// String that replaces the \t (tab) special character.
@@ -51,16 +51,30 @@ namespace BlackTundra.Foundation {
 
             #region delegate
 
-            public delegate bool CommandCallbackDelegate(in Command command, in string[] args);
+            public delegate bool CommandCallbackDelegate(in CommandInfo info);
 
             #endregion
 
             #region variable
 
+            /// <summary>
+            /// Name of the <see cref="Command"/>.
+            /// </summary>
             public readonly string name;
 
+            /// <summary>
+            /// Description of the <see cref="Command"/>.
+            /// </summary>
             public readonly string description;
 
+            /// <summary>
+            /// Usage of the <see cref="Command"/>.
+            /// This should detail how the command can be used.
+            /// </summary>
+            /// <remarks>
+            /// Standard Formatting:
+            /// <c>command_name {arg1} {arg2}\n\tdescription of what that does here.\ncommand_name {arg3}\n\tmore description here for a different variation of the command.</c>
+            /// </remarks>
             public readonly string usage;
 
             internal readonly CommandCallbackDelegate callback;
@@ -92,165 +106,6 @@ namespace BlackTundra.Foundation {
 
             #endregion
 
-        }
-
-        #endregion
-
-        #region CommandInfo
-
-        private sealed class CommandInfo {
-
-            #region variable
-
-            internal readonly Command command;
-            internal readonly string[] args;
-            /// <summary>
-            /// When <c>false</c>, the command will only execute after the last command
-            /// has executed successfully. If <c>true</c>, the command will execute
-            /// regardless of whether the last command executed successfully.
-            /// </summary>
-            internal bool independent;
-
-            #endregion
-
-            #region constructor
-
-            private CommandInfo(in Command command, in string[] args, in bool independent) {
-                this.command = command;
-                this.args = args;
-                this.independent = independent;
-            }
-
-            #endregion
-
-            #region logic
-
-            #region ProcessCommand
-
-            internal static CommandInfo[] ProcessCommand(string command) {
-
-                command = command.Trim();
-                int commandLength = command.Length;
-                if (commandLength == 0) return new CommandInfo[0];
-
-                List<CommandInfo> commandInfoList = new List<CommandInfo>();
-
-                string commandName = null; // track the current command name, null if no name
-                List<string> argumentList = new List<string>(); // track the current arguments
-                bool independent = true; // marks if the current command is independent
-                bool nextIndependent = true; // marks if the next command is independent from the last command
-
-                int tokenStart = -1; // start index (inclusive)
-                int tokenEnd = -1; // end index (exclusive)
-
-                const int InternalState_AwaitToken = 0;
-                const int InternalState_AwaitWhitespace = 1; // waiting for whitespace after token
-                const int InternalState_AwaitEndStringToken = 2; // waiting for " character
-
-                int internalState = InternalState_AwaitToken;
-                int lastIndex = commandLength - 1;
-
-                char c;
-                bool processCommand = false; // when true, the current command will be processed and the internal state will be reset
-                for (int i = 0; i < commandLength; i++) {
-                    c = command[i];
-                    switch (internalState) {
-                        case InternalState_AwaitToken: {
-                            if (c == '"') { // string
-                                tokenStart = i + 1;
-                                internalState = InternalState_AwaitEndStringToken;
-                            } else if (c == ';') {
-                                independent = true;
-                                processCommand = true;
-                            } else if (c == '&') {
-                                independent = false;
-                                processCommand = true;
-                            } else if (!char.IsWhiteSpace(c)) {
-                                tokenStart = i;
-                                internalState = InternalState_AwaitWhitespace;
-                            }
-                            break;
-                        }
-                        case InternalState_AwaitWhitespace: {
-                            if (char.IsWhiteSpace(c) || i == lastIndex) {
-                                if (tokenEnd == -1) tokenEnd = i == lastIndex ? commandLength : i;
-                                string token = command.Substring(tokenStart, tokenEnd - tokenStart);
-                                if (commandName == null) commandName = token;
-                                else argumentList.Add(token);
-                                tokenEnd = -1;
-                                internalState = InternalState_AwaitToken;
-                            }
-                            break;
-                        }
-                        case InternalState_AwaitEndStringToken: {
-                            if (c == '\\') { // escape character
-                                if (++i == commandLength) throw new CommandSyntaxException(string.Concat("Command contains incomplete string: ", command));
-                            } else if (c == '"') { // end of string
-                                tokenEnd = i;
-                                internalState = InternalState_AwaitWhitespace;
-                            }
-                            break;
-                        }
-                        default: throw new NotSupportedException(string.Concat("Unknown internal state: ", internalState));
-                    }
-
-                    if (processCommand || i == lastIndex) { // process the current command
-                        processCommand = false;
-                        if (commandName != null && Commands.TryGetValue(commandName, out Command cmd))
-                            commandInfoList.Add(new CommandInfo(cmd, argumentList.ToArray(), independent));
-                        commandName = null;
-                        argumentList.Clear();
-                        independent = nextIndependent;
-                        nextIndependent = true;
-                        tokenEnd = -1;
-                        internalState = InternalState_AwaitToken;
-                    }
-
-                }
-
-                return commandInfoList.ToArray();
-
-            }
-
-            #endregion
-
-            #region Execute
-
-            private bool Execute() {
-                try {
-                    return command.callback(command, args);
-                } catch (Exception exception) {
-                    exception.Handle();
-                    return false;
-                }
-            }
-
-            internal static bool Execute(in string command) => Execute(ProcessCommand(command));
-
-            /// <returns>Success state of the last executed command.</returns>
-            private static bool Execute(in CommandInfo[] commandInfo) {
-                CommandInfo info;
-                bool lastCommandState = true;
-                for (int i = 0; i < commandInfo.Length; i++) {
-                    info = commandInfo[i];
-                    if (info.independent || lastCommandState)
-                        lastCommandState = info.Execute();
-                }
-                return lastCommandState;
-            }
-
-            #endregion
-
-            #endregion
-
-        }
-
-        #endregion
-
-        #region CommandSyntaxException
-
-        public sealed class CommandSyntaxException : Exception {
-            internal CommandSyntaxException(in string message, in Exception innerException = null) : base(message, innerException) { }
         }
 
         #endregion
