@@ -16,10 +16,18 @@ namespace BlackTundra.Foundation {
 
         #region constant
 
+        /// <summary>
+        /// Regex checker for flag text.
+        /// </summary>
         private static readonly Regex FlagRegex = new Regex(
             @"[a-z]+",
             RegexOptions.Compiled | RegexOptions.IgnoreCase
         );
+
+        /// <summary>
+        /// Character used for declaring flags.
+        /// </summary>
+        private const char FlagCharacter = '?';
 
         #endregion
 
@@ -96,6 +104,7 @@ namespace BlackTundra.Foundation {
                         if (c == '"') { // string
                             tokenStart = i + 1;
                             internalState = InternalState_AwaitEndStringToken;
+                            if (i == lastIndex) throw new CommandSyntaxException(string.Concat("Command contains incomplete string: ", command));
                         } else if (c == ';') {
                             independent = true;
                             processCommand = true;
@@ -105,6 +114,7 @@ namespace BlackTundra.Foundation {
                         } else if (!char.IsWhiteSpace(c)) {
                             tokenStart = i;
                             internalState = InternalState_AwaitWhitespace;
+                            if (i == lastIndex) goto case InternalState_AwaitWhitespace;
                         }
                         break;
                     }
@@ -139,8 +149,8 @@ namespace BlackTundra.Foundation {
                         List<string> flagList = new List<string>();
                         for (int j = argumentList.Count - 1; j >= 0; j--) {
                             argument = argumentList[j];
-                            if (argument.Length > 1 && argument[0] == '-') { // flags
-                                if (argument.Length > 2 && argument[1] == '-') { // literal (word) flag
+                            if (argument.Length > 1 && argument[0] == FlagCharacter) { // flags
+                                if (argument.Length > 2 && argument[1] == FlagCharacter) { // literal (word) flag
                                     string flag = argument.Substring(2, argument.Length - 2); // construct the flags
                                     if (!FlagRegex.IsMatch(flag)) throw new CommandSyntaxException("Flags must only contain letters."); // flag doesnt match flags regex
                                     if (!flagList.Contains(flag)) flagList.Add(flag); // if the flag has not been defined already, add it to the flags

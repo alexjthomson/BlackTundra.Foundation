@@ -56,6 +56,11 @@ namespace BlackTundra.Foundation {
         /// </summary>
         private const string ConfigurationName = "core";
 
+        /// <summary>
+        /// Original value of <see cref="Time.fixedDeltaTime"/> on startup.
+        /// </summary>
+        internal static readonly float DefaultFixedDeltaTime = Time.fixedDeltaTime;
+
         #endregion
 
         #region nested
@@ -274,6 +279,8 @@ namespace BlackTundra.Foundation {
                 } catch (Exception exception) {
                     exception.Handle("Failed to save core configuration after initialisation.");
                 }
+
+                UnityEventLogger.Initialise();
 
                 Console.Info("Core post-assembly-load initialisation stage complete.");
                 Console.Flush();
@@ -533,8 +540,7 @@ namespace BlackTundra.Foundation {
 
         [Command(
             "help",
-            "Displays a list of every command bound to the console." +
-            "\nEach command may also have a description and usage column.",
+            "Displays a table of every command bound to the console.",
             "help" +
             "\nhelp {commands...}" +
             "\n\tcommands: Each argument should be an individual command you want a help message for."
@@ -544,10 +550,12 @@ namespace BlackTundra.Foundation {
             int argumentCount = info.args.Count;
             if (argumentCount == 0) { // all commands
                 Console.Command[] commands = Console.GetCommands();
-                string[,] elements = new string[2, commands.Length];
+                bool all = info.HasFlag('a', "all");
+                string[,] elements = new string[all ? 3 : 2, commands.Length];
                 for (int r = 0; r < commands.Length; r++) {
                     elements[0, r] = commands[r].name;
                     elements[1, r] = $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(commands[r].description)}</color>";
+                    if (all) elements[2, r] = $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(commands[r].usage)}</color>";
                 }
                 console.PrintTable(elements);
             } else { // list of commands
@@ -706,8 +714,69 @@ namespace BlackTundra.Foundation {
 
         #region TimeCommand
 
-        [Command("time")]
-        private static bool TimeCommand(in CommandInfo info) => true;
+        [Command(
+            "time",
+            "Displays application time information and allows for modification of application time properties.",
+            "time" +
+                "\n\tDisplays application time information." +
+            "\ntime set timescale {value}" +
+                "\n\tAllows modification of the application timescale. The default value is 1.0." +
+                "\n\tA lower value means time will travel slower, a larger number means time travels faster." +
+                "\n\tThis value cannot be lower than 0.0 but has no maximum range; however, large timescales may cause performance issues."
+        )]
+        private static bool TimeCommand(in CommandInfo info) {
+            ConsoleWindow console = Core.consoleWindow;
+            int argumentCount = info.args.Count;
+            if (argumentCount == 0) { // no arguments, display timing information
+                console.PrintTable(
+                    new string[,] {
+                        { $"<color=#{Colour.Gray.hex}>Time</color>", Time.time.ToString() },
+                        { $"<color=#{Colour.Gray.hex}>Unscaled Time</color>", Time.unscaledTime.ToString() },
+                        { $"<color=#{Colour.Gray.hex}>Real Time Since Startup</color>", Time.realtimeSinceStartup.ToString() },
+                        { $"<color=#{Colour.Gray.hex}>Time Since Scene Load</color>", Time.timeSinceLevelLoad.ToString() },
+                        { string.Empty, string.Empty },
+                        { $"<color=#{Colour.Gray.hex}>Time Scale</color>", Time.timeScale.ToString() },
+                        { $"<color=#{Colour.Gray.hex}>Frame Rate</color>", (1.0f / Time.deltaTime).ToString() },
+                        { $"<color=#{Colour.Gray.hex}>Fixed Update Rate</color>", (1.0f / Time.fixedDeltaTime).ToString() },
+                        { $"<color=#{Colour.Gray.hex}>Fixed Delta Time</color>", Time.fixedDeltaTime.ToString() },
+                        { $"<color=#{Colour.Gray.hex}>Default Fixed Delta Time</color>", Core.DefaultFixedDeltaTime.ToString() }
+                    }, false, true
+                );
+            } else {
+                string arg = info.args[0];
+                switch (info.args[0].ToLower()) {
+                    case "set": {
+                        if (argumentCount != 3) {
+                            console.Print("Usage: time set {property} {value}");
+                            return false;
+                        } else if (float.TryParse(info.args[2], out float value)) {
+                            switch (info.args[1].ToLower()) {
+                                case "timescale": {
+                                    if (value < 0.0f) {
+                                        console.Print("The timescale property cannot be less than zero.");
+                                        return false;
+                                    }
+                                    console.Print($"Time Scale {Time.timeScale} -> {value}.");
+                                    Time.timeScale = value;
+                                    float fixedDeltaTime = value * Core.DefaultFixedDeltaTime;
+                                    console.Print($"Fixed Delta Time {Time.fixedDeltaTime} -> {fixedDeltaTime}.");
+                                    Time.fixedDeltaTime = fixedDeltaTime;
+                                    return true;
+                                }
+                                default: {
+                                    console.Print(string.Concat("Invalid property: ", ConsoleUtility.Escape(info.args[1])));
+                                    return false;
+                                }
+                            }
+                        } else {
+                            console.Print(string.Concat("Invalid value: ", ConsoleUtility.Escape(info.args[2])));
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
 
         #endregion
 
@@ -721,11 +790,11 @@ namespace BlackTundra.Foundation {
                 "\nconfig {file}" +
                 "\n\tDisplays every configuration entry in a configuration file." +
                 "\n\tfile: Name of the file (or a full or partial path) of the configuration file to view." +
-            "config {file} {key}" +
+            "\nconfig {file} {key}" +
                 "\n\tDisplays the value of a configuration entry in a specified configuration file." +
                 "\n\tfile: Name of the file (or a full or partial path) of the configuration file to view." +
                 "\n\tkey: Name of the entry in the configuration file to view." +
-            "config {file} {key} {value}" +
+            "\nconfig {file} {key} {value}" +
                 "\n\tOverrides a key-value-pair in a specified configuration entry and saves the changes to the configuration file." +
                 "\n\tfile: Name of the file (or a full or partial path) of the configuration file to edit." +
                 "\n\tkey: Name of the entry in the configuration file to edit." +
