@@ -30,7 +30,7 @@ namespace BlackTundra.Foundation {
         #region constructor
 
         public CommandAttribute(string name, string description = null, string usage = null) {
-            if (name == null) throw new ArgumentNullException("name");
+            if (name == null) throw new ArgumentNullException(nameof(name));
             this.name = name.ToLower();
             this.description = description;
             this.usage = usage;

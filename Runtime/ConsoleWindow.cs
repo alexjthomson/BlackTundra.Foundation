@@ -78,7 +78,7 @@ namespace BlackTundra.Foundation {
 
         public ConsoleWindow(in string name, in Vector2 windowSize, in bool echo = true, in bool registerApplicationLogCallback = false, in int capacity = 128, in int inputHistoryCapcity = 32) {
 
-            this.name = name ?? throw new ArgumentNullException("name");
+            this.name = name ?? throw new ArgumentNullException(nameof(name));
             entryBuffer = new RollingBuffer<LogEntry>(capacity, true);
             this.echo = echo;
 
@@ -291,8 +291,8 @@ namespace BlackTundra.Foundation {
 
         public string DecorateCommand(string command, in StringBuilder stringBuilder) {
 
-            if (command == null) throw new ArgumentNullException("command");
-            if (stringBuilder == null) throw new ArgumentNullException("stringBuilder");
+            if (command == null) throw new ArgumentNullException(nameof(command));
+            if (stringBuilder == null) throw new ArgumentNullException(nameof(stringBuilder));
 
             command = command.TrimStart();
             int commandLength = command.Length;
@@ -418,14 +418,14 @@ namespace BlackTundra.Foundation {
         #region Print
 
         public LogEntry Print(in string message) {
-            if (message == null) throw new ArgumentNullException("message");
+            if (message == null) throw new ArgumentNullException(nameof(message));
             LogEntry entry = new LogEntry(message);
             lock (entryBuffer) entryBuffer.Push(entry, out _);
             return entry;
         }
 
         public LogEntry[] Print(in string[] messages) {
-            if (messages == null) throw new ArgumentNullException("messages");
+            if (messages == null) throw new ArgumentNullException(nameof(messages));
             int messageCount = messages.Length;
             LogEntry[] entryBuffer = new LogEntry[messageCount];
             if (messageCount > 0) {
@@ -454,8 +454,8 @@ namespace BlackTundra.Foundation {
         /// <param name="spacing">Number of spaces to place between columns.</param>
         public void PrintTable(string[,] elements, in bool header = false, in bool inverted = false, in int spacing = 3) {
 
-            if (elements == null) throw new ArgumentNullException("elements");
-            if (spacing < 0) throw new ArgumentOutOfRangeException("spacing must be positive.");
+            if (elements == null) throw new ArgumentNullException(nameof(elements));
+            if (spacing < 0) throw new ArgumentOutOfRangeException(string.Concat(nameof(spacing), " must be positive."));
             
             int columns = elements.GetLength(0);
             if (columns == 0) return;
@@ -553,7 +553,7 @@ namespace BlackTundra.Foundation {
 
         public void PrintTable(in string[] rows, in char splitCharacter, in bool header = false, in int spacing = 3) {
 
-            if (rows == null) throw new ArgumentNullException("rows");
+            if (rows == null) throw new ArgumentNullException(nameof(rows));
 
             int rowCount = rows.Length;
             if (rowCount == 0) return;
@@ -573,7 +573,7 @@ namespace BlackTundra.Foundation {
                 if (columnCount == -1) {
                     columnCount = values.Length;
                     elements = new string[columnCount, rowCount];
-                } else if (values.Length != columnCount) throw new ArgumentException("rows doesn't have a consistent number of columns.");
+                } else if (values.Length != columnCount) throw new ArgumentException(string.Concat(nameof(rows), " doesn't have a consistent number of columns."));
 
                 for (int c = 0; c < columnCount; c++) elements[c, r] = values[c].Trim();
 

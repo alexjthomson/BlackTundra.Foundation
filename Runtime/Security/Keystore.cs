@@ -85,7 +85,7 @@ namespace BlackTundra.Foundation.Security {
 
             get {
 
-                if (key == null) throw new ArgumentNullException("key");
+                if (key == null) throw new ArgumentNullException(nameof(key));
                 int hash = key.ToGUID();
 
                 // find key:
@@ -120,7 +120,7 @@ namespace BlackTundra.Foundation.Security {
 
             set {
 
-                if (key == null) throw new ArgumentNullException("key");
+                if (key == null) throw new ArgumentNullException(nameof(key));
                 int hash = key.ToGUID();
 
                 // find key:

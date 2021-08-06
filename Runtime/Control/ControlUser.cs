@@ -135,7 +135,7 @@ namespace BlackTundra.Foundation.Control {
             if (devices != null && devices.Length > 0) { // check devices were provided
                 for (int i = 0; i < devices.Length; i++) { // iterate each device provided
                     if (devices[i] == null) // deivce is null, no null references are allowed
-                        throw new ArgumentException($"devices[{i}] is null; the devices array must not contain any null references.");
+                        throw new ArgumentException($"{nameof(devices)}[{i}] is null; the devices array must not contain any null references.");
                 }
                 this.devices = new PackedBuffer<InputDevice>(devices); // populate the devices with the devices provided
                 ResetDevices(); // reset the state of every device provided
@@ -273,7 +273,7 @@ namespace BlackTundra.Foundation.Control {
         #region ResetDevice
 
         private static void ResetDevice(in InputDevice device) {
-            if (device == null) throw new ArgumentNullException("device");
+            if (device == null) throw new ArgumentNullException(nameof(device));
             if (device is IDualMotorRumble dualMotorRumble) dualMotorRumble.SetMotorSpeeds(0.0f, 0.0f); // reset rumble motor speeds
         }
 
@@ -290,7 +290,7 @@ namespace BlackTundra.Foundation.Control {
         #region BindDevice
 
         public void BindDevice(in InputDevice device) {
-            if (device == null) throw new ArgumentNullException("device");
+            if (device == null) throw new ArgumentNullException(nameof(device));
             if (devices.IsFull) devices.Expand(1);
             ResetDevice(device);
             devices.AddLast(device, true);
@@ -303,7 +303,7 @@ namespace BlackTundra.Foundation.Control {
         #region UnbindDevice
 
         public void UnbindDevice(in InputDevice device) {
-            if (device == null) throw new ArgumentNullException("device");
+            if (device == null) throw new ArgumentNullException(nameof(device));
             int index = devices[device];
             if (index != -1) return; // device not bound
             ResetDevice(device);
@@ -319,7 +319,7 @@ namespace BlackTundra.Foundation.Control {
         /// <returns>
         /// Returns <c>true</c> if the <see cref="ControlUser"/> has the <paramref name="device"/> bound.
         /// </returns>
-        public bool HasDevice(in InputDevice device) => devices[device ?? throw new ArgumentNullException("device")] != -1;
+        public bool HasDevice(in InputDevice device) => devices[device ?? throw new ArgumentNullException(nameof(device))] != -1;
 
         /// <returns>
         /// Returns <c>true</c> if the <see cref="ControlUser"/> has one or more <see cref="InputDevice"/>
@@ -339,12 +339,12 @@ namespace BlackTundra.Foundation.Control {
         /// </returns>
         /// <seealso cref="HasDevices(in ControlDevices)"/>
         public bool HasDevice(in ControlDevices device) {
-            if (device.GetDeviceCount() != 1) throw new ArgumentException("Expected one device.");
+            if (device.GetDeviceCount() != 1) throw new ArgumentException(string.Concat(nameof(device), ": expected one device."));
             return device switch {
                 ControlDevices.Keyboard => HasDevice<Keyboard>(),
                 ControlDevices.Mouse => HasDevice<Mouse>(),
                 ControlDevices.Gamepad => HasDevice<Gamepad>(),
-                _ => throw new ArgumentException(string.Concat("Unknown ControlDevice flag: ", device)),
+                _ => throw new ArgumentException(string.Concat(nameof(device), ": unknown ControlDevice flag: ", device)),
             };
         }
 
@@ -392,7 +392,7 @@ namespace BlackTundra.Foundation.Control {
         /// New <see cref="InputDevice"/> buffer to replace the existing bound devices.
         /// </param>
         internal void OverrideDevices(in InputDevice[] devices) {
-            if (devices == null) throw new ArgumentNullException("devices");
+            if (devices == null) throw new ArgumentNullException(nameof(devices));
             ResetDevices();
             this.devices.Clear(devices); // clear the device buffer and assign a new set of devices
             for (int i = 0; i < this.devices.Count; i++)
@@ -463,7 +463,7 @@ namespace BlackTundra.Foundation.Control {
         #region InvokeOnControlGained
 
         private void InvokeOnControlGained(in IControllable controllable, ref ControlFlags flags) {
-            if (controllable == null) throw new ArgumentNullException("controllable");
+            if (controllable == null) throw new ArgumentNullException(nameof(controllable));
             try {
                 flags = controllable.OnControlGained(this);
             } catch (Exception exception) {
@@ -476,7 +476,7 @@ namespace BlackTundra.Foundation.Control {
         #region InvokeOnControlRevoked
 
         private void InvokeOnControlRevoked(in IControllable controllable, ref ControlFlags flags) {
-            if (controllable == null) throw new ArgumentNullException("controllable");
+            if (controllable == null) throw new ArgumentNullException(nameof(controllable));
             try {
                 flags = controllable.OnControlRevoked(this);
             } catch (Exception exception) {
@@ -502,7 +502,7 @@ namespace BlackTundra.Foundation.Control {
         /// of the <paramref name="controllable"/>.
         /// </returns>
         public bool GainControl(in IControllable controllable, in bool force = false) {
-            if (controllable == null) throw new ArgumentNullException("controllable");
+            if (controllable == null) throw new ArgumentNullException(nameof(controllable));
             ControlUser user = FindControlUser(controllable); // get the current user in control of the controllable
             ControlFlags flags = controlFlags; // get the current control flags
             if (user != null) { // the controllable already has a control user
@@ -542,7 +542,7 @@ namespace BlackTundra.Foundation.Control {
         #region RevokeControl
 
         public void RevokeControl(in IControllable controllable) {
-            if (controllable == null) throw new ArgumentNullException("controllable");
+            if (controllable == null) throw new ArgumentNullException(nameof(controllable));
             if (controlStack.Any()) { // the control stack contains items
                 IControllable current = controlStack.Peek();
                 RemoveFromControlStack(controllable);
@@ -569,7 +569,7 @@ namespace BlackTundra.Foundation.Control {
         /// Removes all occurrances of the <paramref name="controllable"/> from the <see cref="controlStack"/>.
         /// </summary>
         private void RemoveFromControlStack(in IControllable controllable) {
-            if (controllable == null) throw new ArgumentNullException("controllable");
+            if (controllable == null) throw new ArgumentNullException(nameof(controllable));
             IControllable[] stack = controlStack.ToArray();
             controlStack.Clear();
             stack.Remove(controllable, true);
@@ -659,7 +659,7 @@ namespace BlackTundra.Foundation.Control {
         /// is found, <c>null</c> is returned.
         /// </returns>
         public static ControlUser FindControlUser(in IControllable controllable) {
-            if (controllable == null) throw new ArgumentNullException("controllable");
+            if (controllable == null) throw new ArgumentNullException(nameof(controllable));
             ControlUser user; // temporary reference
             for (int i = 0; i < ControlUserBuffer.Count; i++) { // iterate each control user
                 user = ControlUserBuffer[i]; // get the current control user
@@ -674,7 +674,7 @@ namespace BlackTundra.Foundation.Control {
         /// returns <c>null</c> if none is found.
         /// </returns>
         public static ControlUser FindControlUser(in InputDevice device) {
-            if (device == null) throw new ArgumentNullException("device");
+            if (device == null) throw new ArgumentNullException(nameof(device));
             ControlUser user;
             for (int i = 0; i < ControlUserBuffer.Count; i++) {
                 user = ControlUserBuffer[i];

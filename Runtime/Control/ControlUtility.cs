@@ -15,7 +15,7 @@ namespace BlackTundra.Foundation.Control {
         /// <c>null</c> is returned.
         /// </returns>
         public static ControlUser GetControlUser(this IControllable controllable) {
-            if (controllable == null) throw new ArgumentNullException("controllable");
+            if (controllable == null) throw new ArgumentNullException(nameof(controllable));
             return ControlUser.FindControlUser(controllable);
         }
 
@@ -24,7 +24,7 @@ namespace BlackTundra.Foundation.Control {
         #region GainControl
 
         public static bool GainControl(this IControllable controllable, ControlUser user = null) {
-            if (controllable == null) throw new ArgumentNullException("controllable");
+            if (controllable == null) throw new ArgumentNullException(nameof(controllable));
             if (user == null) { // no control user was provided
                 user = ControlUser.main; // default to the main control user
                 if (user == null) return false; // there are no control users
@@ -37,7 +37,7 @@ namespace BlackTundra.Foundation.Control {
         #region RevokeControl
 
         public static void RevokeControl(this IControllable controllable) {
-            if (controllable == null) throw new ArgumentNullException("controllable");
+            if (controllable == null) throw new ArgumentNullException(nameof(controllable));
             ControlUser user = ControlUser.FindControlUser(controllable);
             if (user != null) user.RevokeControl(controllable);
         }

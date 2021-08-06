@@ -12,7 +12,7 @@ namespace BlackTundra.Foundation.Utility {
         #region Handle
 
         public static void Handle(this Exception exception, in string message = null, in Object obj = null) {
-            if (exception == null) throw new ArgumentNullException("exception");
+            if (exception == null) throw new ArgumentNullException(nameof(exception));
             if (obj == null) {
                 Debug.LogException(exception);
                 if (message != null) Debug.LogError(message);

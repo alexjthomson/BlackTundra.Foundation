@@ -38,14 +38,11 @@ namespace BlackTundra.Foundation.Utility {
         #region constructor
 
         public LimiterStream(in Stream stream, in long maxLength) {
-
-            if (stream == null) throw new ArgumentNullException("stream");
-            if (maxLength < 0L) throw new ArgumentOutOfRangeException("maxLength");
-
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
+            if (maxLength < 0L) throw new ArgumentOutOfRangeException(nameof(maxLength));
             this.stream = stream;
             this.maxLength = maxLength;
             length = 0L;
-
         }
 
         #endregion

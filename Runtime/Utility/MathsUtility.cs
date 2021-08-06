@@ -319,34 +319,28 @@ namespace BlackTundra.Foundation.Utility {
         #region CalculateBounds
 
         public static Bounds CalculateBounds(this Vector3[] points) {
-
-            if (points == null) throw new ArgumentNullException("points");
+            if (points == null) throw new ArgumentNullException(nameof(points));
             return GeometryUtility.CalculateBounds(
                 points,
                 Matrix4x4.identity
             );
-
         }
 
         public static Bounds CalculateBounds(this Vector3[] points, Matrix4x4 transform) {
-
-            if (points == null) throw new ArgumentNullException("points");
+            if (points == null) throw new ArgumentNullException(nameof(points));
             return GeometryUtility.CalculateBounds(
                 points,
                 transform
             );
-
         }
 
         public static Bounds CalculateBounds(this Vector3[] points, Transform transform) {
-
-            if (points == null) throw new ArgumentNullException("points");
-            if (transform == null) throw new ArgumentNullException("transform");
+            if (points == null) throw new ArgumentNullException(nameof(points));
+            if (transform == null) throw new ArgumentNullException(nameof(transform));
             return GeometryUtility.CalculateBounds(
                 points,
                 transform.localToWorldMatrix
             );
-
         }
 
         #endregion
@@ -389,18 +383,14 @@ namespace BlackTundra.Foundation.Utility {
         /// </summary>
         /// <param name="t">Position on the curve. This should be between 0.0 and 1.0 to remain on the curve. Any value outside of that range is extrapolated.</param>
         public static Vector2 EvaluateBezierCurve(in Vector2 p0, in Vector2 p1, in Vector2 p2, in Vector2 p3, in float t) {
-
             float omt = 1.0f - t;
             return (omt * omt * ((omt * p0) + (3.0f * t * p1))) + (t * t * ((3.0f * omt * p2) + (t * p3)));
-
         }
         */
 
         public static Vector3 EvaluateBezierCurve(in Vector3[] points, in float t) {
-
-            if (points == null) throw new ArgumentNullException("points");
+            if (points == null) throw new ArgumentNullException(nameof(points));
             return EvaluateBezierCurve(points[0], points[1], points[2], points[3], t);
-
         }
 
         /// <summary>
@@ -408,10 +398,8 @@ namespace BlackTundra.Foundation.Utility {
         /// </summary>
         /// <param name="t">Position on the curve. This should be between 0.0 and 1.0 to remain on the curve. Any value outside of that range is extrapolated.</param>
         public static Vector3 EvaluateBezierCurve(in Vector3 p0, in Vector3 p1, in Vector3 p2, in Vector3 p3, in float t) {
-
             float omt = 1.0f - t;
             return (omt * omt * ((omt * p0) + (3.0f * t * p1))) + (t * t * ((3.0f * omt * p2) + (t * p3)));
-
         }
 
 #endif
@@ -421,18 +409,14 @@ namespace BlackTundra.Foundation.Utility {
 #if USE_BEZIER_MATHS
 
         public static Vector3 EvaluateBezierCurveDerivative(in Vector3[] points, in float t) {
-
-            if (points == null) throw new ArgumentNullException("points");
+            if (points == null) throw new ArgumentNullException(nameof(points));
             return EvaluateBezierCurveDerivative(points[0], points[1], points[2], points[3], t);
-
         }
 
         public static Vector3 EvaluateBezierCurveDerivative(in Vector3 a0, in Vector3 c0, in Vector3 c1, in Vector3 a1, float t) {
-
             t = Mathf.Clamp01(t);
             float omt = 1.0f - t;
             return 3.0f * (omt * ((omt * (c0 - a0)) + (2.0f * t * (c1 - c0))) + (t * t * (a1 - c1)));
-
         }
 
 #endif
@@ -467,12 +451,9 @@ namespace BlackTundra.Foundation.Utility {
         /// </summary>
         public static float EstimateBezierCurveLength(in Vector2 p0, in Vector2 p1, in Vector2 p2, in Vector2 p3) => Vector3.Distance(p0, p3) + ((Vector3.Distance(p0, p1) + Vector3.Distance(p1, p2) + Vector3.Distance(p2, p3)) * 0.33333333333333333333f);
         */
-
         public static float EstimateBezierCurveLength(in Vector3[] points) {
-
-            if (points == null) throw new ArgumentNullException("points");
+            if (points == null) throw new ArgumentNullException(nameof(points));
             return EstimateBezierCurveLength(points[0], points[1], points[2], points[3]);
-
         }
 
         /// <summary>
@@ -487,21 +468,17 @@ namespace BlackTundra.Foundation.Utility {
 #if USE_BEZIER_MATHS
 
         public static Bounds CalculateBezierBounds(in Vector3[] points) {
-
-            if (points == null) throw new ArgumentNullException("points");
+            if (points == null) throw new ArgumentNullException(nameof(points));
             return CalculateBezierBounds(points[0], points[1], points[2], points[3]);
-
         }
 
         public static Bounds CalculateBezierBounds(in Vector3 p0, in Vector3 p1, in Vector3 p2, in Vector3 p3) {
-
             MinMaxVector3 minMax = new MinMaxVector3();
             minMax.Evaluate(p0);
             minMax.Evaluate(p3);
             IEnumerable<float> turningPoints = FindBezierTurningPoints(p0, p1, p2, p3);
             foreach (float t in turningPoints) minMax.Evaluate(EvaluateBezierCurve(p0, p1, p2, p3, t));
             return minMax.ToBounds();
-
         }
 
 #endif
@@ -576,7 +553,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static float GetLineLength(in Vector3[] line) {
 
-            if (line == null) throw new ArgumentNullException("line");
+            if (line == null) throw new ArgumentNullException(nameof(line));
 
             int segmentCount = line.Length;
             if (segmentCount < 2) return 0.0f;
@@ -716,8 +693,8 @@ namespace BlackTundra.Foundation.Utility {
             get => _xSmoothing;
             set {
                 if (value == _xSmoothing) return;
-                if (value < 0.0f) throw new ArgumentException("xSmoothing must be positive.");
-                if (value == float.NaN) throw new ArgumentException("NaN xSmoothing.");
+                if (value < 0.0f) throw new ArgumentException(string.Concat(nameof(xSmoothing), " must be positive."));
+                if (value == float.NaN) throw new ArgumentException(string.Concat(nameof(xSmoothing), " is NaN."));
                 _xSmoothing = value;
             }
         }
@@ -728,8 +705,8 @@ namespace BlackTundra.Foundation.Utility {
             get => _ySmoothing;
             set {
                 if (value == _ySmoothing) return;
-                if (value < 0.0f) throw new ArgumentException("ySmoothing must be positive.");
-                if (value == float.NaN) throw new ArgumentException("NaN ySmoothing.");
+                if (value < 0.0f) throw new ArgumentException(string.Concat(nameof(ySmoothing), " must be positive."));
+                if (value == float.NaN) throw new ArgumentException(string.Concat(nameof(ySmoothing), " is NaN."));
                 _ySmoothing = value;
             }
         }
@@ -768,11 +745,11 @@ namespace BlackTundra.Foundation.Utility {
 
         public SmoothVector2(in float x, in float y, in float xSmoothing, in float ySmoothing) {
 
-            if (xSmoothing < 0.0f) throw new ArgumentException("xSmoothing must be positive.");
-            if (xSmoothing == float.NaN) throw new ArgumentException("NaN xSmoothing.");
+            if (xSmoothing < 0.0f) throw new ArgumentException(string.Concat(nameof(xSmoothing), " must be positive."));
+            if (xSmoothing == float.NaN) throw new ArgumentException(string.Concat(nameof(xSmoothing), " is NaN."));
 
-            if (ySmoothing < 0.0f) throw new ArgumentException("ySmoothing must be positive.");
-            if (ySmoothing == float.NaN) throw new ArgumentException("NaN ySmoothing.");
+            if (ySmoothing < 0.0f) throw new ArgumentException(string.Concat(nameof(ySmoothing), " must be positive."));
+            if (ySmoothing == float.NaN) throw new ArgumentException(string.Concat(nameof(ySmoothing), " is NaN."));
 
             this.x = x;
             this.y = y;
@@ -852,8 +829,8 @@ namespace BlackTundra.Foundation.Utility {
             get => _xSmoothing;
             set {
                 if (value == _xSmoothing) return;
-                if (value < 0.0f) throw new ArgumentException("xSmoothing must be positive.");
-                if (value == float.NaN) throw new ArgumentException("NaN xSmoothing.");
+                if (value < 0.0f) throw new ArgumentException(string.Concat(nameof(xSmoothing), " must be positive."));
+                if (value == float.NaN) throw new ArgumentException(string.Concat(nameof(xSmoothing), " is NaN."));
                 _xSmoothing = value;
             }
         }
@@ -864,8 +841,8 @@ namespace BlackTundra.Foundation.Utility {
             get => _ySmoothing;
             set {
                 if (value == _ySmoothing) return;
-                if (value < 0.0f) throw new ArgumentException("ySmoothing must be positive.");
-                if (value == float.NaN) throw new ArgumentException("NaN ySmoothing.");
+                if (value < 0.0f) throw new ArgumentException(string.Concat(nameof(ySmoothing), " must be positive."));
+                if (value == float.NaN) throw new ArgumentException(string.Concat(nameof(ySmoothing), " is NaN."));
                 _ySmoothing = value;
             }
         }
@@ -876,8 +853,8 @@ namespace BlackTundra.Foundation.Utility {
             get => _zSmoothing;
             set {
                 if (value == _zSmoothing) return;
-                if (value < 0.0f) throw new ArgumentException("zSmoothing must be positive.");
-                if (value == float.NaN) throw new ArgumentException("NaN zSmoothing.");
+                if (value < 0.0f) throw new ArgumentException(string.Concat(nameof(zSmoothing), " must be positive."));
+                if (value == float.NaN) throw new ArgumentException(string.Concat(nameof(zSmoothing), " is NaN."));
                 _zSmoothing = value;
             }
         }
@@ -917,14 +894,14 @@ namespace BlackTundra.Foundation.Utility {
 
         public SmoothVector3(in float x, in float y, in float z, in float xSmoothing, in float ySmoothing, in float zSmoothing) {
 
-            if (xSmoothing < 0.0f) throw new ArgumentException("xSmoothing must be positive.");
-            if (xSmoothing == float.NaN) throw new ArgumentException("NaN xSmoothing.");
+            if (xSmoothing < 0.0f) throw new ArgumentException(string.Concat(nameof(xSmoothing), " must be positive."));
+            if (xSmoothing == float.NaN) throw new ArgumentException(string.Concat(nameof(xSmoothing), " is NaN."));
 
-            if (ySmoothing < 0.0f) throw new ArgumentException("ySmoothing must be positive.");
-            if (ySmoothing == float.NaN) throw new ArgumentException("NaN ySmoothing.");
+            if (ySmoothing < 0.0f) throw new ArgumentException(string.Concat(nameof(ySmoothing), " must be positive."));
+            if (ySmoothing == float.NaN) throw new ArgumentException(string.Concat(nameof(ySmoothing), " is NaN."));
 
-            if (zSmoothing < 0.0f) throw new ArgumentException("zSmoothing must be positive.");
-            if (zSmoothing == float.NaN) throw new ArgumentException("NaN zSmoothing.");
+            if (zSmoothing < 0.0f) throw new ArgumentException(string.Concat(nameof(zSmoothing), " must be positive."));
+            if (zSmoothing == float.NaN) throw new ArgumentException(string.Concat(nameof(zSmoothing), " is NaN."));
 
             this.x = x;
             this.y = y;
@@ -971,7 +948,7 @@ namespace BlackTundra.Foundation.Utility {
 
         #region ToString
 
-        public override string ToString() => $"[{x}, {y}, {z}]";
+        public override string ToString() => string.Concat('[', x, ',', y, ',', z, ']');
 
         #endregion
 

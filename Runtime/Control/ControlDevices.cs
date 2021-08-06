@@ -43,12 +43,12 @@ namespace BlackTundra.Foundation.Control {
         public static readonly int MaxControlDevices = GetDeviceCount(ControlDevices.All);
 
         public static Type GetInputDeviceType(this ControlDevices device) {
-            if (GetDeviceCount(device) != 1) throw new ArgumentException("Expected one control device.");
+            if (GetDeviceCount(device) != 1) throw new ArgumentException(string.Concat(nameof(device), ": expected one control device."));
             return device switch {
                 ControlDevices.Keyboard => typeof(Keyboard),
                 ControlDevices.Mouse => typeof(Mouse),
                 ControlDevices.Gamepad => typeof(Gamepad),
-                _ => throw new ArgumentException(string.Concat("Unknown control device: ", device))
+                _ => throw new ArgumentException(string.Concat(nameof(device), ": unknown control device: ", device))
             };
         }
 

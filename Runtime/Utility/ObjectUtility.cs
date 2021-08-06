@@ -40,7 +40,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static int SizeOf(this Type type) {
 
-            if (type == null) throw new ArgumentNullException("type");
+            if (type == null) throw new ArgumentNullException(nameof(type));
 
             if (SizeOfDictionary.TryGetValue(type, out int size)) return size;
             size = SizeOfType(type);
@@ -77,7 +77,7 @@ namespace BlackTundra.Foundation.Utility {
         /// </param>
         public static byte[] SerializeToBytes(this object obj, in bool includeType = false) {
 
-            if (obj == null) throw new ArgumentNullException("obj");
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
 
             Type type = obj.GetType(); // get the type of the object
 
@@ -144,7 +144,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static T ToObject<T>(in byte[] bytes) {
 
-            if (bytes == null) throw new ArgumentNullException("bytes");
+            if (bytes == null) throw new ArgumentNullException(nameof(bytes));
             int size = bytes.Length - 1;
             if (size < 1) return default;
 

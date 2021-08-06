@@ -215,18 +215,18 @@ namespace BlackTundra.Foundation {
         public static Command Bind(in string name, in Command.CommandCallbackDelegate callback, string description = null, string usage = null) {
 
             #region validate arguments
-            if (name == null) throw new ArgumentNullException("name");
-            if (callback == null) throw new ArgumentNullException("callback");
-            if (!Command.IsValidName(name)) throw new ArgumentException("Invalid name.");
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (callback == null) throw new ArgumentNullException(nameof(callback));
+            if (!Command.IsValidName(name)) throw new ArgumentException(nameof(name));
             if (description != null) {
                 description = description.Replace("\t", TabSpaces);
-                if (!Command.IsValidDescription(description)) throw new ArgumentException("Invalid decription.");
+                if (!Command.IsValidDescription(description)) throw new ArgumentException(nameof(description));
             }
             if (usage != null) {
                 usage = usage.Replace("\t", TabSpaces);
-                if (!Command.IsValidDescription(usage)) throw new ArgumentException("Invalid usage.");
+                if (!Command.IsValidDescription(usage)) throw new ArgumentException(nameof(usage));
             }
-            if (Commands.ContainsKey(name)) throw new ArgumentException(string.Concat(name, " command already exists."));
+            if (Commands.ContainsKey(name)) throw new ArgumentException(string.Concat(nameof(name), ": \"", name, "\" command already exists."));
             #endregion
 
             Command command = new Command(name, description, usage, callback);
@@ -251,7 +251,7 @@ namespace BlackTundra.Foundation {
         #region GetCommand
 
         public static Command GetCommand(in string name) {
-            if (name == null) throw new ArgumentNullException("name");
+            if (name == null) throw new ArgumentNullException(nameof(name));
             return Commands.TryGetValue(name, out Command command) ? command : null;
         }
 

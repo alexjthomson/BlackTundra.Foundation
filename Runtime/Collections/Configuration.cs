@@ -3,8 +3,6 @@
 using System;
 using System.Text;
 
-using BlackTundra.Foundation.IO;
-using BlackTundra.Foundation.Utility;
 using BlackTundra.Foundation.Collections.Generic;
 
 namespace BlackTundra.Foundation.Collections {
@@ -46,9 +44,8 @@ namespace BlackTundra.Foundation.Collections {
         /// <param name="dirty">When true, the configuration entry will be set to dirty.</param>
         /// <returns>Configuration entry or null if no entry was found.</returns>
         public string this[in string key, in bool dirty = true] {
-
             get {
-                if (key == null) throw new ArgumentNullException("key");
+                if (key == null) throw new ArgumentNullException(nameof(key));
                 int hash = key.GetHashCode();
                 ConfigurationEntry entry;
                 for (int i = buffer.Count - 1; i >= 0; i--) {
@@ -60,9 +57,8 @@ namespace BlackTundra.Foundation.Collections {
                 }
                 return null;
             }
-
             set {
-                if (key == null) throw new ArgumentNullException("key");
+                if (key == null) throw new ArgumentNullException(nameof(key));
                 int hash = key.GetHashCode();
                 ConfigurationEntry entry;
                 for (int i = buffer.Count - 1; i >= 0; i--) {
@@ -82,7 +78,6 @@ namespace BlackTundra.Foundation.Collections {
                 }
                 AddEntry(key, value, dirty);
             }
-
         }
 
         /// <summary>
@@ -97,7 +92,7 @@ namespace BlackTundra.Foundation.Collections {
         /// <returns>Value of the configuration entry at this index.</returns>
         public ConfigurationEntry this[in int index] {
             get {
-                if (index < 0 || index >= buffer.Count) throw new ArgumentOutOfRangeException("index");
+                if (index < 0 || index >= buffer.Count) throw new ArgumentOutOfRangeException(nameof(index));
                 return buffer[index];
             }
         }
@@ -112,8 +107,8 @@ namespace BlackTundra.Foundation.Collections {
         #region constructor
 
         public Configuration(in int capacity = DefaultConfigurationBufferCapacity, in int expandSize = DefaultConfigurationBufferExpandSize) {
-            if (capacity < 1) throw new ArgumentOutOfRangeException("capacity must be greater than zero.");
-            if (expandSize < 1) throw new ArgumentOutOfRangeException("expand size must be greater than zero.");
+            if (capacity < 1) throw new ArgumentOutOfRangeException(string.Concat(nameof(capacity), " must be greater than zero."));
+            if (expandSize < 1) throw new ArgumentOutOfRangeException(string.Concat(nameof(expandSize), " must be greater than zero."));
             buffer = new PackedBuffer<ConfigurationEntry>(capacity);
             this.expandSize = expandSize;
             dirty = false;
@@ -317,7 +312,7 @@ namespace BlackTundra.Foundation.Collections {
         /// <param name="fallback">Fallback value to return if no valid value is found in the <see cref="Configuration"/>.</param>
         public string ForceGet(in string key, in string fallback) {
 
-            if (key == null) throw new ArgumentNullException("key");
+            if (key == null) throw new ArgumentNullException(nameof(key));
 
             string entry = this[key];
             if (entry == null) {
@@ -332,7 +327,7 @@ namespace BlackTundra.Foundation.Collections {
         /// <inheritdoc cref="ForceGet(in string, in string)"/>
         public int ForceGet(in string key, in int fallback) {
 
-            if (key == null) throw new ArgumentNullException("key");
+            if (key == null) throw new ArgumentNullException(nameof(key));
 
             string entry = this[key];
             if (entry == null) {
@@ -361,7 +356,7 @@ namespace BlackTundra.Foundation.Collections {
         /// <inheritdoc cref="ForceGet(in string, in string)"/>
         public bool ForceGet(in string key, in bool fallback) {
 
-            if (key == null) throw new ArgumentNullException("key");
+            if (key == null) throw new ArgumentNullException(nameof(key));
 
             string entry = this[key];
             if (entry == null) {
@@ -389,7 +384,7 @@ namespace BlackTundra.Foundation.Collections {
         /// <inheritdoc cref="ForceGet(in string, in string)"/>
         public float ForceGet(in string key, in float fallback) {
 
-            if (key == null) throw new ArgumentNullException("key");
+            if (key == null) throw new ArgumentNullException(nameof(key));
 
             string entry = this[key];
             if (entry == null) {

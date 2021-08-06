@@ -54,10 +54,10 @@ namespace BlackTundra.Foundation.Collections {
 
         internal ConfigurationEntry(in string key, in string value, in bool dirty) {
 
-            this.key = key ?? throw new ArgumentNullException("key");
+            this.key = key ?? throw new ArgumentNullException(nameof(key));
             hash = key.GetHashCode();
 
-            this.value = value ?? throw new ArgumentNullException("value");
+            this.value = value ?? throw new ArgumentNullException(nameof(value));
             this.dirty = dirty;
 
         }

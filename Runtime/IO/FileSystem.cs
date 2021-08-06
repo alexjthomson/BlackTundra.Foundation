@@ -194,7 +194,7 @@ namespace BlackTundra.Foundation.IO {
         /// <returns>Absolute path on the system.</returns>
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToCanonicalPath(in string localPath, in bool formatAsDirectory = false) {
-            if (localPath == null) throw new ArgumentNullException("localPath");
+            if (localPath == null) throw new ArgumentNullException(nameof(localPath));
             string path = Path.GetFullPath(localPath).Replace('\\', '/');
             if (formatAsDirectory && path[path.Length - 1] != '/') path += '/';
             return path;
@@ -205,16 +205,15 @@ namespace BlackTundra.Foundation.IO {
         #region Write
 
         public static bool Write(in FileSystemReference fsr, in string content, in FileFormat fileFormat = FileFormat.Standard, in bool append = false) {
-            if (fsr == null) throw new ArgumentNullException("fsr");
-            if (content == null) throw new ArgumentNullException("content");
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
+            if (content == null) throw new ArgumentNullException(nameof(content));
             byte[] byteContent = DefaultEncoding.GetBytes(content);
             return Write(fsr, byteContent, fileFormat, append);
         }
 
         public static bool Write(in FileSystemReference fsr, in byte[] content, in FileFormat fileFormat = FileFormat.Standard, in bool append = false) {
-
-            if (fsr == null) throw new ArgumentNullException("fsr");
-            if (content == null) throw new ArgumentNullException("content");
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
+            if (content == null) throw new ArgumentNullException(nameof(content));
 
             byte[] formattedContent;
             if (fileFormat == FileFormat.Standard)
@@ -275,8 +274,7 @@ namespace BlackTundra.Foundation.IO {
         }
 
         public static bool Read(in FileSystemReference fsr, out byte[] content, in FileFormat fileFormat = FileFormat.Standard) {
-
-            if (fsr == null) throw new ArgumentNullException("fsr");
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
 
             #region load content
             byte[] rawContent;
@@ -320,9 +318,9 @@ namespace BlackTundra.Foundation.IO {
         #region UpdateConfiguration
 
         public static bool UpdateConfiguration(in string name, in Configuration configuration, in FileFormat fileFormat = FileFormat.Standard) {
-            if (name == null) throw new ArgumentNullException("name");
-            if (!StringUtility.Matches(name, FileNameRegexPattern)) throw new ArgumentException("Invalid name.");
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (!StringUtility.Matches(name, FileNameRegexPattern)) throw new ArgumentException(nameof(name));
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             return UpdateConfiguration(
                 new FileSystemReference(
                     string.Concat(LocalConfigDirectory, name, ConfigExtension),
@@ -335,8 +333,8 @@ namespace BlackTundra.Foundation.IO {
         }
 
         public static bool UpdateConfiguration(in FileSystemReference fsr, in Configuration configuration, in FileFormat fileFormat = FileFormat.Standard) {
-            if (fsr == null) throw new ArgumentNullException("fsr");
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             if (!Read(fsr, out string content, fileFormat)) content = string.Empty;
             StringBuilder configBuilder;
             try {
@@ -358,8 +356,8 @@ namespace BlackTundra.Foundation.IO {
         #region LoadConfiguration
 
         public static Configuration LoadConfiguration(in string name, Configuration configuration = null, in FileFormat fileFormat = FileFormat.Standard) {
-            if (name == null) throw new ArgumentNullException("name");
-            if (name.IsNullOrWhitespace() || !StringUtility.Matches(name, FileNameRegexPattern)) throw new ArgumentException("Invalid name.");
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (name.IsNullOrWhitespace() || !StringUtility.Matches(name, FileNameRegexPattern)) throw new ArgumentException(nameof(name));
             return LoadConfiguration(
                 new FileSystemReference(
                     string.Concat(LocalConfigDirectory, name, ConfigExtension),
@@ -372,7 +370,7 @@ namespace BlackTundra.Foundation.IO {
         }
 
         public static Configuration LoadConfiguration(in FileSystemReference fsr, Configuration configuration = null, in FileFormat fileFormat = FileFormat.Standard) {
-            if (fsr == null) throw new ArgumentNullException("fsr");
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
             if (configuration == null) configuration = new Configuration();
             if (Read(fsr, out string content, fileFormat)) {
                 try {
@@ -442,7 +440,7 @@ namespace BlackTundra.Foundation.IO {
         /// Reference to the location to open on the native file explorer.
         /// </param>
         public static Process OpenInExplorer(in FileSystemReference fsr) {
-            if (fsr == null) throw new ArgumentNullException("fsr");
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
 #if UNITY_STANDALONE_WIN // windows
             //Process.Start("explorer.exe", $"/{(Directory.Exists(path) ? "root" : "select")},{path}");
             string path = fsr.AbsolutePath.Replace('/', '\\');
@@ -474,7 +472,7 @@ namespace BlackTundra.Foundation.IO {
         /// <param name="arguments">Arguments to start the process running the resource with.</param>
         /// <returns>Returns the <see cref="Process"/> started to run the resource.</returns>
         public static Process Run(in FileSystemReference fsr, in string arguments = null) {
-            if (fsr == null) throw new ArgumentNullException("fsr");
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
             return fsr.IsDirectory ? OpenInExplorer(fsr) : Process.Start(fsr.AbsolutePath, arguments);
         }
 

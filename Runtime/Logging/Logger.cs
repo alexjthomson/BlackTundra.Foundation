@@ -131,12 +131,12 @@ namespace BlackTundra.Foundation.Logging {
         internal Logger(in Type context, in string name, in int capacity, in LogBufferFullDelegate logBufferFullCallback) {
 
             #region argument validation
-            if (context == null) throw new ArgumentNullException("context");
-            //if (name == null) throw new ArgumentNullException("name");
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("name");
+            if (context == null) throw new ArgumentNullException(nameof(context));
+            //if (name == null) throw new ArgumentNullException(nameof(name));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException(nameof(name));
             if (capacity < MinCapacity || capacity > MaxCapacity)
-                throw new ArgumentOutOfRangeException("capacity");
-            if (logBufferFullCallback == null) throw new ArgumentNullException("logBufferFullCallback");
+                throw new ArgumentOutOfRangeException(nameof(capacity));
+            if (logBufferFullCallback == null) throw new ArgumentNullException(nameof(logBufferFullCallback));
             #endregion
 
             this.name = name;
@@ -163,8 +163,8 @@ namespace BlackTundra.Foundation.Logging {
         /// <param name="logLevel"><see cref="LogLevel"/> to mark the message with.</param>
         /// <param name="content">Content to push to the <see cref="Logger"/></param>
         public void Push(in LogLevel logLevel, in string content) {
-            if (logLevel == null) throw new ArgumentNullException("logLevel");
-            if (content == null) throw new ArgumentNullException("content");
+            if (logLevel == null) throw new ArgumentNullException(nameof(logLevel));
+            if (content == null) throw new ArgumentNullException(nameof(content));
             LogEntry logEntry = new LogEntry(logLevel, DateTime.Now, content);
             Push(logEntry);
         }

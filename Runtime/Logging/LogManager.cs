@@ -70,7 +70,7 @@ namespace BlackTundra.Foundation.Logging {
         /// <param name="name">Name of the <see cref="Logger"/> to get.</param>
         /// <returns>Always returns a reference to a <see cref="Logger"/>. This is never <c>null</c>.</returns>
         public static Logger GetLogger(in string name) {
-            if (name == null) throw new ArgumentNullException("name");
+            if (name == null) throw new ArgumentNullException(nameof(name));
             if (LoggerDictionary.TryGetValue(name, out Logger logger)) return logger;
             throw new KeyNotFoundException(name);
         }
@@ -107,7 +107,7 @@ namespace BlackTundra.Foundation.Logging {
         /// <param name="name">Name of the <see cref="Logger"/>.</param>
         /// <returns>Returns true if a <see cref="Logger"/> exists with the provided name.</returns>
         public static bool Exists(in string name) {
-            if (name == null) throw new ArgumentNullException("name");
+            if (name == null) throw new ArgumentNullException(nameof(name));
             return LoggerDictionary.ContainsKey(name);
         }
 
@@ -127,7 +127,7 @@ namespace BlackTundra.Foundation.Logging {
         #region FormatBufferToString
 
         private static StringBuilder FormatBufferToString(in LogEntry[] buffer) {
-            if (buffer == null) throw new ArgumentNullException("buffer");
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
             StringBuilder stringBuilder = new StringBuilder(buffer.Length * 32);
             LogEntry entry;
             for (int i = 0; i < buffer.Length; i++) {

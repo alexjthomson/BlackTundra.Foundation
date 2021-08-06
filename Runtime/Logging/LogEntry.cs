@@ -78,20 +78,20 @@ namespace BlackTundra.Foundation.Logging {
         private LogEntry() => throw new NotSupportedException();
 
         internal LogEntry(in string content) {
-            this.content = content ?? throw new ArgumentNullException("content");
+            this.content = content ?? throw new ArgumentNullException(nameof(content));
             logLevel = LogLevel.None;
             timestamp = DateTime.UtcNow;
         }
 
         internal LogEntry(in LogLevel logLevel, in string content) {
-            this.logLevel = logLevel ?? throw new ArgumentNullException("logLevel");
-            this.content = content ?? throw new ArgumentNullException("content");
+            this.logLevel = logLevel ?? throw new ArgumentNullException(nameof(logLevel));
+            this.content = content ?? throw new ArgumentNullException(nameof(content));
             timestamp = DateTime.UtcNow;
         }
 
         internal LogEntry(in LogLevel logLevel, in DateTime timestamp, in string content) {
-            this.logLevel = logLevel ?? throw new ArgumentNullException("logLevel");
-            this.content = content ?? throw new ArgumentNullException("content");
+            this.logLevel = logLevel ?? throw new ArgumentNullException(nameof(logLevel));
+            this.content = content ?? throw new ArgumentNullException(nameof(content));
             this.timestamp = timestamp;
         }
 

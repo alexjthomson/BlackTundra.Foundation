@@ -11,7 +11,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static T[] AddFirst<T>(this T[] original, in T obj) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
 
             int length = original.Length;
             T[] newArray = new T[length + 1];
@@ -28,7 +28,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static T[] AddLast<T>(this T[] original, in T obj) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
 
             int length = original.Length;
             T[] newArray = new T[length + 1];
@@ -45,9 +45,9 @@ namespace BlackTundra.Foundation.Utility {
 
         public static T[] AddAt<T>(this T[] original, in int index, in T obj) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
             int length = original.Length;
-            if (index < 0 || index > length) throw new ArgumentOutOfRangeException("index");
+            if (index < 0 || index > length) throw new ArgumentOutOfRangeException(nameof(index));
 
             T[] newArray = new T[length + 1];
             for (int i = 0; i < index; i++) newArray[i] = original[i];
@@ -69,8 +69,8 @@ namespace BlackTundra.Foundation.Utility {
         /// <param name="startIndex">Index in the array to start searching from.</param>
         /// <returns>Index of the first occurance of the entry or -1 if no entry is found.</returns>
         public static int FindIndexOf<T>(this T[] array, in T entry, in int startIndex = 0) {
-            if (array == null) throw new ArgumentNullException("array");
-            if (startIndex < 0) throw new ArgumentOutOfRangeException("startIndex");
+            if (array == null) throw new ArgumentNullException(nameof(array));
+            if (startIndex < 0) throw new ArgumentOutOfRangeException(nameof(startIndex));
             return Array.IndexOf(array, entry, startIndex);
         }
 
@@ -87,8 +87,8 @@ namespace BlackTundra.Foundation.Utility {
         /// <returns>Total number of occurances found, 0 if nothing is found.</returns>
         public static int FindCountOf<T>(this T[] array, in T occurance, in int startIndex = 0) where T : class {
 
-            if (array == null) throw new ArgumentNullException("array");
-            if (startIndex < 0) throw new ArgumentOutOfRangeException("startIndex");
+            if (array == null) throw new ArgumentNullException(nameof(array));
+            if (startIndex < 0) throw new ArgumentOutOfRangeException(nameof(startIndex));
 
             int length = array.Length; // get the length of the array
             if (length == 0 || startIndex >= length) return 0; // nothing to find
@@ -112,7 +112,7 @@ namespace BlackTundra.Foundation.Utility {
         /// <returns>Array without the entry inside it.</returns>
         public static T[] Remove<T>(this T[] original, in T entry, in bool removeAll = false) where T : class {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
 
             int length = original.Length; // get the length of the original array
             if (length == 0) return original; // no length therefore nothing to remove
@@ -152,7 +152,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static T[] RemoveFirst<T>(this T[] original, out T entry) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
 
             int length = original.Length - 1;
             if (length == -1) {
@@ -174,7 +174,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static T[] RemoveLast<T>(this T[] original, out T entry) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
 
             int length = original.Length - 1;
             if (length == -1) {
@@ -196,9 +196,9 @@ namespace BlackTundra.Foundation.Utility {
 
         public static T[] RemoveAt<T>(this T[] original, in int index, out T entry) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
             int length = original.Length;
-            if (index < 0 || index >= length) throw new ArgumentOutOfRangeException("index");
+            if (index < 0 || index >= length) throw new ArgumentOutOfRangeException(nameof(index));
 
             if (length == 0) {
                 entry = default;
@@ -226,8 +226,8 @@ namespace BlackTundra.Foundation.Utility {
         /// <returns>Expanded array.</returns>
         public static T[] Expand<T>(this T[] original, in int size) {
 
-            if (original == null) throw new ArgumentNullException("original");
-            if (size < 0) throw new ArgumentOutOfRangeException("size");
+            if (original == null) throw new ArgumentNullException(nameof(original));
+            if (size < 0) throw new ArgumentOutOfRangeException(nameof(size));
             if (size == 0) return original;
 
             int length = original.Length;
@@ -252,7 +252,7 @@ namespace BlackTundra.Foundation.Utility {
         /// <returns>Index of the first null reference in the array or -1 if no null reference was found.</returns>
         public static int FirstNullIndex<T>(this T[] array) {
 
-            if (array == null) throw new ArgumentNullException("array");
+            if (array == null) throw new ArgumentNullException(nameof(array));
 
             for (int i = 0; i < array.Length; i++) { if (array[i] == null) return i; } // find first null reference
             return -1; // no null refernce found
@@ -270,7 +270,7 @@ namespace BlackTundra.Foundation.Utility {
         /// <param name="entry">Entry to search for.</param>
         /// <returns>Returns true if the entry was found in the array; otherwise returns false.</returns>
         public static bool Contains<T>(this T[] array, in T entry) {
-            if (array == null) throw new ArgumentNullException("array");
+            if (array == null) throw new ArgumentNullException(nameof(array));
             return Array.IndexOf(array, entry) != -1;
         }
 
@@ -284,10 +284,10 @@ namespace BlackTundra.Foundation.Utility {
 
         public static void Sort<T>(this T[] array, in int index, in int count, IComparer<T> comparer) {
 
-            if (index < 0) throw new ArgumentOutOfRangeException("index");
-            if (count < 0) throw new ArgumentOutOfRangeException("count");
+            if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+            if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
             int length = array.Length;
-            if (length - index < count) throw new ArgumentOutOfRangeException("count");
+            if (length - index < count) throw new ArgumentOutOfRangeException(nameof(count));
 
             Array.Sort(array, index, count, comparer);
 
@@ -295,7 +295,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static void Sort<T>(this T[] array, Comparison<T> comparison) {
 
-            if (comparison == null) throw new ArgumentNullException("comparison");
+            if (comparison == null) throw new ArgumentNullException(nameof(comparison));
             Array.Sort(array, comparison);
 
         }
@@ -306,7 +306,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static void Shuffle<T>(this T[] array, int iterations = -1) {
 
-            if (array == null) throw new ArgumentNullException("array");
+            if (array == null) throw new ArgumentNullException(nameof(array));
 
             if (iterations == 0) return;
 
@@ -338,7 +338,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static void ShiftRight<T>(this T[] original) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
 
             int lastIndex = original.Length - 1;
 
@@ -350,12 +350,12 @@ namespace BlackTundra.Foundation.Utility {
 
         public static void ShiftRight<T>(this T[] original, in int distance) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
             if (distance < 0) { ShiftLeft(original, -distance); return; }
             if (distance == 0) return;
 
             int count = original.Length;
-            if (distance > count) throw new ArgumentOutOfRangeException("distance");
+            if (distance > count) throw new ArgumentOutOfRangeException(nameof(distance));
             if (distance == count) return; // no offset required
             
             T[] lastValues = new T[distance]; // store the last values of the array
@@ -373,7 +373,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static void ShiftLeft<T>(this T[] original) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
 
             int lastIndex = original.Length - 1;
 
@@ -385,12 +385,12 @@ namespace BlackTundra.Foundation.Utility {
 
         public static void ShiftLeft<T>(this T[] original, in int distance) {
 
-            if (original == null) throw new ArgumentNullException("original");
+            if (original == null) throw new ArgumentNullException(nameof(original));
             if (distance < 0) { ShiftRight(original, -distance); return; }
             if (distance == 0) return;
 
             int count = original.Length;
-            if (distance > count) throw new ArgumentOutOfRangeException("distance");
+            if (distance > count) throw new ArgumentOutOfRangeException(nameof(distance));
             if (distance == count) return; // no offset required
 
             T[] lastValues = new T[distance];
@@ -412,7 +412,7 @@ namespace BlackTundra.Foundation.Utility {
         /// <param name="i1">Unclamped target index. This will be clamped to the range of the array in the method.</param>
         public static void Swap<T>(this T[] array, int i0, int i1) {
 
-            if (array == null) throw new ArgumentNullException("array");
+            if (array == null) throw new ArgumentNullException(nameof(array));
             if (array.Length == 0 || i0 == i1) return;
 
             if (i0 < 0) i0 = 0; else if (i0 >= array.Length) i0 = array.Length - 1;

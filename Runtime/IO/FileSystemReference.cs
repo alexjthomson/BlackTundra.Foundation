@@ -75,7 +75,7 @@ namespace BlackTundra.Foundation.IO {
         #region constructor
 
         public FileSystemReference(string path, in bool isLocal, in bool isDirectory) {
-            if (path == null) throw new ArgumentNullException("path");
+            if (path == null) throw new ArgumentNullException(nameof(path));
             path = path.Replace('\\', '/');
             this.path = isDirectory && path[path.Length - 1] != '/' ? (path + '/') : path;
             this.isLocal = isLocal;

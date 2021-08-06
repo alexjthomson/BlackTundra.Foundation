@@ -48,7 +48,7 @@ namespace BlackTundra.Foundation {
         private ConsoleColour() => throw new NotSupportedException();
 
         private ConsoleColour(in string hex) {
-            this.colour = ColorUtility.TryParseHtmlString(hex, out Color colour) ? colour : throw new ArgumentException("hex");
+            this.colour = ColorUtility.TryParseHtmlString(hex, out Color colour) ? colour : throw new ArgumentException(nameof(hex));
             this.hex = ColorUtility.ToHtmlStringRGB(this.colour);
         }
 

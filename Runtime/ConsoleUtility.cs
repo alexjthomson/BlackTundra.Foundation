@@ -19,16 +19,16 @@ namespace BlackTundra.Foundation {
 
         public static string UnknownArgumentMessage(in string arg) {
 
-            if (arg == null) throw new ArgumentNullException("arg");
+            if (arg == null) throw new ArgumentNullException(nameof(arg));
             return string.Format("Unknown argument: \"{0}\".", Escape(arg));
 
         }
 
         public static string UnknownArgumentMessage(in string[] args, int startIndex = 0, int length = 0) {
 
-            if (args == null) throw new ArgumentNullException("args");
+            if (args == null) throw new ArgumentNullException(nameof(args));
             int argCount = args.Length;
-            if (argCount == 0) throw new ArgumentException("args must have at least 1 element");
+            if (argCount == 0) throw new ArgumentException(string.Concat(nameof(args), " must have at least 1 element"));
             if (argCount == 1) return UnknownArgumentMessage(args[0]);
 
             if (length <= 0) length = argCount;
@@ -45,9 +45,9 @@ namespace BlackTundra.Foundation {
 
         public static string UnknownArgumentMessage(in ReadOnlyCollection<string> args, int startIndex = 0, int length = 0) {
 
-            if (args == null) throw new ArgumentNullException("args");
+            if (args == null) throw new ArgumentNullException(nameof(args));
             int argCount = args.Count;
-            if (argCount == 0) throw new ArgumentException("args must have at least 1 element");
+            if (argCount == 0) throw new ArgumentException(string.Concat(nameof(args), " must have at least 1 element"));
             if (argCount == 1) return UnknownArgumentMessage(args[0]);
 
             if (length <= 0) length = argCount;

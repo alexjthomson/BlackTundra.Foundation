@@ -82,9 +82,9 @@ namespace BlackTundra.Foundation.Security {
         /// <param name="key">Key to use for encryption.</param>
         /// <returns>Encrypted and compressed byte array.</returns>
         public static byte[] Encrypt(in byte[] content, in byte[] iv, in byte[] key) {
-            if (content == null) throw new ArgumentNullException("raw");
-            if (iv == null) throw new ArgumentNullException("iv");
-            if (key == null) throw new ArgumentNullException("key");
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (iv == null) throw new ArgumentNullException(nameof(iv));
+            if (key == null) throw new ArgumentNullException(nameof(key));
             using var cryptoProvider = new AesCryptoServiceProvider();
             using var cryptoTransform = cryptoProvider.CreateEncryptor(key, iv);
             using var memoryStream = new MemoryStream();
@@ -96,9 +96,9 @@ namespace BlackTundra.Foundation.Security {
         }
 
         public static byte[] Encrypt(in byte[] content, in byte[] cryptoKey) {
-            if (content == null) throw new ArgumentNullException("content");
-            if (cryptoKey == null) throw new ArgumentNullException("cryptoKey");
-            if (cryptoKey.Length != CryptoKeySize) throw new ArgumentException("cryptoKey");
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (cryptoKey == null) throw new ArgumentNullException(nameof(cryptoKey));
+            if (cryptoKey.Length != CryptoKeySize) throw new ArgumentException(nameof(cryptoKey));
             ProcessCryptoKey(cryptoKey, out byte[] iv, out byte[] key);
             return Encrypt(content, iv, key);
         }
@@ -114,10 +114,10 @@ namespace BlackTundra.Foundation.Security {
         /// <param name="key">Key to use for the decryption.</param>
         /// <returns>Decrypted raw bytes.</returns>
         public static byte[] Decrypt(in byte[] content, in byte[] iv, in byte[] key, in int maxDecompressionSize = DefaultDecompressionSize) {
-            if (content == null) throw new ArgumentNullException("data");
-            if (iv == null) throw new ArgumentNullException("iv");
-            if (key == null) throw new ArgumentNullException("key");
-            if (maxDecompressionSize <= 0) throw new ArgumentOutOfRangeException("maxDecompressionSize");
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (iv == null) throw new ArgumentNullException(nameof(iv));
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (maxDecompressionSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxDecompressionSize);
             using var memoryStream = new MemoryStream(content);
             using var decompressionStream = new GZipStream(memoryStream, CompressionMode.Decompress);
             using var limiterStream = new LimiterStream(decompressionStream, maxDecompressionSize); // limiter stream prevents compression bombs
@@ -130,9 +130,9 @@ namespace BlackTundra.Foundation.Security {
         }
 
         public static byte[] Decrypt(in byte[] content, in byte[] cryptoKey, in int maxDecompressionSize = DefaultDecompressionSize) {
-            if (content == null) throw new ArgumentNullException("data");
-            if (cryptoKey == null) throw new ArgumentNullException("cryptoKey");
-            if (maxDecompressionSize <= 0) throw new ArgumentOutOfRangeException("maxDecompressionSize");
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (cryptoKey == null) throw new ArgumentNullException(nameof(cryptoKey));
+            if (maxDecompressionSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxDecompressionSize);
             ProcessCryptoKey(cryptoKey, out byte[] iv, out byte[] key);
             return Decrypt(content, iv, key, maxDecompressionSize);
         }
@@ -158,7 +158,7 @@ namespace BlackTundra.Foundation.Security {
         /// </summary>
         /// <param name="size">Number of bytes to generate.</param>
         private static byte[] GenerateRandomBytes(in int size) {
-            if (size < 0) throw new ArgumentOutOfRangeException("size");
+            if (size < 0) throw new ArgumentOutOfRangeException(nameof(size));
             byte[] buffer = new byte[size];
             if (size == 0) return buffer;
             RNG.GetBytes(buffer);
@@ -186,8 +186,8 @@ namespace BlackTundra.Foundation.Security {
         /// <param name="iv">IV contained in the crypto key.</param>
         /// <param name="key">KEY contained in the crypto key.</param>
         private static void ProcessCryptoKey(in byte[] cryptoKey, out byte[] iv, out byte[] key) {
-            if (cryptoKey == null) throw new ArgumentNullException("cryptoKey");
-            if (cryptoKey.Length != CryptoKeySize) throw new ArgumentException("cryptoKey");
+            if (cryptoKey == null) throw new ArgumentNullException(nameof(cryptoKey));
+            if (cryptoKey.Length != CryptoKeySize) throw new ArgumentException(nameof(cryptoKey));
             #region find xor key
             byte[] xorKey = new byte[XKF0 + XKF1 + XKF2];
             int i = 0;
@@ -211,8 +211,8 @@ namespace BlackTundra.Foundation.Security {
         #region XOR
 
         public static byte[] XOR(in byte[] content, in byte[] key) {
-            if (content == null) throw new ArgumentNullException("content");
-            if (key == null) throw new ArgumentNullException("key");
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (key == null) throw new ArgumentNullException(nameof(key));
             int bufferSize = content.Length;
             byte[] buffer = new byte[bufferSize];
             if (bufferSize == 0) return buffer;

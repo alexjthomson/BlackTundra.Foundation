@@ -42,7 +42,7 @@ namespace BlackTundra.Foundation.Utility {
             get => _min;
             set {
 
-                if (value > _max) throw new ArgumentException("min cannot be more than max");
+                if (value > _max) throw new ArgumentException(string.Concat(nameof(min), " cannot be more than max"));
                 _min = value; // set new min
                 if (_value < value) _value = value; // apply lower clamp again
 
@@ -60,7 +60,7 @@ namespace BlackTundra.Foundation.Utility {
             get => _max;
             set {
 
-                if (value < _min) throw new ArgumentException("max cannot be less then min");
+                if (value < _min) throw new ArgumentException(string.Concat(nameof(max), " cannot be less then min"));
                 _max = value; // set new max
                 if (_value > value) _value = value; // apply upper clamp again
 
