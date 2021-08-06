@@ -30,7 +30,7 @@ Any miscillanious utility classes are implemented here. This namespace contains 
 ### Custom Commands
 To implement a custom command, decorate a static method of return type `bool` with the `[Command]` attribute and ensure the method signature matches `(CommandInfo info)`.
 ##### Example:
-```
+```csharp
 [Command( // this attribute marks this static method as a command
     Name = "mycommand",
 	Description = "This is my custom command!!",
