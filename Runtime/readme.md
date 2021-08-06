@@ -33,14 +33,14 @@ To implement a custom command, decorate a static method of return type `bool` wi
 ```csharp
 [Command( // this attribute marks this static method as a command
     Name = "mycommand",
-	Description = "This is my custom command!!",
-	Usage = "mycommand"
-	    + "\n\tExecutes my custom command."
+    Description = "This is my custom command!!",
+    Usage = "mycommand"
+        + "\n\tExecutes my custom command."
 )]
 private static bool MyCommand(CommandInfo info) {
     ConsoleWindow console = Core.consoleWindow; // get the console window
-	console.Print("Hello world!"); // print a message to the console window
-	return true; // command successful, return false if the command was not successful
+    console.Print("Hello world!"); // print a message to the console window
+    return true; // command successful, return false if the command was not successful
 }
 ```
 ### Custom Serialization
