@@ -195,14 +195,14 @@ namespace BlackTundra.Foundation {
                     #region bind commands
 
                     // find delegate parameter types:
-                    ParameterInfo[] targetParameterInfo = SystemUtility.GetDelegateInfo<Console.Command.CommandCallbackDelegate>().GetParameters(); // get delegate parameters
+                    ParameterInfo[] targetParameterInfo = ObjectUtility.GetDelegateInfo<Console.Command.CommandCallbackDelegate>().GetParameters(); // get delegate parameters
                     int targetParameterCount = targetParameterInfo.Length; // get the number of parameters in the delegate
                     Type[] targetTypes = new Type[targetParameterCount]; // create a buffer of target types, these will match up with the parameters
                     for (int i = targetParameterCount - 1; i >= 0; i--) // iterate through the parameters
                         targetTypes[i] = targetParameterInfo[i].GetType(); // assign the type corresponding to the current parameter
                     
                     // iterate console commands:
-                    IEnumerable<MethodInfo> methods = SystemUtility.GetMethods<CommandAttribute>(); // get all console command attributes
+                    IEnumerable<MethodInfo> methods = ObjectUtility.GetMethods<CommandAttribute>(); // get all console command attributes
                     CommandAttribute attribute;
                     foreach (MethodInfo method in methods) { // iterate each method
                         attribute = method.GetCustomAttribute<CommandAttribute>(); // get the command attribute on the method
@@ -272,7 +272,7 @@ namespace BlackTundra.Foundation {
                         break;
                     }
                 }
-                Console.Info($"[Application] Updated resolution (w:{windowWidth}px, h:{windowHeight}px, mode: \"{fullscreenMode}\").");
+                Console.Info($"[Core] Updated resolution (w:{windowWidth}px, h:{windowHeight}px, mode: \"{fullscreenMode}\").");
 
                 #endregion
 
@@ -353,7 +353,7 @@ namespace BlackTundra.Foundation {
 
                 #region call initialise methods
 
-                IEnumerable<MethodInfo> methods = SystemUtility.GetMethods<CoreInitialiseAttribute>();
+                IEnumerable<MethodInfo> methods = ObjectUtility.GetMethods<CoreInitialiseAttribute>();
                 foreach (MethodInfo method in methods) {
                     string signature = $"{method.DeclaringType.FullName}.{method.Name}";
                     Console.Info(string.Concat("[Core] Invoking \"", signature, "\"."));
@@ -392,6 +392,11 @@ namespace BlackTundra.Foundation {
                 else if (exception != null) Console.Error(shutdownMessage, exception);
                 else Console.Info(shutdownMessage);
                 Console.Flush();
+                #region destroy core instance
+                if (instance != null) {
+                    try { Object.Destroy(instance.gameObject); } catch (Exception e) { e.Handle(); }
+                }
+                #endregion
                 #region shutdown steamworks
 #if USE_STEAMWORKS
                 try { SteamManager.Shutdown(); } catch (Exception e) { e.Handle(); } // try to shut down steamworks

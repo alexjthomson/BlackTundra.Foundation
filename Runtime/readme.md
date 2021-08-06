@@ -25,3 +25,23 @@ To make the application more secure, security logic is built-in to the foundatio
 
 #### BlackTundra.Foundation.Utility
 Any miscillanious utility classes are implemented here. This namespace contains classes that extend default C# and Unity objects to make them easier to work with. This is by far one of the most useful namespaces, to see more about what it can do it's best to look through it and read the documentation for each of the utility classes inside of it.
+
+## Useful Features
+### Custom Commands
+To implement a custom command, decorate a static method of return type `bool` with the `[Command]` attribute and ensure the method signature matches `(CommandInfo info)`.
+##### Example:
+```
+[Command( // this attribute marks this static method as a command
+    Name = "mycommand",
+	Description = "This is my custom command!!",
+	Usage = "mycommand"
+	    + "\n\tExecutes my custom command."
+)]
+private static bool MyCommand(CommandInfo info) {
+    ConsoleWindow console = Core.consoleWindow; // get the console window
+	console.Print("Hello world!"); // print a message to the console window
+	return true; // command successful, return false if the command was not successful
+}
+```
+### Custom Serialization
+To implement custom serializable classes, decorate a type with the `[Serializable]` and `[SerializableImplementationOf(typeof(TYPE HERE))]` attributes. Ensure the implementation has a constructor with a signature that only takes in the target type (without any `in`, `out`, or `ref` keywords). After adding a custom type, make sure to check the main log file to ensure it was bound correctly by the `ObjectUtility`.

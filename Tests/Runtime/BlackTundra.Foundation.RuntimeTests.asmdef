@@ -1,0 +1,18 @@
+{
+    "name": "BlackTundra.Foundation.RuntimeTests",
+    "rootNamespace": "BlackTundra.Foundation",
+    "references": [
+        "GUID:77b61193d6b3a4c449fc64980b211e9f"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

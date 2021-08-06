@@ -8,6 +8,7 @@ namespace BlackTundra.Foundation.Utility {
     #region SerializableVector2
 
     [Serializable]
+    [SerializableImplementationOf(typeof(Vector2))]
     [StructLayout(LayoutKind.Explicit, Size = 8, Pack = 1)]
     public struct SerializableVector2 {
 
@@ -23,7 +24,7 @@ namespace BlackTundra.Foundation.Utility {
 
         #region constructor
 
-        public SerializableVector2(in Vector2 v) {
+        public SerializableVector2(Vector2 v) {
             x = v.x;
             y = v.y;
         }
@@ -65,6 +66,7 @@ namespace BlackTundra.Foundation.Utility {
     #region SerializableVector3
 
     [Serializable]
+    [SerializableImplementationOf(typeof(Vector3))]
     [StructLayout(LayoutKind.Explicit, Size = 12, Pack = 1)]
     public struct SerializableVector3 {
 
@@ -89,7 +91,7 @@ namespace BlackTundra.Foundation.Utility {
             z = 0.0f;
         }
 
-        public SerializableVector3(in Vector3 v) {
+        public SerializableVector3(Vector3 v) {
             x = v.x;
             y = v.y;
             z = v.z;
@@ -142,6 +144,7 @@ namespace BlackTundra.Foundation.Utility {
     #region SerializableVector4
 
     [Serializable]
+    [SerializableImplementationOf(typeof(Vector4))]
     [StructLayout(LayoutKind.Explicit, Size = 16, Pack = 1)]
     public struct SerializableVector4 {
 
@@ -177,7 +180,7 @@ namespace BlackTundra.Foundation.Utility {
             w = 0.0f;
         }
 
-        public SerializableVector4(in Vector4 v) {
+        public SerializableVector4(Vector4 v) {
             x = v.x;
             y = v.y;
             z = v.z;
@@ -243,6 +246,7 @@ namespace BlackTundra.Foundation.Utility {
     #region SerializableQuanternion
 
     [Serializable]
+    [SerializableImplementationOf(typeof(Quaternion))]
     [StructLayout(LayoutKind.Explicit, Size = 16, Pack = 1)]
     public struct SerializableQuaternion {
 
@@ -264,7 +268,7 @@ namespace BlackTundra.Foundation.Utility {
 
         #region constructor
 
-        public SerializableQuaternion(in Quaternion q) {
+        public SerializableQuaternion(Quaternion q) {
             x = q.x;
             y = q.y;
             z = q.z;

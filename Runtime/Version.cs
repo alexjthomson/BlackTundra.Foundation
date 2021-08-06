@@ -61,12 +61,10 @@ namespace BlackTundra.Foundation {
         #region Equals
 
         public bool Equals(Version other) {
-
             return other.release == release
                 && other.minor == minor
                 && other.major == major
                 && other.type == type;
-
         }
 
         #endregion
@@ -100,7 +98,7 @@ namespace BlackTundra.Foundation {
         /// <param name="version">String to parse to a Version.</param>
         public static Version Parse(in string version) {
 
-            if (version == null) throw new ArgumentNullException("version");
+            if (version == null) throw new ArgumentNullException(nameof(version));
 
             // example: 1.4.16b (major: 1, minor: 4, release: 16, release_type: beta)
 
@@ -158,22 +156,26 @@ namespace BlackTundra.Foundation {
         #region CharToReleaseType
 
         private static ReleaseType CharToReleaseType(in char c) {
-
-            switch (c) {
-
-                case 'a': return ReleaseType.Alpha;
-                case 'b': return ReleaseType.Beta;
-                case 'f': return ReleaseType.Final;
-                default: throw new ArgumentException(
-                    string.Format(
-                        "Unknown release char: '{0}'.",
-                        c
-                    )
-                );
-
-            }
-
+            return c switch {
+                'a' => ReleaseType.Alpha,
+                'b' => ReleaseType.Beta,
+                'f' => ReleaseType.Final,
+                _ => throw new ArgumentException($"Unknown release code: '{c}'.")
+            };
         }
+
+        #endregion
+
+        #region IsValid
+
+        public bool IsValid() => major > 0;
+        public static bool IsValid(in string version) {
+            if (version == null) throw new ArgumentNullException(nameof(version));
+            Version v;
+            try { v = Parse(version); } catch (Exception) { return false; }
+            return v.IsValid();
+        }
+        public static bool IsValid(in Version version) => version.major > 0;
 
         #endregion
 
