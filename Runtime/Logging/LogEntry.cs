@@ -47,7 +47,7 @@ namespace BlackTundra.Foundation.Logging {
         /// Formatted text that describes the <see cref="LogEntry"/> used in logs.
         /// </summary>
         public string FormattedLogEntry => logLevel == LogLevel.None
-            ? string.Concat(timestamp.ToFormattedString(), ' ', content, Environment.NewLine)
+            ? string.Concat(content, Environment.NewLine)
             : string.Concat(timestamp.ToFormattedString(), " [", logLevel.logName, "] ", content, Environment.NewLine);
 
         /// <summary>

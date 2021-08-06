@@ -155,6 +155,15 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
+        #region Empty
+        /// <summary>
+        /// Pushes an empty message to the <see cref="Console"/>.
+        /// This message will not have a log level or timestamp associated with it.
+        /// </summary>
+        /// <param name="message"></param>
+        public static void Empty(in string message) => Logger.Push(LogLevel.None, message);
+        #endregion
+
         #region Trace
         public static void Trace(in string message) => Logger.Push(LogLevel.Trace, message);
         #endregion

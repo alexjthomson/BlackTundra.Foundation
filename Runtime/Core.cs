@@ -147,7 +147,8 @@ namespace BlackTundra.Foundation {
 
                 if (phase != CorePhase.Idle) return;
                 phase = CorePhase.Init_Stage1;
-                Console.Info(string.Concat("[Core] Started: ", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")));
+                string separator = new string('-', 64);
+                Console.Empty(string.Concat(separator, ' ', DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), ' ', separator));
                 Console.Info("[Core] Init (1/3) STARTED.");
 
                 #region bind play mode shutdown hook
@@ -385,7 +386,8 @@ namespace BlackTundra.Foundation {
             lock (coreLock) {
                 if (phase >= CorePhase.Shutdown) return; // already shutdown
                 phase = CorePhase.Shutdown;
-                string shutdownMessage = $"[Core] Shutdown (reason: \"{quitReason}\", fatal: {(fatal ? "true" : "false")}, phase: {phase}): {message ?? "no message provided."}";
+                string shutdownMessage = $"[Core] Shutdown (reason: \"{quitReason}\", fatal: {(fatal ? "true" : "false")})";
+                if (message != null) shutdownMessage = string.Concat(shutdownMessage, ": ", message);
                 if (fatal) Console.Fatal(shutdownMessage, exception);
                 else if (exception != null) Console.Error(shutdownMessage, exception);
                 else Console.Info(shutdownMessage);
