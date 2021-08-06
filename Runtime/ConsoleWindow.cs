@@ -390,20 +390,15 @@ namespace BlackTundra.Foundation {
         #region ExecuteInput
 
         public void ExecuteInput() {
-
             focus = true;
-
             if (!string.IsNullOrWhiteSpace(input)) {
-
                 inputHistoryBuffer.ShiftRight();
                 inputHistoryBuffer[0] = input;
                 inputHistoryIndex = 0; // reset history index
                 scrollPosition.y = float.MaxValue;
                 string displayCommand = DecorateCommand(input, new StringBuilder());
-
                 LogEntry echoEntry = null;
                 if (echo) echoEntry = Print($"<color=#{ConsoleColour.Green.hex}>></color> " + displayCommand);
-
                 try {
                     if (!Console.Execute(input) && echoEntry != null) { // execute command
                         entryBuffer.Replace( // execution failed, change colour of echo message
@@ -414,11 +409,8 @@ namespace BlackTundra.Foundation {
                 } catch (Exception exception) {
                     exception.Handle();
                 }
-
             }
-
             input = string.Empty;
-
         }
 
         #endregion

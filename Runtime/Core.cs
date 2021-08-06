@@ -15,11 +15,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 #endif
 
-/*
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-*/
 
 // FOUNDATION:
 
@@ -96,15 +94,10 @@ namespace BlackTundra.Foundation {
             Running = 4,
 
             /// <summary>
-            /// While the <see cref="Core"/> is <see cref="Terminated"/>, it has started to shutdown.
-            /// </summary>
-            Terminated = 5,
-
-            /// <summary>
             /// While the <see cref="Core"/> is <see cref="Shutdown"/>, it is no longer active and will not run again.
             /// The application should terminate at this state.
             /// </summary>
-            Shutdown = 6
+            Shutdown = 5
         }
 
         #endregion
@@ -154,6 +147,14 @@ namespace BlackTundra.Foundation {
 
                 if (phase != CorePhase.Idle) return;
                 phase = CorePhase.Init_Stage1;
+                Console.Info(string.Concat("[Core] Started: ", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")));
+                Console.Info("[Core] Init (1/3) STARTED.");
+
+                #region bind play mode shutdown hook
+#if UNITY_EDITOR
+                EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+#endif
+                #endregion
 
                 #region find version
                 try {
@@ -165,6 +166,7 @@ namespace BlackTundra.Foundation {
                     Quit(QuitReason.CoreSelfQuit, $"Failed to parse application version (version: \"{Application.version}\").", exception, true);
                     throw exception;
                 }
+                Console.Info(string.Concat("[Core] Version: ", Version.ToString()));
                 #endregion
 
                 FileSystem.Initialise(); // initialise file system
@@ -220,11 +222,11 @@ namespace BlackTundra.Foundation {
                                     attribute.description,
                                     attribute.usage
                                 );
-                                Console.Info(string.Concat("Console: bound \"", signature, "\" -> \"", attribute.name, "\".")); // log binding
+                                Console.Info(string.Concat("[Console] Bound \"", signature, "\" -> \"", attribute.name, "\".")); // log binding
                                 continue; // move to next method
                             }
                         }
-                        string fatalMessage = string.Concat("Console: failed to bind \"", signature, "\" -> \"", attribute.name, "\"."); // the command was not bound, create error message
+                        string fatalMessage = string.Concat("Console failed to bind \"", signature, "\" -> \"", attribute.name, "\"."); // the command was not bound, create error message
 #if UNITY_EDITOR
                         Debug.LogWarning($"Failed to bind method \"{signature}\" to console. Check the method signature matches that of \"{typeof(Console.Command.CommandCallbackDelegate).FullName}\".");
                         Debug.LogError(fatalMessage);
@@ -236,7 +238,6 @@ namespace BlackTundra.Foundation {
 
                     #endregion
                 }
-                Console.Info("Initialised console.");
 
                 #endregion
 
@@ -270,7 +271,7 @@ namespace BlackTundra.Foundation {
                         break;
                     }
                 }
-                Console.Info($"Set resolution (mode: {fullscreenMode}, w:{windowWidth}px h:{windowHeight}px).");
+                Console.Info($"[Application] Updated resolution (w:{windowWidth}px, h:{windowHeight}px, mode: \"{fullscreenMode}\").");
 
                 #endregion
 
@@ -282,7 +283,7 @@ namespace BlackTundra.Foundation {
 
                 UnityEventLogger.Initialise();
 
-                Console.Info("Core post-assembly-load initialisation stage complete.");
+                Console.Info("[Core] Init (1/3) COMPLETE.");
                 Console.Flush();
 
             }
@@ -293,7 +294,7 @@ namespace BlackTundra.Foundation {
 
         #region InitialisePostSceneLoad
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
 #pragma warning disable IDE0051 // remove unread private members
         private static void InitialisePostSceneLoad() {
 #pragma warning restore IDE0051 // remove unread private members
@@ -304,6 +305,8 @@ namespace BlackTundra.Foundation {
                 if (phase != CorePhase.Init_Stage1) return;
                 phase = CorePhase.Init_Stage2;
                 #endregion
+
+                Console.Info("[Core] Init (2/3) STARTED.");
 
                 #region update instance
                 if (instance == null) {
@@ -317,12 +320,12 @@ namespace BlackTundra.Foundation {
                         };
                         Object.DontDestroyOnLoad(gameObject);
                         instance = gameObject.GetComponent<CoreInstance>();
-                        Console.Info($"Created CoreInstance instance.");
+                        Console.Info($"[Core] Instantiated \"CoreInstance\" GameObject.");
                     }
                 }
                 #endregion
 
-                Console.Info("Core post-initial-scene initialisation stage complete.");
+                Console.Info("[Core] Init (2/3) COMPLETE.");
                 Console.Flush();
 
             }
@@ -334,9 +337,9 @@ namespace BlackTundra.Foundation {
         #region InitialiseAwake
 
         /// <summary>
-        /// Called by <see cref="CoreInstance.Awake"/>.
+        /// Called by <see cref="CoreInstance.Start"/>.
         /// </summary>
-        internal static void InitialiseAwake() {
+        internal static void OnInstanceStart() {
 
             lock (coreLock) {
 
@@ -345,54 +348,30 @@ namespace BlackTundra.Foundation {
                 phase = CorePhase.Init_Stage3;
                 #endregion
 
+                Console.Info("[Core] Init (3/3) STARTED.");
+
                 #region call initialise methods
 
                 IEnumerable<MethodInfo> methods = SystemUtility.GetMethods<CoreInitialiseAttribute>();
                 foreach (MethodInfo method in methods) {
                     string signature = $"{method.DeclaringType.FullName}.{method.Name}";
-                    Console.Info(string.Concat("Invoking \"", signature, "\"."));
+                    Console.Info(string.Concat("[Core] Invoking \"", signature, "\"."));
                     try {
                         method.Invoke(null, null);
                     } catch (Exception exception) {
                         Quit(QuitReason.FatalCrash, string.Concat("Failed to invoke \"", signature, "\"."), exception, true);
                         return;
                     }
-                    Console.Info(string.Concat("Invoked \"", signature, "\"."));
+                    Console.Info(string.Concat("[Core] Invoked \"", signature, "\"."));
                 }
 
                 #endregion
 
-                Console.Info("Core final initialisation stage complete.");
+                Console.Info("[Core] Init (3/3) COMPLETE.");
                 Console.Flush();
 
                 phase = CorePhase.Running;
-
-            }
-
-        }
-
-        #endregion
-
-        #region Terminate
-
-        /// <summary>
-        /// Called by <see cref="CoreInstance.OnDestroy"/>.
-        /// </summary>
-        internal static void Terminate() {
-
-            lock (coreLock) {
-
-                Console.Flush();
-
-                #region shutdown steamworks
-#if USE_STEAMWORKS
-            try { SteamManager.Shutdown(); } catch (Exception exception) { exception.Handle(); } // try to shut down steamworks
-#endif
-                #endregion
-
-                #region shutdown console
-                try { Console.Shutdown(); } catch (Exception exception) { exception.Handle(); }
-                #endregion
+                Console.Info("[Core] Init COMPLETE .");
 
             }
 
@@ -403,31 +382,30 @@ namespace BlackTundra.Foundation {
         #region Quit
 
         public static void Quit(in QuitReason quitReason = QuitReason.Unknown, in string message = null, in Exception exception = null, in bool fatal = false) {
-
             lock (coreLock) {
-
                 if (phase >= CorePhase.Shutdown) return; // already shutdown
-                string shutdownMessage = $"Core shutdown (reason: \"{quitReason}\", fatal: {(fatal ? "true" : "false")}, phase: {phase}): {message ?? "no message provided."}";
-                if (phase < CorePhase.Terminated) {
-                    if (fatal) Console.Fatal(shutdownMessage, exception);
-                    else if (exception != null) Console.Error(shutdownMessage, exception);
-                    else Console.Info(shutdownMessage);
-                    Terminate(); // not terminated yet
-                } else {
-                    if (fatal) Debug.LogError(shutdownMessage);
-                    else Debug.Log(shutdownMessage);
-                    if (exception != null) Debug.LogException(exception);
-                }
-                #region shutdown application
-#if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false;
-#else
-            Application.Quit((int)quitReason);
+                phase = CorePhase.Shutdown;
+                string shutdownMessage = $"[Core] Shutdown (reason: \"{quitReason}\", fatal: {(fatal ? "true" : "false")}, phase: {phase}): {message ?? "no message provided."}";
+                if (fatal) Console.Fatal(shutdownMessage, exception);
+                else if (exception != null) Console.Error(shutdownMessage, exception);
+                else Console.Info(shutdownMessage);
+                Console.Flush();
+                #region shutdown steamworks
+#if USE_STEAMWORKS
+                try { SteamManager.Shutdown(); } catch (Exception e) { e.Handle(); } // try to shut down steamworks
 #endif
                 #endregion
-
+                #region shutdown console
+                try { Console.Shutdown(); } catch (Exception e) { e.Handle(); }
+                #endregion
+                #region shutdown application
+#if UNITY_EDITOR
+                EditorApplication.isPlaying = false;
+#else
+                Application.Quit((int)quitReason);
+#endif
+                #endregion
             }
-
         }
 
         #endregion
@@ -521,6 +499,17 @@ namespace BlackTundra.Foundation {
 
         }
 
+        #endregion
+
+        #region OnPlayModeStateChanged
+#if UNITY_EDITOR
+        private static void OnPlayModeStateChanged(PlayModeStateChange state) {
+            if (state == PlayModeStateChange.ExitingPlayMode) {
+                EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+                Quit(QuitReason.CoreDestroyed, "Play mode exited.");
+            }
+        }
+#endif
         #endregion
 
         #endregion

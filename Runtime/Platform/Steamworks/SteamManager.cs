@@ -23,6 +23,19 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
 
         #endregion
 
+        #region variable
+
+        /// <summary>
+        /// Tracks if Steamworks.NET is initialised or not.
+        /// This is only really necessary when trying to call <see cref="Shutdown"/> since this may be called
+        /// if an exception occures during initialisation of Steamworks.NET which causes a fatal crash. When
+        /// the application is quit, <see cref="Shutdown"/> is called and further exceptions will occur if
+        /// trying to shut down Steamworks.NET when it was never started.
+        /// </summary>
+        private static bool initialised = false;
+
+        #endregion
+
         #region property
 
         public static AppId_t AppId { get; private set; }
@@ -48,16 +61,17 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
 
             #region system checks
             if (!Packsize.Test()) {
-                Core.Quit(QuitReason.FatalCrash, "The wrong version of Steamworks.NET is being ran on the current platform.", null, true);
+                Core.Quit(QuitReason.FatalCrash, "[Steamworks.NET] The wrong version of Steamworks.NET is being ran on the current platform.", null, true);
                 return;
             }
             if (!DllCheck.Test()) {
-                Core.Quit(QuitReason.FatalCrash, "One or more of the Steamworks.NET binaries are the wrong version.", null, true);
+                Core.Quit(QuitReason.FatalCrash, "[Steamworks.NET] One or more of the Steamworks.NET binaries are the wrong version.", null, true);
                 return;
             }
             #endregion
 
-            // get app id here
+            // set app id here
+            AppId = (AppId_t)480;
 
             #region steam checks
             try {
@@ -72,11 +86,11 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
                  * https://partner.steamgames.com/doc/sdk/api#initialization_and_shutdown
                  */
                 if (SteamAPI.RestartAppIfNecessary(AppId)) { // check if the application needs to restart
-                    Core.Quit(QuitReason.InternalSelfQuit, "The application was not launched through the Steam client.");
+                    Core.Quit(QuitReason.InternalSelfQuit, "[Steamworks.NET] The application was not launched through the Steam client.");
                     return;
                 }
             } catch (DllNotFoundException exception) { // failed to find steamworks dll
-                Core.Quit(QuitReason.FatalCrash, "Failed to load \"[lib]steam_api.dll/so/dylib\".", exception, true);
+                Core.Quit(QuitReason.FatalCrash, "[Steamworks.NET] Failed to load \"[lib]steam_api.dll/so/dylib\".", exception, true);
                 return;
             }
             #endregion
@@ -96,11 +110,11 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
              */
             try {
                 if (!SteamAPI.Init()) {
-                    Core.Quit(QuitReason.FatalCrash, "Failed to initialise Steamworks.NET SteamAPI.", null, true);
+                    Core.Quit(QuitReason.FatalCrash, "[Steamworks.NET] Failed to initialise SteamAPI.", null, true);
                     return;
                 }
             } catch (Exception exception) {
-                Core.Quit(QuitReason.FatalCrash, "Failed to initialise Steamworks.NET SteamAPI.", exception, true);
+                Core.Quit(QuitReason.FatalCrash, "[Steamworks.NET] Failed to initialise SteamAPI.", exception, true);
                 return;
             }
             #endregion
@@ -109,7 +123,8 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
             SteamClient.SetWarningMessageHook(new SteamAPIWarningMessageHook_t(SteamAPIWarningMessageHook));
             #endregion
 
-            Console.Info(string.Concat("Initialised Steamworks.NET (x64_id: ", AppId ,")."));
+            initialised = true;
+            Console.Info(string.Concat("[Steamworks.NET] Initialisation complete (x64_id: ", AppId ,")."));
 
         }
 
@@ -118,8 +133,9 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
         #region Shutdown
 
         internal static void Shutdown() {
+            if (!initialised) return;
             SyncStats(); // sync steam stats before shutdown
-            SteamAPI.Shutdown(); // shutdown the steam api
+            try { SteamAPI.Shutdown(); } catch (Exception) { } // shutdown the steam api
         }
 
         #endregion
@@ -135,7 +151,10 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
         /// <summary>
         /// Called every frame.
         /// </summary>
-        internal static void Update() => SteamAPI.RunCallbacks();
+        internal static void Update() {
+            if (CallbackDispatcher.IsInitialized)
+                SteamAPI.RunCallbacks();
+        }
 
         #endregion
 
