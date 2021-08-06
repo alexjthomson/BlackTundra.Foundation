@@ -117,7 +117,7 @@ namespace BlackTundra.Foundation.Security {
             if (content == null) throw new ArgumentNullException(nameof(content));
             if (iv == null) throw new ArgumentNullException(nameof(iv));
             if (key == null) throw new ArgumentNullException(nameof(key));
-            if (maxDecompressionSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxDecompressionSize);
+            if (maxDecompressionSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxDecompressionSize));
             using var memoryStream = new MemoryStream(content);
             using var decompressionStream = new GZipStream(memoryStream, CompressionMode.Decompress);
             using var limiterStream = new LimiterStream(decompressionStream, maxDecompressionSize); // limiter stream prevents compression bombs
@@ -132,7 +132,7 @@ namespace BlackTundra.Foundation.Security {
         public static byte[] Decrypt(in byte[] content, in byte[] cryptoKey, in int maxDecompressionSize = DefaultDecompressionSize) {
             if (content == null) throw new ArgumentNullException(nameof(content));
             if (cryptoKey == null) throw new ArgumentNullException(nameof(cryptoKey));
-            if (maxDecompressionSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxDecompressionSize);
+            if (maxDecompressionSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxDecompressionSize));
             ProcessCryptoKey(cryptoKey, out byte[] iv, out byte[] key);
             return Decrypt(content, iv, key, maxDecompressionSize);
         }
