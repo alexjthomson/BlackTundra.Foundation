@@ -47,18 +47,22 @@ private static bool MyCommand(CommandInfo info) {
 To implement custom serializable classes, decorate a type with the `[Serializable]` and `[SerializableImplementationOf(typeof(TYPE HERE))]` attributes. Ensure the implementation has a constructor with a signature that only takes in the target type (without any `in`, `out`, or `ref` keywords). After adding a custom type, make sure to check the main log file to ensure it was bound correctly by the `ObjectUtility`. You should also make sure there is a way to cast the serialized implementation back to the target type using an explicit cast operator.
 #### Example:
 ```csharp
+using System;
+using System.Runtime.InteropServices;
+using UnityEngine;
+using BlackTundra.Foundation.Utility;
 [Serializable]
-    [SerializableImplementationOf(typeof(Vector2))]
-    [StructLayout(LayoutKind.Explicit, Size = 8, Pack = 1)]
-    public struct SerializableVector2 {
-        [FieldOffset(0)]
-        public float x;
-        [FieldOffset(4)]
-        public float y;
-        public SerializableVector2(Vector2 v) {
-            x = v.x;
-            y = v.y;
-        }
-        public static explicit operator Vector2(in SerializableVector2 v) => new Vector2(v.x, v.y);
+[SerializableImplementationOf(typeof(Vector2))]
+[StructLayout(LayoutKind.Explicit, Size = 8, Pack = 1)]
+public struct SerializableVector2 {
+    [FieldOffset(0)]
+    public float x;
+    [FieldOffset(4)]
+    public float y;
+    public SerializableVector2(Vector2 v) {
+        x = v.x;
+        y = v.y;
     }
+    public static explicit operator Vector2(in SerializableVector2 v) => new Vector2(v.x, v.y);
+}
 ```
