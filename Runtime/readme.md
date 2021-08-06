@@ -1,4 +1,4 @@
-# BLACK TUNDRA - FOUNDATION
+# BlackTundra.Foundation
 The foundation package implements basic boilerplate game logic and provides a plethora of utilities to make game development faster and more secure.
 ## Project Structure
 The project is split into different directories/sub-namespaces. All code is contained within the `BlackTundra.Foundation` namespace.
