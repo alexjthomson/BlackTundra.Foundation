@@ -30,7 +30,7 @@ Any miscillanious utility classes are implemented here. This namespace contains 
 
 ### Custom Commands
 To implement a custom command, decorate a static method of return type `bool` with the `[Command]` attribute and ensure the method signature matches `(CommandInfo info)`.
-#### Example:
+#### Example
 ```csharp
 [Command( // this attribute marks this static method as a command
     Name = "mycommand",
@@ -47,7 +47,8 @@ private static bool MyCommand(CommandInfo info) {
 
 ### Custom Serialization
 To implement custom serializable classes, decorate a type with the `[Serializable]` and `[SerializableImplementationOf(typeof(TYPE HERE))]` attributes. Ensure the implementation has a constructor with a signature that only takes in the target type (without any `in`, `out`, or `ref` keywords). After adding a custom type, make sure to check the main log file to ensure it was bound correctly by the `ObjectUtility`. You should also make sure there is a way to cast the serialized implementation back to the target type using an explicit cast operator.
-#### Example:
+
+#### Example
 ```csharp
 using System;
 using System.Runtime.InteropServices;
@@ -71,7 +72,8 @@ public struct SerializableVector2 {
 
 ### Custom Initialisation & Termination Methods
 Custom initialization and termination methods can be created by decorating a static method with the `[CoreInitialise]` or `[CoreTerminate]` attributes.
-#### Example:
+
+#### Example
 ```csharp
 [CoreInitialise]
 private static void Initialise() { // called when the application is started
@@ -102,6 +104,9 @@ The application version should follow the format: `{major}.{minor}.{release}{typ
 | a      | Alpha       |
 | b      | Beta        |
 | f      | Final       |
+
+#### Examples
+`1.0.0a`, `2020.1.13b`, `2020.1.13f`
 
 ### Input System
 The foundation package supports the new Unity InputSystem package. The project should be set up to use the new InputSystem package.
