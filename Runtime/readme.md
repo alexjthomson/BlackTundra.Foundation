@@ -1,6 +1,6 @@
 # BLACK TUNDRA - FOUNDATION
 The foundation package implements basic boilerplate game logic and provides a plethora of utilities to make game development faster and more secure.
-## PROJECT STRUCTURE
+## Project Structure
 The project is split into different directories/sub-namespaces. All code is contained within the `BlackTundra.Foundation` namespace.
 ### BlackTundra.Foundation
 This namespace contains the main classes that help the package function. All scripts automatically execute code to set themselves up when the application is launched. The main script in this namespace is the `Core.cs` class; which is responsible for acting as the games core and ensuring all foundation systems are functional. The core can be used to shutdown the application.
@@ -68,3 +68,46 @@ public struct SerializableVector2 {
     public static explicit operator Vector2(in SerializableVector2 v) => new Vector2(v.x, v.y);
 }
 ```
+
+### Custom Initialisation & Termination Methods
+Custom initialization and termination methods can be created by decorating a static method with the `[CoreInitialise]` or `[CoreTerminate]` attributes.
+#### Example:
+```csharp
+[CoreInitialise]
+private static void Initialise() { // called when the application is started
+    // code here
+}
+[Core Terminate]
+private static void Terminate() { // called when the application is closed
+    // code here
+}
+```
+
+## Project Configuration
+
+### Version
+The application version should follow the format: `{major}.{minor}.{release}{type}`.
+
+#### Format
+| Name      | Description                                     | Value |
+| --------- | ----------------------------------------------- | ----- |
+| `major`   | Main version/build iteration.                   | x > 0 |
+| `minor`   | Current iteration of the `major` version/build. |   x   |
+| `release` | Current iteration of the `minor` version/build. |   x   |
+| `type`    | Release type                                    | a/b/f |
+
+#### Release Types
+| Symbol | Description |
+| ------ | ----------- |
+| a      | Alpha       |
+| b      | Beta        |
+| f      | Final       |
+
+### Input System
+The foundation package supports the new Unity InputSystem package. The project should be set up to use the new InputSystem package.
+For more information on setting up a project with the InputSystem package, click [here](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/manual/Installation.html).
+
+Once the new input system is imported into the project, the foundation package will recompile with additonal input functionality. This functionality can be found in the `BlackTundra.Foundation.Control` namespace.
+
+### Scripting Backend & API Compatibility Level
+The foundation package was written using the `Mono` scrpting backend and the `.NET 4.x` API compatibility level.
