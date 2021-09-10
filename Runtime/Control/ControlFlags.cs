@@ -35,9 +35,7 @@ namespace BlackTundra.Foundation.Control {
     }
 
     public static class ControlFlagsUtility {
-
         public static void Apply(this ControlFlags flags) => ControlUser.ControlFlags = flags;
-
     }
 
 }

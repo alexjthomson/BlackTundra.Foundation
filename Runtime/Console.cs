@@ -51,7 +51,7 @@ namespace BlackTundra.Foundation {
 
             #region delegate
 
-            public delegate bool CommandCallbackDelegate(in CommandInfo info);
+            public delegate bool CommandCallbackDelegate(CommandInfo info);
 
             #endregion
 
@@ -131,11 +131,34 @@ namespace BlackTundra.Foundation {
 
         static Console() {
             Logger.OnPushLogEntry += OnPushLogEntry;
+#if UNITY_EDITOR
+            Logger.OnPushLogEntry += PushToUnityDebugConsole;
+#endif
         }
 
         #endregion
 
         #region logic
+
+        #region PushToUnityDebugConsole
+#if UNITY_EDITOR
+        /// <summary>
+        /// Invoked when the <see cref="Console"/> has an entry pushed to it while the application is running
+        /// and therefore the in-game <see cref="ConsoleWindow"/> cannot be seen.
+        /// </summary>
+        private static void PushToUnityDebugConsole(LogEntry entry) {
+            if (!UnityEngine.Application.isEditor || UnityEngine.Application.isPlaying) return; // application is not in the Unity editor
+            int priority = entry.logLevel.priority;
+            if (priority <= LogLevel.Info.priority) {
+                UnityEngine.Debug.Log(entry.FormattedPlainTextEntry);
+            } else if (priority <= LogLevel.Warning.priority) {
+                UnityEngine.Debug.LogWarning(entry.FormattedPlainTextEntry);
+            } else {
+                UnityEngine.Debug.LogError(entry.FormattedPlainTextEntry);
+            }
+        }
+#endif
+        #endregion
 
         #region Shutdown
 
@@ -208,6 +231,22 @@ namespace BlackTundra.Foundation {
                 Logger.Push(LogLevel.Fatal, message);
             }
         }
+        #endregion
+
+        #region AssertCondition
+
+        public static void AssertCondition(in bool condition) {
+            if (condition) throw new ArgumentException(nameof(condition));
+        }
+
+        #endregion
+
+        #region AssertReference
+
+        public static void AssertReference<T>(in T reference) where T : class {
+            if (reference == null) throw new ArgumentNullException(nameof(reference));
+        }
+
         #endregion
 
         #region Bind

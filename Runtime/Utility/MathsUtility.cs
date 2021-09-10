@@ -1,12 +1,15 @@
 ﻿//#define USE_BEZIER_MATHS
 
 using System;
+#if USE_BEZIER_MATHS
 using System.Collections.Generic;
+#endif
 using System.Runtime.InteropServices;
 
 using UnityEngine;
 
-using Random = System.Random;
+using SystemRandom = System.Random;
+using UnityRandom = UnityEngine.Random;
 
 namespace BlackTundra.Foundation.Utility {
 
@@ -14,7 +17,7 @@ namespace BlackTundra.Foundation.Utility {
 
         #region constant
 
-        internal static readonly Random Random = new Random();
+        internal static readonly SystemRandom Random = new SystemRandom();
 
         #endregion
 
@@ -64,20 +67,28 @@ namespace BlackTundra.Foundation.Utility {
         /// <param name="delta">Difference to add to get the the target.</param>
         /// <returns>Value after lerp has been applied towards the target value.</returns>
         public static float Lerp(this float value, in float target, in float delta) {
-
             if (value == target) return value;
-
             if (value > target) { // greater than target value
-
                 value -= delta;
                 return value < target ? target : value;
-
             }
-
             value += delta;
             return value > target ? target : value;
-
         }
+
+        #endregion
+
+        #region Wrap
+
+        /// <summary>
+        /// Wraps a <paramref name="value"/> between <c>0.0</c> (inclusive) and <paramref name="max"/> (exclusive).
+        /// </summary>
+        public static float Wrap(in float value, in float max) => value < 0.0f ? max + value % max : value % max;
+
+        /// <summary>
+        /// Wraps a <paramref name="value"/> between <paramref name="min"/> (inclusive) and <paramref name="max"/> (exclusive).
+        /// </summary>
+        public static float Wrap(in float value, in float min, in float max) => value < min ? max - (min - value) % (max - min) : min + (value - min) % (max - min);
 
         #endregion
 
@@ -127,6 +138,43 @@ namespace BlackTundra.Foundation.Utility {
             Mathf.Abs(point.x - centre.x) < radius
             && Mathf.Abs(point.y - centre.y) < radius
             && Mathf.Abs(point.z - centre.z) < radius;
+
+        #endregion
+
+        #region RandomPoint
+
+        /// <returns>
+        /// Returns a random point at <paramref name="range"/> distance (in meters) from the provided <paramref name="point"/>.
+        /// </returns>
+        public static Vector2 RandomPoint(in Vector2 point, in float range) {
+            float x = UnityRandom.Range(-1.0f, 1.0f);
+            float y = UnityRandom.Range(-1.0f, 1.0f);
+            float c = range / Mathf.Sqrt(x * x + y * y);
+            return new Vector2(x * c, y * c);
+        }
+
+        /// <returns>
+        /// Returns a random point at <paramref name="range"/> distance (in meters) from the provided <paramref name="point"/>.
+        /// </returns>
+        public static Vector3 RandomPoint(in Vector3 point, in float range) {
+            float x = UnityRandom.Range(-1.0f, 1.0f);
+            float y = UnityRandom.Range(-1.0f, 1.0f);
+            float z = UnityRandom.Range(-1.0f, 1.0f);
+            float c = range / Mathf.Sqrt(x * x + y * y + z * z);
+            return new Vector3(x * c, y * c, z * c);
+        }
+
+        /// <returns>
+        /// Returns a random point at <paramref name="range"/> distance (in meters) from the provided <paramref name="point"/>.
+        /// </returns>
+        public static Vector4 RandomPoint(in Vector4 point, in float range) {
+            float x = UnityRandom.Range(-1.0f, 1.0f);
+            float y = UnityRandom.Range(-1.0f, 1.0f);
+            float z = UnityRandom.Range(-1.0f, 1.0f);
+            float w = UnityRandom.Range(-1.0f, 1.0f);
+            float c = range / Mathf.Sqrt(x * x + y * y + z * z + w * w);
+            return new Vector4(x * c, y * c, z * c, w * c);
+        }
 
         #endregion
 

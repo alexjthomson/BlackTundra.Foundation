@@ -132,7 +132,8 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
 
         #region Shutdown
 
-        internal static void Shutdown() {
+        [CoreTerminate]
+        private static void Shutdown() {
             if (!initialised) return;
             SyncStats(); // sync steam stats before shutdown
             try { SteamAPI.Shutdown(); } catch (Exception) { } // shutdown the steam api
@@ -151,7 +152,8 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
         /// <summary>
         /// Called every frame.
         /// </summary>
-        internal static void Update() {
+        [CoreUpdate]
+        private static void Update() {
             if (CallbackDispatcher.IsInitialized)
                 SteamAPI.RunCallbacks();
         }

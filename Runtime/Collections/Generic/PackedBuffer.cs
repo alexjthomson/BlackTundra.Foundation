@@ -116,9 +116,16 @@ namespace BlackTundra.Foundation.Collections.Generic {
         public bool IsFull => lastIndex == -1 || lastIndex == buffer.Length;
 
         /// <summary>
-        /// True if the buffer is empty.
+        /// <c>true</c> if the buffer is empty.
         /// </summary>
-        public bool IsEmpty => Count == 0;
+        /// <seealso cref="HasElements"/>
+        public bool IsEmpty => lastIndex == 0;
+
+        /// <summary>
+        /// <c>true</c> if the buffer has elements.
+        /// </summary>
+        /// <seealso cref="IsEmpty"/>
+        public bool HasElements => lastIndex != 0;
 
         /// <summary>
         /// Number of spaces available in the buffer.
@@ -150,12 +157,17 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// <summary>
         /// First element in the <see cref="PackedBuffer{T}"/>.
         /// </summary>
-        public T First => buffer[0];
+        public T First => Count == 0 ? default : buffer[0];
 
         /// <summary>
         /// Last element in the <see cref="PackedBuffer{T}"/>.
         /// </summary>
-        public T Last => buffer[(lastIndex == -1 ? buffer.Length : lastIndex) - 1];
+        public T Last {
+            get {
+                int index = (lastIndex == -1 ? buffer.Length : lastIndex) - 1; // calculate the index of the last element
+                return index == -1 ? default : buffer[index]; // return the last element
+            }
+        }
 
         #endregion
 
@@ -231,7 +243,7 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
             #region process amount
 
-            if (amount < -1) throw new ArgumentOutOfRangeException("amount must be a positive integer or -1.");
+            if (amount < -1) throw new ArgumentOutOfRangeException(string.Concat(nameof(amount), " must be a positive integer or -1."));
             if (amount == 0) return 0; // nothing to shave
             int length = buffer.Length; // get the current length of the buffer
             int count = Count;
@@ -254,25 +266,21 @@ namespace BlackTundra.Foundation.Collections.Generic {
         #region TryShrink
 
         /// <summary>
-        /// Try to shrink the buffer by a set amount.
+        /// Try to shrink the buffer by a set <paramref name="amount"/>. The buffer will only be shrank if the
+        /// <paramref name="amount"/> specified is available as free space (or the buffer is completely empty).
         /// </summary>
         /// <param name="amount">Number of elements to remove in the shrink operation.</param>
         /// <returns>Returns <c>true</c> if the buffer was shrank successfully.</returns>
         public bool TryShrink(int amount) {
-
-            if (amount < 0) throw new ArgumentOutOfRangeException("amount");
-            if (amount > buffer.Length) amount = buffer.Length;
-
-            if (lastIndex == -1) return false;
-
-            int newSize = buffer.Length - amount;
-            if (newSize < lastIndex) return false;
-
-            T[] newBuffer = new T[newSize];
-            Array.Copy(buffer, newBuffer, newSize);
-            buffer = newBuffer;
-            return true;
-
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount)); // out of range
+            if (amount > buffer.Length) amount = buffer.Length; // apply max clamp
+            if (lastIndex == -1) return false; // last index is -1, meaning the buffer is full
+            int newSize = buffer.Length - amount; // calculate the size of the buffer after the shrink operation
+            if (newSize < lastIndex) return false; // check if the buffer can be shrank by the set amount
+            T[] newBuffer = new T[newSize]; // construct a new buffer
+            Array.Copy(buffer, newBuffer, newSize); // copy the contents of the current buffer to the new one
+            buffer = newBuffer; // re-assign the buffer
+            return true; // return true
         }
 
         #endregion

@@ -62,6 +62,14 @@ namespace BlackTundra.Foundation.Logging {
             );
 
         /// <summary>
+        /// Formatted text that describes the <see cref="LogEntry"/> used in plain text.
+        /// </summary>
+        /// <remarks>
+        /// This can be used to display in other consoles that do not support rich text.
+        /// </remarks>
+        public string FormattedPlainTextEntry => logLevel == LogLevel.None ? content : string.Concat('[', logLevel.logName, "] ", content);
+
+        /// <summary>
         /// Constructs a formatted timestamp.
         /// </summary>
         public string FormattedTimestamp => timestamp.ToFormattedString();

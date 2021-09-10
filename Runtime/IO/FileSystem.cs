@@ -441,7 +441,7 @@ namespace BlackTundra.Foundation.IO {
         /// </param>
         public static Process OpenInExplorer(in FileSystemReference fsr) {
             if (fsr == null) throw new ArgumentNullException(nameof(fsr));
-#if UNITY_STANDALONE_WIN // windows
+#if UNITY_STANDALONE_WIN || UNITY_WSA // windows
             //Process.Start("explorer.exe", $"/{(Directory.Exists(path) ? "root" : "select")},{path}");
             string path = fsr.AbsolutePath.Replace('/', '\\');
             return Process.Start("explorer.exe", fsr.IsDirectory ? path : $"/select,\"{path}\"");
@@ -456,8 +456,8 @@ namespace BlackTundra.Foundation.IO {
             try { process = Process.Start("thunar", path); } catch (Exception) { }
             if (process != null) return process;
             throw new NotImplementedException("No explorer found.");
-#else // unsupported operating system
-            throw new NotSupportedException($"Cannot open \"{path}\" in native file explorer because the operating system is not supported.");
+#else // unsupported platform
+            throw new NotSupportedException($"Cannot open \"{nameof(fsr)}\" in native file explorer because the platform is not supported.");
 #endif
         }
 

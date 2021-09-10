@@ -15,8 +15,13 @@
     "versionDefines": [
         {
             "name": "com.rlabrecque.steamworks.net",
-            "expression": "15.0.0",
+            "expression": "1.0.0",
             "define": "USE_STEAMWORKS"
+        },
+        {
+            "name": "com.blacktundra.world",
+            "expression": "1.0.0",
+            "define": "USE_BEZIER_MATHS"
         }
     ],
     "noEngineReferences": false

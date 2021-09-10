@@ -111,107 +111,109 @@ namespace BlackTundra.Foundation.Utility {
         /// <param name="removeAll">If true, all references to the entry will be removed. Otherwise only the first occurance will be removed.</param>
         /// <returns>Array without the entry inside it.</returns>
         public static T[] Remove<T>(this T[] original, in T entry, in bool removeAll = false) where T : class {
-
             if (original == null) throw new ArgumentNullException(nameof(original));
-
             int length = original.Length; // get the length of the original array
             if (length == 0) return original; // no length therefore nothing to remove
-
             if (!removeAll) { // only remove the first occurence
-
                 int index = original.FindIndexOf(entry);
                 if (index == -1) return original; // no occurance found
-
                 return original.RemoveAt(index, out _);
-
             } else { // remove all occurances
-
                 int occurances = original.FindCountOf(entry); // find the total number of occurances of the entry
                 if (occurances == 0) return original; // no occurances found, return the original array
-
                 T[] newArray = new T[length - occurances]; // create a new array
                 int index = 0; // track the next index to insert into the newArray at
-
                 T temp; // temporary variable used for storing a reference
                 for (int i = 0; i < length; i++) { // iterate through the original array
-
                     temp = original[i]; // assign temporary variable
                     if (temp != entry) newArray[index++] = temp; // not the entry to remove, add this to the new array
-
                 }
-
                 return newArray; // return the new array
-
             }
-
         }
 
         #endregion
 
         #region RemoveFirst
 
-        public static T[] RemoveFirst<T>(this T[] original, out T entry) {
-
+        public static T[] RemoveFirst<T>(this T[] original) {
             if (original == null) throw new ArgumentNullException(nameof(original));
+            int length = original.Length - 1;
+            if (length == -1) return new T[0];
+            T[] newArray = new T[length];
+            Array.Copy(original, 1, newArray, 0, length);
+            return newArray;
+        }
 
+        public static T[] RemoveFirst<T>(this T[] original, out T entry) {
+            if (original == null) throw new ArgumentNullException(nameof(original));
             int length = original.Length - 1;
             if (length == -1) {
                 entry = default;
                 return new T[0];
             }
-
             T[] newArray = new T[length];
-            for (int i = 0; i < length;) newArray[i] = original[++i];
-
+            Array.Copy(original, 1, newArray, 0, length);
             entry = original[0];
             return newArray;
-
         }
 
         #endregion
 
         #region RemoveLast
 
-        public static T[] RemoveLast<T>(this T[] original, out T entry) {
-
+        public static T[] RemoveLast<T>(this T[] original) {
             if (original == null) throw new ArgumentNullException(nameof(original));
+            int length = original.Length - 1;
+            if (length == -1) return new T[0];
+            T[] newArray = new T[length];
+            Array.Copy(original, 0, newArray, 0, length);
+            for (int i = 0; i < length; i++) newArray[i] = original[i];
+            return newArray;
+        }
 
+        public static T[] RemoveLast<T>(this T[] original, out T entry) {
+            if (original == null) throw new ArgumentNullException(nameof(original));
             int length = original.Length - 1;
             if (length == -1) {
                 entry = default;
                 return new T[0];
             }
-
             T[] newArray = new T[length];
+            Array.Copy(original, 0, newArray, 0, length);
             for (int i = 0; i < length; i++) newArray[i] = original[i];
-
             entry = original[length];
             return newArray;
-
         }
 
         #endregion
 
         #region RemoveAt
 
-        public static T[] RemoveAt<T>(this T[] original, in int index, out T entry) {
-
+        public static T[] RemoveAt<T>(this T[] original, in int index) {
             if (original == null) throw new ArgumentNullException(nameof(original));
             int length = original.Length;
             if (index < 0 || index >= length) throw new ArgumentOutOfRangeException(nameof(index));
+            if (length == 0) return new T[0];
+            T[] newArray = new T[length - 1];
+            Array.Copy(original, 0, newArray, 0, index);
+            Array.Copy(original, index + 1, newArray, index, length - index - 1);
+            return newArray;
+        }
 
+        public static T[] RemoveAt<T>(this T[] original, in int index, out T entry) {
+            if (original == null) throw new ArgumentNullException(nameof(original));
+            int length = original.Length;
+            if (index < 0 || index >= length) throw new ArgumentOutOfRangeException(nameof(index));
             if (length == 0) {
                 entry = default;
                 return new T[0];
             }
-
             T[] newArray = new T[length - 1];
-            for (int i = 0; i < index; i++) newArray[i] = original[i];
-            for (int i = index; i < length - 1;) newArray[i] = original[++i];
-
+            Array.Copy(original, 0, newArray, 0, index);
+            Array.Copy(original, index + 1, newArray, index, length - index - 1);
             entry = original[index];
             return newArray;
-
         }
 
         #endregion

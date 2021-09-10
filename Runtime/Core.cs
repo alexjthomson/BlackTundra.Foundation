@@ -23,15 +23,10 @@ using UnityEditor;
 
 using BlackTundra.Foundation.Collections;
 using BlackTundra.Foundation.IO;
-using BlackTundra.Foundation.System;
 using BlackTundra.Foundation.Utility;
 
 #if ENABLE_INPUT_SYSTEM
 using BlackTundra.Foundation.Control;
-#endif
-
-#if USE_STEAMWORKS
-using BlackTundra.Foundation.Platform.Steamworks;
 #endif
 
 // DEFINES:
@@ -58,6 +53,20 @@ namespace BlackTundra.Foundation {
         /// Original value of <see cref="Time.fixedDeltaTime"/> on startup.
         /// </summary>
         internal static readonly float DefaultFixedDeltaTime = Time.fixedDeltaTime;
+
+        #endregion
+
+        #region delegate
+
+        /// <summary>
+        /// Used to call methods that should be called every frame.
+        /// </summary>
+        private delegate void UpdateDelegate();
+
+        /// <summary>
+        /// Used to call methods that should be called every frame and require the difference in time since the last frame.
+        /// </summary>
+        private delegate void UpdateDeltaTimeDelegate(float deltaTime);
 
         #endregion
 
@@ -126,6 +135,16 @@ namespace BlackTundra.Foundation {
         /// </summary>
         private static object coreLock = new object();
 
+        /// <summary>
+        /// Array of <see cref="UpdateDelegate"/> callbacks that should be called every frame.
+        /// </summary>
+        private static UpdateDelegate[] updateCallbacks;
+
+        /// <summary>
+        /// Array of <see cref="UpdateDeltaTimeDelegate"/> callbacks that should be called every frame.
+        /// </summary>
+        private static UpdateDeltaTimeDelegate[] updateDeltaTimeCallbacks;
+
         #endregion
 
         #region property
@@ -142,7 +161,6 @@ namespace BlackTundra.Foundation {
 #pragma warning disable IDE0051 // remove unused private members
         private static void InitialisePostAssembliesLoaded() {
 #pragma warning restore IDE0051 // remove unused private members
-
             lock (coreLock) {
 
                 if (phase != CorePhase.Idle) return;
@@ -195,46 +213,34 @@ namespace BlackTundra.Foundation {
                     #region bind commands
 
                     // find delegate parameter types:
-                    ParameterInfo[] targetParameterInfo = ObjectUtility.GetDelegateInfo<Console.Command.CommandCallbackDelegate>().GetParameters(); // get delegate parameters
-                    int targetParameterCount = targetParameterInfo.Length; // get the number of parameters in the delegate
-                    Type[] targetTypes = new Type[targetParameterCount]; // create a buffer of target types, these will match up with the parameters
-                    for (int i = targetParameterCount - 1; i >= 0; i--) // iterate through the parameters
-                        targetTypes[i] = targetParameterInfo[i].GetType(); // assign the type corresponding to the current parameter
-                    
+                    Type[] targetTypes = ObjectUtility.GetDelegateParameterTypes<Console.Command.CommandCallbackDelegate>();
+
                     // iterate console commands:
-                    IEnumerable<MethodInfo> methods = ObjectUtility.GetMethods<CommandAttribute>(); // get all console command attributes
+                    IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CommandAttribute>(); // get all console command attributes
                     CommandAttribute attribute;
+                    Type[] methodParameterTypes;
                     foreach (MethodInfo method in methods) { // iterate each method
                         attribute = method.GetCustomAttribute<CommandAttribute>(); // get the command attribute on the method
                         string signature = string.Concat(method.DeclaringType.FullName, '.', method.Name); // build method signature
-                        ParameterInfo[] parameters = method.GetParameters(); // get method parameter info
-                        if (parameters.Length == targetParameterCount) { // parameter cound matches target count
-                            bool match = true; // track if the parameters match
-                            for (int i = targetParameterCount - 1; i >= 0; i--) { // iterate through parameters
-                                if (!targetTypes[i].Equals(parameters[i].GetType())) { // check the parameter matches
-                                    match = false; // parameter does not match
-                                    break; // stop iterating parameters here
-                                }
-                            }
-                            if (match) { // the parameters match
-                                Console.Bind( // bind the method to the console as a command
-                                    attribute.name, // use the attribute name
-                                    (Console.Command.CommandCallbackDelegate)Delegate.CreateDelegate(typeof(Console.Command.CommandCallbackDelegate), method), // create delegate
-                                    attribute.description,
-                                    attribute.usage
-                                );
-                                Console.Info(string.Concat("[Console] Bound \"", signature, "\" -> \"", attribute.name, "\".")); // log binding
-                                continue; // move to next method
-                            }
-                        }
-                        string fatalMessage = string.Concat("Console failed to bind \"", signature, "\" -> \"", attribute.name, "\"."); // the command was not bound, create error message
+                        methodParameterTypes = ObjectUtility.GetMethodParameterTypes(method); // get method parameter types
+                        if (methodParameterTypes.ContentEquals(targetTypes)) { // parameter cound matches target count
+                            Console.Bind( // bind the method to the console as a command
+                                attribute.name, // use the attribute name
+                                (Console.Command.CommandCallbackDelegate)Delegate.CreateDelegate(typeof(Console.Command.CommandCallbackDelegate), method), // create delegate
+                                attribute.description,
+                                attribute.usage
+                            );
+                            Console.Info(string.Concat("[Console] Bound \"", signature, "\" -> \"", attribute.name, "\".")); // log binding
+                        } else {
+                            string fatalMessage = string.Concat("Console failed to bind \"", signature, "\" -> \"", attribute.name, "\"."); // the command was not bound, create error message
 #if UNITY_EDITOR
-                        Debug.LogWarning($"Failed to bind method \"{signature}\" to console. Check the method signature matches that of \"{typeof(Console.Command.CommandCallbackDelegate).FullName}\".");
-                        Debug.LogError(fatalMessage);
+                            Debug.LogWarning($"Failed to bind method \"{signature}\" to console. Check the method signature matches that of \"{typeof(Console.Command.CommandCallbackDelegate).FullName}\".");
+                            Debug.LogError(fatalMessage);
 #endif
-                        Console.Fatal(fatalMessage); // log the failure
-                        Quit(QuitReason.FatalCrash, fatalMessage, null, true); // quit
-                        return;
+                            Console.Fatal(fatalMessage); // log the failure
+                            Quit(QuitReason.FatalCrash, fatalMessage, null, true); // quit
+                            return;
+                        }
                     }
 
                     #endregion
@@ -286,9 +292,7 @@ namespace BlackTundra.Foundation {
 
                 Console.Info("[Core] Init (1/3) COMPLETE.");
                 Console.Flush();
-
             }
-
         }
 
         #endregion
@@ -299,7 +303,6 @@ namespace BlackTundra.Foundation {
 #pragma warning disable IDE0051 // remove unread private members
         private static void InitialisePostSceneLoad() {
 #pragma warning restore IDE0051 // remove unread private members
-
             lock (coreLock) {
 
                 #region check phase
@@ -328,9 +331,7 @@ namespace BlackTundra.Foundation {
 
                 Console.Info("[Core] Init (2/3) COMPLETE.");
                 Console.Flush();
-
             }
-
         }
 
         #endregion
@@ -353,10 +354,9 @@ namespace BlackTundra.Foundation {
 
                 #region call initialise methods
 
-                IEnumerable<MethodInfo> methods = ObjectUtility.GetMethods<CoreInitialiseAttribute>();
+                IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CoreInitialiseAttribute>();
                 foreach (MethodInfo method in methods) {
                     string signature = $"{method.DeclaringType.FullName}.{method.Name}";
-                    Console.Info(string.Concat("[Core] Invoking \"", signature, "\"."));
                     try {
                         method.Invoke(null, null);
                     } catch (Exception exception) {
@@ -365,6 +365,35 @@ namespace BlackTundra.Foundation {
                     }
                     Console.Info(string.Concat("[Core] Invoked \"", signature, "\"."));
                 }
+
+                #endregion
+
+                #region gather update methods
+
+                // find delegate signatures:
+                Type[] updateParameterTypes = ObjectUtility.GetDelegateParameterTypes<UpdateDelegate>();
+                Type[] updateDeltaTimeParameterTypes = ObjectUtility.GetDelegateParameterTypes<UpdateDeltaTimeDelegate>();
+
+                // iterate methods:
+                methods = ObjectUtility.GetDecoratedMethods<CoreUpdateAttribute>();
+                List<UpdateDelegate> updateList = new List<UpdateDelegate>();
+                List<UpdateDeltaTimeDelegate> updateDeltaTimeList = new List<UpdateDeltaTimeDelegate>();
+                Type[] methodParameterTypes;
+                foreach (MethodInfo method in methods) {
+                    methodParameterTypes = ObjectUtility.GetMethodParameterTypes(method);
+                    if (methodParameterTypes.ContentEquals(updateParameterTypes))
+                        updateList.Add((UpdateDelegate)Delegate.CreateDelegate(typeof(UpdateDelegate), method));
+                    else if (methodParameterTypes.ContentEquals(updateDeltaTimeParameterTypes))
+                        updateDeltaTimeList.Add((UpdateDeltaTimeDelegate)Delegate.CreateDelegate(typeof(UpdateDeltaTimeDelegate), method));
+                    else {
+                        Quit(QuitReason.FatalCrash, string.Concat("[Core] Failed to bind \"", method.DeclaringType.FullName, '.', method.Name, "\" to core update method."), null, true);
+                        continue;
+                    }
+                    Console.Info(string.Concat("[Core] Bound \"", method.DeclaringType.FullName, '.', method.Name, "\" -> \"Core.Update\"."));
+                }
+
+                updateCallbacks = updateList.ToArray();
+                updateDeltaTimeCallbacks = updateDeltaTimeList.ToArray();
 
                 #endregion
 
@@ -391,16 +420,29 @@ namespace BlackTundra.Foundation {
                 if (fatal) Console.Fatal(shutdownMessage, exception);
                 else if (exception != null) Console.Error(shutdownMessage, exception);
                 else Console.Info(shutdownMessage);
+                #region invoke terminate methods
+                IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CoreTerminateAttribute>();
+                foreach (MethodInfo method in methods) {
+                    try {
+                        method.Invoke(null, null);
+                    } catch (Exception e) {
+                        Console.Fatal(
+                            string.Concat(
+                                "[Core] Failed to invoke \"",
+                                method.DeclaringType.FullName,
+                                '.',
+                                method.Name,
+                                "\"."
+                            ), e
+                        );
+                    }
+                }
+                #endregion
                 Console.Flush();
                 #region destroy core instance
                 if (instance != null) {
                     try { Object.Destroy(instance.gameObject); } catch (Exception e) { e.Handle(); }
                 }
-                #endregion
-                #region shutdown steamworks
-#if USE_STEAMWORKS
-                try { SteamManager.Shutdown(); } catch (Exception e) { e.Handle(); } // try to shut down steamworks
-#endif
                 #endregion
                 #region shutdown console
                 try { Console.Shutdown(); } catch (Exception e) { e.Handle(); }
@@ -423,13 +465,6 @@ namespace BlackTundra.Foundation {
         /// Called by <see cref="CoreInstance.Update"/>.
         /// </summary>
         internal static void Update() {
-
-            #region steamworks
-#if USE_STEAMWORKS
-            // NOTE: this may require a try catch in the future
-            SteamManager.Update(); // update the steam manager
-#endif
-            #endregion
 
             #region console window
             if (consoleWindow != null) { // console window instance exists
@@ -489,6 +524,55 @@ namespace BlackTundra.Foundation {
             }
             #endregion
 
+            #region update callbacks
+
+            int callbackCount = updateCallbacks.Length;
+            if (callbackCount > 0) {
+                UpdateDelegate callback;
+                for (int i = callbackCount - 1; i >= 0; i--) {
+                    callback = updateCallbacks[i];
+                    try {
+                        callback.Invoke();
+                    } catch (Exception exception) {
+                        MethodInfo methodInfo = callback.GetMethodInfo();
+                        Console.Error(
+                            string.Concat(
+                                "An unhandled exception occurred while invoking \"",
+                                methodInfo.DeclaringType.FullName,
+                                '.',
+                                methodInfo.Name,
+                                "\"."
+                            ), exception
+                        );
+                    }
+                }
+            }
+
+            callbackCount = updateDeltaTimeCallbacks.Length;
+            if (callbackCount > 0) {
+                float deltaTime = Time.deltaTime;
+                UpdateDeltaTimeDelegate callback;
+                for (int i = callbackCount - 1; i >= 0; i--) {
+                    callback = updateDeltaTimeCallbacks[i];
+                    try {
+                        callback.Invoke(deltaTime);
+                    } catch (Exception exception) {
+                        MethodInfo methodInfo = callback.GetMethodInfo();
+                        Console.Error(
+                            string.Concat(
+                                "An unhandled exception occurred while invoking \"",
+                                methodInfo.DeclaringType.FullName,
+                                '.',
+                                methodInfo.Name,
+                                "\"."
+                            ), exception
+                        );
+                    }
+                }
+            }
+
+            #endregion
+
         }
 
         #endregion
@@ -519,6 +603,35 @@ namespace BlackTundra.Foundation {
 #endif
         #endregion
 
+        #region Validate
+
+        /// <summary>
+        /// Validates the current state of the application.
+        /// </summary>
+#if UNITY_EDITOR
+        [MenuItem("Tools/Validate")]
+#endif
+        internal static void Validate() {
+            IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CoreValidateAttribute>();
+            foreach (MethodInfo method in methods) {
+                string signature = $"{method.DeclaringType.FullName}.{method.Name}";
+                if (ObjectUtility.GetMethodParameterTypes(method).Length != 0) {
+                    Console.Fatal(string.Concat("[Core] Invalid validate method \"", signature, "\"."));
+                    continue;
+                }
+                try {
+                    method.Invoke(null, null);
+                } catch (Exception exception) {
+                    Console.Error(string.Concat("[Core] Failed to invoke validate method \"", signature, "\"."), exception);
+                    continue;
+                }
+                Console.Info(string.Concat("[Core] Invoked \"", signature, "\"."));
+            }
+            Console.Info("[Core] Validate completed.");
+        }
+
+        #endregion
+
         #endregion
 
     }
@@ -541,7 +654,7 @@ namespace BlackTundra.Foundation {
             "\nhelp {commands...}" +
             "\n\tcommands: Each argument should be an individual command you want a help message for."
         )]
-        private static bool HelpCommand(in CommandInfo info) {
+        private static bool HelpCommand(CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
             int argumentCount = info.args.Count;
             if (argumentCount == 0) { // all commands
@@ -578,7 +691,7 @@ namespace BlackTundra.Foundation {
         #region HistoryCommand
 
         [Command("history", "Prints the command history buffer to the console.")]
-        private static bool HistoryCommand(in CommandInfo info) {
+        private static bool HistoryCommand(CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
             if (info.args.Count > 0) {
                 console.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
@@ -600,7 +713,7 @@ namespace BlackTundra.Foundation {
         #region ClearCommand
 
         [Command("clear", "Clears the console.")]
-        private static bool ClearCommand(in CommandInfo info) {
+        private static bool ClearCommand(CommandInfo info) {
             Core.consoleWindow.Clear();
             return true;
         }
@@ -610,7 +723,7 @@ namespace BlackTundra.Foundation {
         #region EchoCommand
 
         [Command("echo", "Prints a message to the console.", "echo \"{message}\"")]
-        private static bool EchoCommand(in CommandInfo info) {
+        private static bool EchoCommand(CommandInfo info) {
             if (info.args.Count == 0) return false;
             StringBuilder stringBuilder = new StringBuilder(info.args.Count * 5);
             stringBuilder.Append(ConsoleUtility.Escape(info.args[0]));
@@ -627,7 +740,7 @@ namespace BlackTundra.Foundation {
         #region CoreCommand
 
         [Command("core", "Displays core and basic system information to the console.")]
-        private static bool CoreCommand(in CommandInfo info) {
+        private static bool CoreCommand(CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
             if (info.args.Count > 0) {
                 console.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
@@ -697,7 +810,7 @@ namespace BlackTundra.Foundation {
         #region QuitCommand
 
         [Command("quit", "Force quits the game.")]
-        private static bool QuitCommand(in CommandInfo info) {
+        private static bool QuitCommand(CommandInfo info) {
             if (info.args.Count > 0) {
                 Core.consoleWindow.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
@@ -720,7 +833,7 @@ namespace BlackTundra.Foundation {
                 "\n\tA lower value means time will travel slower, a larger number means time travels faster." +
                 "\n\tThis value cannot be lower than 0.0 but has no maximum range; however, large timescales may cause performance issues."
         )]
-        private static bool TimeCommand(in CommandInfo info) {
+        private static bool TimeCommand(CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
             int argumentCount = info.args.Count;
             if (argumentCount == 0) { // no arguments, display timing information
@@ -740,7 +853,7 @@ namespace BlackTundra.Foundation {
                 );
             } else {
                 string arg = info.args[0];
-                switch (info.args[0].ToLower()) {
+                switch (arg.ToLower()) {
                     case "set": {
                         if (argumentCount != 3) {
                             console.Print("Usage: time set {property} {value}");
@@ -769,6 +882,10 @@ namespace BlackTundra.Foundation {
                             return false;
                         }
                     }
+                    default: {
+                        console.Print(ConsoleUtility.UnknownArgumentMessage(arg));
+                        return false;
+                    }
                 }
             }
             return true;
@@ -796,7 +913,7 @@ namespace BlackTundra.Foundation {
                 "\n\tkey: Name of the entry in the configuration file to edit." +
                 "\n\tvalue: New value to assign to the configuration entry."
         )]
-        private static bool ConfigCommand(in CommandInfo info) {
+        private static bool ConfigCommand(CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
             int argumentCount = info.args.Count;
             if (argumentCount == 0) {
@@ -873,7 +990,7 @@ namespace BlackTundra.Foundation {
 #if UNITY_EDITOR
 
         [Command("cdebug", "Prints the information about a command. This is used to test the command parsing system works correctly.")]
-        private static bool CommandDebugCommand(in CommandInfo info) {
+        private static bool CommandDebugCommand(CommandInfo info) {
             ConsoleWindow console = Core.consoleWindow;
             List<string> table = new List<string>() {
                 $"<b>Command</b>¬{info.command.name}",
@@ -890,6 +1007,21 @@ namespace BlackTundra.Foundation {
         }
 
 #endif
+        #endregion
+
+        #region ValidateCommand
+
+        [Command("validate", "Validates the current application state.")]
+        private static bool ValidateCommand(CommandInfo info) {
+            ConsoleWindow console = Core.consoleWindow;
+            if (info.args.Count > 0) {
+                console.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
+                return false;
+            }
+            Core.Validate();
+            return true;
+        }
+
         #endregion
 
     }

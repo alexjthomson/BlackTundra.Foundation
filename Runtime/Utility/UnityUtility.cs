@@ -14,6 +14,8 @@ namespace BlackTundra.Foundation.Utility {
 
         public static bool HasComponent<T>(this GameObject gameObject) => gameObject.GetComponent<T>() != null;
 
+        public static bool HasComponent<T>(this Component component) => component.GetComponent<T>() != null;
+
         #endregion
 
         #region ForceGetComponent
@@ -25,12 +27,9 @@ namespace BlackTundra.Foundation.Utility {
         /// <param name="gameObject">GameObject to get the component from.</param>
         /// <returns>Returns the existing component or newly created component from the gameObject.</returns>
         public static T ForceGetComponent<T>(this GameObject gameObject) where T : Component {
-
-            if (gameObject == null) throw new ArgumentNullException("gameObject");
-
+            if (gameObject == null) throw new ArgumentNullException(nameof(gameObject));
             T component = gameObject.GetComponent<T>();
-            return component ?? gameObject.AddComponent<T>();
-
+            return component != null ? component : gameObject.AddComponent<T>();
         }
 
         /// <summary>
@@ -40,12 +39,9 @@ namespace BlackTundra.Foundation.Utility {
         /// <param name="behaviour">MonoBehaviour to get the component from.</param>
         /// <returns>Returns the existing component or newly created component from the behaviour.</returns>
         public static T ForceGetComponent<T>(this MonoBehaviour behaviour) where T : Component {
-
-            if (behaviour == null) throw new ArgumentNullException("behaviour");
-
+            if (behaviour == null) throw new ArgumentNullException(nameof(behaviour));
             T component = behaviour.GetComponent<T>();
-            return component ?? behaviour.gameObject.AddComponent<T>();
-
+            return component != null ? component : behaviour.gameObject.AddComponent<T>();
         }
 
         #endregion
@@ -77,10 +73,9 @@ namespace BlackTundra.Foundation.Utility {
 
         #region GetCollider
 
-        public static Collider GetCollider(this GameObject gameObject) => gameObject?.GetComponent<Collider>();
+        public static Collider GetCollider(this GameObject gameObject) => gameObject != null ? gameObject.GetComponent<Collider>() : null;
 
         public static Collider GetCollider(this GameObject gameObject, in LayerMask layerMask) {
-
             if (gameObject == null) return null;
             Collider[] colliders = gameObject.GetComponentsInChildren<Collider>();
             if (colliders.Length > 0) {
@@ -91,7 +86,6 @@ namespace BlackTundra.Foundation.Utility {
                 }
             }
             return null;
-
         }
 
         #endregion

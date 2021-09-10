@@ -28,11 +28,18 @@ namespace BlackTundra.Foundation.Utility {
         /// <seealso cref="SerializableImplementationOfAttribute"/>
         private static readonly Dictionary<Type, Type> TypeOverrideDictionary;
 
+        /// <summary>
+        /// An array containing a reference to every <see cref="Type"/>.
+        /// </summary>
+        private static readonly Type[] types;
+
         #endregion
 
         #region constructor
 
         static ObjectUtility() {
+            types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes()).ToArray();
+            if (types == null) throw new ApplicationException("No types found in assemblies in current domain.");
             SizeOfDictionary = new Dictionary<Type, int>();
             TypeOverrideDictionary = new Dictionary<Type, Type>();
             IEnumerable<Type> serializableImplementations = GetDecoratedTypes<SerializableImplementationOfAttribute>();
@@ -287,9 +294,10 @@ namespace BlackTundra.Foundation.Utility {
         /// <typeparamref name="T"/> as an <see cref="IEnumerable{T}"/>.
         /// </returns>
         public static IEnumerable<Type> GetDecoratedTypes<T>() where T : Attribute {
-            Assembly assembly = Assembly.GetExecutingAssembly();
             Type context = typeof(T);
-            foreach (Type type in assembly.GetTypes()) {
+            Type type;
+            for (int i = types.Length - 1; i >= 0; i--) {
+                type = types[i];
                 if (type.GetCustomAttributes(context, true).Length > 0)
                     yield return type;
             }
@@ -303,9 +311,10 @@ namespace BlackTundra.Foundation.Utility {
         /// Returns all objects that inherit from <typeparamref name="T"/>.
         /// </returns>
         public static IEnumerable<Type> GetImplementations<T>() where T : class {
-            Assembly assembly = Assembly.GetExecutingAssembly();
             Type context = typeof(T);
-            foreach (Type type in assembly.GetTypes()) {
+            Type type;
+            for (int i = types.Length - 1; i >= 0; i--) {
+                type = types[i];
                 if (type.IsClass && type.IsSubclassOf(context))
                     yield return type;
             }
@@ -313,20 +322,130 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
-        #region GetMethods
+        #region GetDecoratedMethods
 
-        public static IEnumerable<MethodInfo> GetMethods<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute => AppDomain.CurrentDomain.GetAssemblies() // return all currently loaded assemblies
-            .SelectMany(x => x.GetTypes()) // get all types defined in the assembly
-            .Where(x => x.IsClass) // only return classes
-            .SelectMany(x => x.GetMethods(bindingFlags)) // get all static methods defined in the class
-            .Where(x => x.GetCustomAttributes(typeof(T), false).FirstOrDefault() != null); // only return methods with the correct attribute
+        public static IEnumerable<MethodInfo> GetDecoratedMethods<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute
+            => types.Where(x => x.IsClass).SelectMany(x => x.GetMethods(bindingFlags)).Where(x => x.GetCustomAttributes(typeof(T), false).FirstOrDefault() != null); // find methods decorated with correct attribute
+
+        #endregion
+
+        #region GetValidDecoratedMethods
+
+        /// <returns>
+        /// Returns every method decorated with the <typeparamref name="T"/> attribute that follows the <see cref="MethodImplementsAttribute"/>
+        /// method signature definitions. If a method is found decorated with the <typeparamref name="T"/> attribute that does not follow a
+        /// pre-defined <see cref="MethodImplementsAttribute"/> method signature definition, a <see cref="NotSupportedException"/> will be
+        /// thrown. A <see cref="NotSupportedException"/> will also be thrown if the <typeparamref name="T"/> attribute is not decorated with
+        /// at least one <see cref="MethodImplementsAttribute"/>.
+        /// </returns>
+        public static IEnumerable<MethodInfo> GetValidDecoratedMethods<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute {
+            Type context = typeof(T); // get the context to check
+            MethodImplementsAttribute[] implementations = context.GetCustomAttributes<MethodImplementsAttribute>(false).ToArray(); // get implementation definitions
+            if (implementations.Length == 0) throw new NotSupportedException($"Attribute {nameof(T)} is not decorated with a {nameof(MethodImplementsAttribute)}."); // check for implementation definitions
+            // temp variables:
+            Type type;
+            MethodInfo[] methods;
+            MethodInfo method;
+            ParameterInfo[] parameters;
+            Type[] parameterTypes;
+            MethodImplementsAttribute implementation;
+            Type[] signature;
+            bool valid = false;
+            for (int i = types.Length - 1; i >= 0; i--) { // iterate each type that exists in the application
+                type = types[i]; // get the current type
+                if (type.IsClass) { // the type is a class
+                    methods = type.GetMethods(bindingFlags); // get each method implemented in the method
+                    for (int j = methods.Length - 1; j >= 0; j--) { // iterate each method in the class
+                        method = methods[j]; // get the current method
+                        if (method.GetCustomAttributes(context, false).FirstOrDefault() != null) { // method is decorated with target type
+                            parameters = method.GetParameters(); // get the method parameters for the current method
+                            int parameterCount = parameters.Length; // get the number of parameters in the current method
+                            parameterTypes = new Type[parameterCount]; // construct an array of target types that must match a valid implementation
+                            if (parameterCount > 0) { // there are parameters in the method signature
+                                for (int k = parameterCount - 1; k >= 0; k--) { // iterate each parameter in the method signature
+                                    parameterTypes[k] = parameters[k].ParameterType; // assign the signature types
+                                }
+                            }
+                            for (int k = implementations.Length - 1; k >= 0; k--) { // iterate each possible implementation the method may follow
+                                implementation = implementations[k]; // get the current implementation
+                                signature = implementation.signature; // get the signature required by the current implementation
+                                if (signature.ContentEquals(parameterTypes)) { // invalid parameter length
+                                    valid = true; // this is a valid implementation
+                                    yield return method; // return the valid method
+                                    break; // stop here
+                                }
+                            }
+                            if (!valid) throw new NotSupportedException($"Method {method.DeclaringType.FullName}.{method.Name} does not comply with any {nameof(T)} implementations.");
+                            valid = false; // reset the valid flag
+                        }
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<MethodInfo> GetValidDecoratedMethods<T1, T2>(T2 obj, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic) where T1 : Attribute where T2 : class {
+            Type context = typeof(T1); // get the context to check
+            MethodImplementsAttribute[] implementations = context.GetCustomAttributes<MethodImplementsAttribute>(false).ToArray(); // get implementation definitions
+            if (implementations.Length == 0) throw new NotSupportedException($"Attribute {nameof(T1)} is not decorated with a {nameof(MethodImplementsAttribute)}."); // check for implementation definitions
+            // temp variables:
+            MethodInfo method;
+            ParameterInfo[] parameters;
+            Type[] parameterTypes;
+            MethodImplementsAttribute implementation;
+            Type[] signature;
+            bool valid = false;
+            MethodInfo[] methods = obj.GetType().GetMethods(bindingFlags); // get each method implemented in the method
+            for (int i = methods.Length - 1; i >= 0; i--) { // iterate each method in the class
+                method = methods[i]; // get the current method
+                if (method.GetCustomAttributes(context, false).FirstOrDefault() != null) { // method is decorated with target type
+                    parameters = method.GetParameters(); // get the method parameters for the current method
+                    int parameterCount = parameters.Length; // get the number of parameters in the current method
+                    parameterTypes = new Type[parameterCount]; // construct an array of target types that must match a valid implementation
+                    if (parameterCount > 0) { // there are parameters in the method signature
+                        for (int j = parameterCount - 1; j >= 0; j--) { // iterate each parameter in the method signature
+                            parameterTypes[j] = parameters[j].ParameterType; // assign the signature types
+                        }
+                    }
+                    for (int j = implementations.Length - 1; j >= 0; j--) { // iterate each possible implementation the method may follow
+                        implementation = implementations[j]; // get the current implementation
+                        signature = implementation.signature; // get the signature required by the current implementation
+                        if (signature.ContentEquals(parameterTypes)) { // invalid parameter length
+                            valid = true; // this is a valid implementation
+                            yield return method; // return the valid method
+                            break; // stop here
+                        }
+                    }
+                    if (!valid) throw new NotSupportedException($"Method {nameof(T2)}.{method.Name} does not comply with any {nameof(T1)} implementations.");
+                    valid = false; // reset the valid flag
+                }
+            }
+        }
+
+        #endregion
+
+        #region GetMethodParameterTypes
+
+        /// <returns>
+        /// Returns a <see cref="Type"/> array matching the expected types of the <paramref name="methodInfo"/> provided.
+        /// </returns>
+        public static Type[] GetMethodParameterTypes(in MethodInfo methodInfo) {
+            ParameterInfo[] parameterInfo = methodInfo.GetParameters();
+            int parameterCount = parameterInfo.Length;
+            Type[] types = new Type[parameterCount];
+            if (parameterCount > 0) {
+                for (int i = parameterCount - 1; i >= 0; i--) {
+                    types[i] = parameterInfo[i].ParameterType;
+                }
+            }
+            return types;
+        }
 
         #endregion
 
         #region InvokeMethods
 
         public static void InvokeMethods<T>(in object[] args = null) where T : Attribute {
-            IEnumerable<MethodInfo> methods = GetMethods<T>();
+            IEnumerable<MethodInfo> methods = GetDecoratedMethods<T>();
             foreach (MethodInfo method in methods) {
                 try {
                     method.Invoke(null, args);
@@ -348,6 +467,15 @@ namespace BlackTundra.Foundation.Utility {
             if (memberInfo.Length == 0) throw new InvalidOperationException();
             return (MethodInfo)memberInfo[0];
         }
+
+        #endregion
+
+        #region GetDelegateParameterTypes
+
+        /// <returns>
+        /// Returns a <see cref="Type"/> array matching the expected types of the delegate of type <typeparamref name="T"/> provided.
+        /// </returns>
+        public static Type[] GetDelegateParameterTypes<T>() where T : Delegate => GetMethodParameterTypes(GetDelegateInfo<T>());
 
         #endregion
 
