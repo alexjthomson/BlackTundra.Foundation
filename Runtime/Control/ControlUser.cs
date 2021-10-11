@@ -22,7 +22,12 @@ namespace BlackTundra.Foundation.Control {
         /// <summary>
         /// Buffer that tracks every <see cref="ControlUser"/> instance.
         /// </summary>
-        private static readonly PackedBuffer<ControlUser> ControlUserBuffer = new PackedBuffer<ControlUser>(1);
+#if UNITY_EDITOR
+        internal
+#else
+        private
+#endif
+        static readonly PackedBuffer<ControlUser> ControlUserBuffer = new PackedBuffer<ControlUser>(1);
 
         #endregion
 
@@ -197,7 +202,7 @@ namespace BlackTundra.Foundation.Control {
         /// <summary>
         /// Invoked after a scene is loaded.
         /// </summary>
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
 #pragma warning disable IDE0051 // remove unread private members
         private static void Initialise() {
 #pragma warning restore IDE0051 // remove unread private members
@@ -218,8 +223,15 @@ namespace BlackTundra.Foundation.Control {
         #region Dispose
 
         public void Dispose() {
-
             if (disposed) return;
+            Core.Enqueue(SafeDispose);
+        }
+
+        #endregion
+
+        #region SafeDispose
+
+        private void SafeDispose() {
 
             #region handle controllables
 

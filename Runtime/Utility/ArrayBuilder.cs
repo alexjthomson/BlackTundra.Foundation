@@ -82,11 +82,9 @@ namespace BlackTundra.Foundation.Utility {
         #region constructor
 
         public ArrayBuilder() {
-
             linkedList = new LinkedList<T>();
             array = null;
             modified = true;
-
         }
 
         #endregion
@@ -176,10 +174,8 @@ namespace BlackTundra.Foundation.Utility {
         #region ToArray
 
         public T[] ToArray() {
-
             if (modified) BuildArray();
             return array;
-
         }
 
         #endregion

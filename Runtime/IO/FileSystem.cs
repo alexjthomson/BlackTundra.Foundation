@@ -100,7 +100,7 @@ namespace BlackTundra.Foundation.IO {
                         FileFormat.Obfuscated
                     )) { // read was successfull
                         try {
-                            keystore = ObjectUtility.ToObject<Keystore>(content);
+                            keystore = Keystore.FromBytes(content, 0, out _);
                         } catch (Exception exception) {
                             exception.Handle("Failed to convert keystore data to keystore object.");
                             throw exception;

@@ -204,7 +204,7 @@ namespace BlackTundra.Foundation.Collections.Generic {
         #region Expand
 
         /// <summary>
-        /// Expands the packed buffer.
+        /// Expands the packed buffer by <paramref name="capacity"/> elements.
         /// </summary>
         /// <param name="capacity">Number of new indicies to add.</param>
         public void Expand(in int capacity) {

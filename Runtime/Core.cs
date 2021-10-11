@@ -33,6 +33,7 @@ using BlackTundra.Foundation.Control;
 
 using Object = UnityEngine.Object;
 using Colour = BlackTundra.Foundation.ConsoleColour;
+using System.Collections;
 
 #endregion
 
@@ -53,6 +54,11 @@ namespace BlackTundra.Foundation {
         /// Original value of <see cref="Time.fixedDeltaTime"/> on startup.
         /// </summary>
         internal static readonly float DefaultFixedDeltaTime = Time.fixedDeltaTime;
+
+        /// <summary>
+        /// <see cref="Queue{T}"/> used to enqueue methods to be executed on the main thread.
+        /// </summary>
+        private static readonly Queue<Action> ExecutionQueue = new Queue<Action>();
 
         #endregion
 
@@ -150,6 +156,9 @@ namespace BlackTundra.Foundation {
         #region property
 
         public static Version Version { get; private set; } = Version.Invalid;
+
+        /// <inheritdoc cref="consoleWindow"/>
+        public static ConsoleWindow ConsoleWindow => consoleWindow;
 
         #endregion
 
@@ -573,6 +582,18 @@ namespace BlackTundra.Foundation {
 
             #endregion
 
+            #region clear execution queue
+
+            if (ExecutionQueue.Count > 0) {
+                lock (ExecutionQueue) {
+                    while (ExecutionQueue.Count > 0) {
+                        ExecutionQueue.Dequeue().Invoke();
+                    }
+                }
+            }
+
+            #endregion
+
         }
 
         #endregion
@@ -628,6 +649,22 @@ namespace BlackTundra.Foundation {
                 Console.Info(string.Concat("[Core] Invoked \"", signature, "\"."));
             }
             Console.Info("[Core] Validate completed.");
+        }
+
+        #endregion
+
+        #region Enqueue
+
+        public static void Enqueue(in Action action) {
+            lock (ExecutionQueue) {
+                ExecutionQueue.Enqueue(action);
+            }
+        }
+
+        public static void Enqueue(IEnumerator action) {
+            lock (ExecutionQueue) {
+                ExecutionQueue.Enqueue(() => { instance.StartCoroutine(action); });
+            }
         }
 
         #endregion

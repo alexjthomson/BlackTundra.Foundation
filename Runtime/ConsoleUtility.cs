@@ -18,10 +18,13 @@ namespace BlackTundra.Foundation {
         #region UnknownArgumentMessage
 
         public static string UnknownArgumentMessage(in string arg) {
-
             if (arg == null) throw new ArgumentNullException(nameof(arg));
-            return string.Format("Unknown argument: \"{0}\".", Escape(arg));
+            return $"Unknown argument: \"{Escape(arg)}\".";
+        }
 
+        public static string UnknownArgumentMessage(in string arg, in int index) {
+            if (arg == null) throw new ArgumentNullException(nameof(arg));
+            return $"Unknown argument: \"{Escape(arg)}\" at {index}.";
         }
 
         public static string UnknownArgumentMessage(in string[] args, int startIndex = 0, int length = 0) {
