@@ -1,6 +1,6 @@
 using NUnit.Framework;
 
-namespace BlackTundra.Foundation {
+namespace BlackTundra.Foundation.Tests {
 
     public sealed class VersionTest {
 

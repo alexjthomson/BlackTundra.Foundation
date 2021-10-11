@@ -65,7 +65,7 @@ namespace BlackTundra.Foundation.Security {
         /// <summary>
         /// Random number generator.
         /// </summary>
-        private static readonly RNGCryptoServiceProvider RNG = new RNGCryptoServiceProvider();
+        internal static readonly RNGCryptoServiceProvider RNG = new RNGCryptoServiceProvider();
 
         private const int DefaultDecompressionSize = 1000000000;
 

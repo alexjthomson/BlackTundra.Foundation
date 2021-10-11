@@ -103,9 +103,9 @@ namespace BlackTundra.Foundation.Collections {
             if (key.Length > byte.MaxValue) throw new ArgumentException($"{nameof(key)} length exceeded {byte.MaxValue}.");
             if (data == null) throw new ArgumentNullException(nameof(data));
             if (data.LongLength > int.MaxValue) throw new ArgumentException($"{nameof(data)} length exceeded {int.MaxValue}.");
-            _key = key;
             _hash = key.ToGUID();
-            this._data = data;
+            _key = key;
+            _data = data;
         }
 
         private KeystoreEntry(in int hash, in string key, in byte[] data) {
@@ -123,12 +123,12 @@ namespace BlackTundra.Foundation.Collections {
         public byte[] ToBytes() {
             int keySize = _key.Length;
             if (keySize > byte.MaxValue) throw new OutOfMemoryException($"{nameof(_key)} length exceeded {byte.MaxValue}.");
-            long dataSize = _data != null ? _data.LongLength : -1L;
+            int dataSize = _data != null ? _data.Length : 0;
             byte[] buffer = new byte[FixedToBytesSize + keySize + dataSize];
             // hash:
             byte[] temp = BitConverter.GetBytes(_hash);
-            Array.Copy(temp, 0, buffer, 0, temp.Length);
             int index = temp.Length;
+            Array.Copy(temp, 0, buffer, 0, index);
             // key length:
             buffer[index++] = (byte)keySize; // cast key length into byte
             // key value:
@@ -136,11 +136,11 @@ namespace BlackTundra.Foundation.Collections {
             Array.Copy(temp, 0, buffer, index, temp.Length);
             index += temp.Length;
             // data length:
-            temp = BitConverter.GetBytes(temp.Length);
+            temp = BitConverter.GetBytes(dataSize);
             Array.Copy(temp, 0, buffer, index, temp.Length);
             index += temp.Length;
             // data:
-            Array.Copy(_data, 0, buffer, index, dataSize);
+            if (dataSize > 0) Array.Copy(_data, 0, buffer, index, dataSize);
             return buffer;
         }
 
@@ -162,16 +162,18 @@ namespace BlackTundra.Foundation.Collections {
             int keyLength = bytes[endIndex++];
             // key value:
             string key = Encoding.ASCII.GetString(bytes, endIndex, keyLength);
-            endIndex += keyLength;
             if (key.ToGUID() != hash) throw new InvalidOperationException($"Hash mismatch for key \"{key}\" (expected: \"{key.ToGUID()}\", actual: \"{hash}\").");
+            endIndex += keyLength;
             // data length:
             int dataLength = BitConverter.ToInt32(bytes, endIndex);
             endIndex += sizeof(int);
             // data:
             byte[] data = new byte[dataLength];
-            Array.Copy(bytes, endIndex, data, 0, dataLength);
+            if (dataLength > 0) {
+                Array.Copy(bytes, endIndex, data, 0, dataLength);
+                endIndex += dataLength;
+            }
             // finalize:
-            endIndex += dataLength;
             return new KeystoreEntry(hash, key, data);
         }
 

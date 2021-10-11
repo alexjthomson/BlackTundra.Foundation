@@ -156,21 +156,21 @@ namespace BlackTundra.Foundation.Collections {
             if (entryCount == 0) return BitConverter.GetBytes((ushort)0); // there are no entries, return zero
             byte[][] staggeredOutputBytes = new byte[entryCount + 1][]; // create a staggered byte array to cache output results into
             byte[] temp = BitConverter.GetBytes((ushort)entryCount); // create a temporary byte array to store results in for processing
-            long totalBytes = temp.LongLength; // create a total byte counter
+            int totalBytes = temp.Length; // create a total byte counter
             staggeredOutputBytes[0] = temp; // add the number of entries into the byte buffer
-            for (int i = entryCount - 1; i > 0; i--) { // iterate each entry put into the keystore
+            for (int i = 0; i < entryCount;) { // iterate each entry put into the keystore
                 temp = buffer[i].ToBytes(); // get the bytes for this entry
-                totalBytes += temp.LongLength; // add to the total byte count
-                staggeredOutputBytes[i + 1] = temp; // store the bytes into the staggered byte buffer
+                totalBytes += temp.Length; // add to the total byte count
+                staggeredOutputBytes[++i] = temp; // store the bytes into the staggered byte buffer
             }
             byte[] outputBytes = new byte[totalBytes]; // create a new byte array for the output bytes
-            long index = totalBytes; // create an index to start inserting bytes into the output bytes buffer at
-            long tempLength; // temporary variable used to store the current length of the temp array
-            for (int i = entryCount; i >= 0; i--) { // iterate each entry in the staggered output buffer
+            int index = 0; // create an index to start inserting bytes into the output bytes buffer at
+            int tempLength; // temporary variable used to store the current length of the temp array
+            for (int i = 0; i <= entryCount; i++) { // iterate each entry in the staggered output buffer
                 temp = staggeredOutputBytes[i]; // get a reference to the current output array
-                tempLength = temp.LongLength;
-                index -= tempLength;
-                Array.Copy(temp, 0L, outputBytes, index, tempLength);
+                tempLength = temp.Length;
+                Array.Copy(temp, 0, outputBytes, index, tempLength);
+                index += tempLength;
             }
             return outputBytes; // return the output bytes
         }
@@ -208,7 +208,7 @@ namespace BlackTundra.Foundation.Collections {
 
         public int IndexOf(in string key) {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            int bufferCount = 0;
+            int bufferCount = buffer.Count;
             if (bufferCount == 0) return -1;
             int hash = key.ToGUID();
             KeystoreEntry entry;
