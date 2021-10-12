@@ -19,8 +19,18 @@ namespace BlackTundra.Foundation.Control {
         /// <summary>
         /// All devices.
         /// </summary>
-        All = Keyboard | Mouse | Gamepad,
+        All = KeyboardMouse | Gamepad/* | XR*/,
 
+        /// <summary>
+        /// Keyboard mouse pair.
+        /// </summary>
+        KeyboardMouse = Keyboard | Mouse,
+        /*
+        /// <summary>
+        /// Group of common XR devices such as headset and both right and left hand controllers.
+        /// </summary>
+        XR = XRHeadset | XRRightController | XRLeftController,
+        */
         /// <summary>
         /// Keyboard.
         /// </summary>
@@ -35,6 +45,21 @@ namespace BlackTundra.Foundation.Control {
         /// Gamepad such as an XboxOne controller or PS4 controller.
         /// </summary>
         Gamepad = 1u << 2,
+        /*
+        /// <summary>
+        /// XR headset such as Oculus Quest 2.
+        /// </summary>
+        XRHeadset = 1u << 3,
+        
+        /// <summary>
+        /// XR controller for the right hand.
+        /// </summary>
+        XRRightController = 1u << 4,
+
+        /// <summary>
+        /// XR controller for the left hand.
+        /// </summary>
+        XRLeftController = 1u << 5*/
 
     }
 

@@ -58,6 +58,7 @@ namespace BlackTundra.Foundation.Control {
         /// </summary>
         private static void OnUnpairedDeviceUsed(InputControl inputControl, InputEventPtr inputEventPointer) {
             InputDevice inputDevice = inputControl.device;
+            if (UnusedInputDeviceBuffer.IsFull) UnusedInputDeviceBuffer.Expand(1);
             UnusedInputDeviceBuffer.AddLast(inputDevice, true);
         }
 

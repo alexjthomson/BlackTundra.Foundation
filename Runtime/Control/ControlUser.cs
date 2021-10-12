@@ -208,7 +208,7 @@ namespace BlackTundra.Foundation.Control {
 #pragma warning restore IDE0051 // remove unread private members
             if (main == null) { // there is no main control device
 #if UNITY_STANDALONE || UNITY_WSA
-                main = CreateControlUser(ControlDevices.Keyboard | ControlDevices.Mouse, ControlDevices.Gamepad);
+                main = CreateControlUser(ControlDevices.KeyboardMouse, ControlDevices.Gamepad);
 #elif UNITY_PS4 || UNITY_XBOXONE
                 main = CreateControlUser(ControlDevices.Gamepad);
 #else
