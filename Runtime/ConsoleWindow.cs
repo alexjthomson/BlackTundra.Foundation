@@ -400,7 +400,7 @@ namespace BlackTundra.Foundation {
                 LogEntry echoEntry = null;
                 if (echo) echoEntry = Print($"<color=#{ConsoleColour.Green.hex}>></color> " + displayCommand);
                 try {
-                    if (!Console.Execute(input) && echoEntry != null) { // execute command
+                    if (!Console.Execute(this, input) && echoEntry != null) { // execute command
                         entryBuffer.Replace( // execution failed, change colour of echo message
                             echoEntry,
                             new LogEntry($"<color=#{ConsoleColour.Red.hex}>></color> " + displayCommand)

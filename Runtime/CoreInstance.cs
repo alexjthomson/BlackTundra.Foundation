@@ -4,6 +4,7 @@ namespace BlackTundra.Foundation {
     /// <see cref="MonoBehaviour"/> class responsible for initialising the <see cref="Core"/> static class.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(int.MinValue)]
     sealed class CoreInstance : MonoBehaviour {
 #pragma warning disable IDE0051 // remove unused private members
         private void Start() => Core.OnInstanceStart();

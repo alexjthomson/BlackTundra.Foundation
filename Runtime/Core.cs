@@ -34,6 +34,8 @@ using BlackTundra.Foundation.Control;
 using Object = UnityEngine.Object;
 using Colour = BlackTundra.Foundation.ConsoleColour;
 using System.Collections;
+using System.Linq;
+using BlackTundra.Foundation.Collections.Generic;
 
 #endregion
 
@@ -176,7 +178,7 @@ namespace BlackTundra.Foundation {
                 phase = CorePhase.Init_Stage1;
                 string separator = new string('-', 64);
                 Console.Empty(string.Concat(separator, ' ', DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), ' ', separator));
-                Console.Info("[Core] Init (1/3) STARTED.");
+                Console.Trace("[Core] Init (1/3) STARTED.");
 
                 #region bind play mode shutdown hook
 #if UNITY_EDITOR
@@ -299,7 +301,7 @@ namespace BlackTundra.Foundation {
 
                 UnityEventLogger.Initialise();
 
-                Console.Info("[Core] Init (1/3) COMPLETE.");
+                Console.Trace("[Core] Init (1/3) COMPLETE.");
                 Console.Flush();
             }
         }
@@ -319,7 +321,7 @@ namespace BlackTundra.Foundation {
                 phase = CorePhase.Init_Stage2;
                 #endregion
 
-                Console.Info("[Core] Init (2/3) STARTED.");
+                Console.Trace("[Core] Init (2/3) STARTED.");
 
                 #region update instance
                 if (instance == null) {
@@ -338,7 +340,55 @@ namespace BlackTundra.Foundation {
                 }
                 #endregion
 
-                Console.Info("[Core] Init (2/3) COMPLETE.");
+                #region call initialise methods
+
+                SortedList<MethodInfo> methods = ObjectUtility.GetDecoratedMethodsOrdered<CoreInitialiseAttribute>();
+                MethodInfo method;
+                for (int i = 0; i < methods.Count; i++) {
+                    method = methods[i];
+                    string signature = $"{method.DeclaringType.FullName}.{method.Name}";
+                    try {
+                        method.Invoke(null, null);
+                    } catch (Exception exception) {
+                        Quit(QuitReason.FatalCrash, string.Concat("Failed to invoke \"", signature, "\"."), exception, true);
+                        return;
+                    }
+                    Console.Info(string.Concat("[Core] Invoked \"", signature, "\"."));
+                }
+
+                #endregion
+
+                #region gather update methods
+
+                // find delegate signatures:
+                Type[] updateParameterTypes = ObjectUtility.GetDelegateParameterTypes<UpdateDelegate>();
+                Type[] updateDeltaTimeParameterTypes = ObjectUtility.GetDelegateParameterTypes<UpdateDeltaTimeDelegate>();
+
+                // iterate methods:
+                methods = ObjectUtility.GetDecoratedMethodsOrdered<CoreUpdateAttribute>();
+                List<UpdateDelegate> updateList = new List<UpdateDelegate>();
+                List<UpdateDeltaTimeDelegate> updateDeltaTimeList = new List<UpdateDeltaTimeDelegate>();
+                Type[] methodParameterTypes;
+                for (int i = 0; i < methods.Count; i++) {
+                    method = methods[i];
+                    methodParameterTypes = ObjectUtility.GetMethodParameterTypes(method);
+                    if (methodParameterTypes.ContentEquals(updateParameterTypes))
+                        updateList.Add((UpdateDelegate)Delegate.CreateDelegate(typeof(UpdateDelegate), method));
+                    else if (methodParameterTypes.ContentEquals(updateDeltaTimeParameterTypes))
+                        updateDeltaTimeList.Add((UpdateDeltaTimeDelegate)Delegate.CreateDelegate(typeof(UpdateDeltaTimeDelegate), method));
+                    else {
+                        Quit(QuitReason.FatalCrash, string.Concat("[Core] Failed to bind \"", method.DeclaringType.FullName, '.', method.Name, "\" to core update method."), null, true);
+                        continue;
+                    }
+                    Console.Info(string.Concat("[Core] Bound \"", method.DeclaringType.FullName, '.', method.Name, "\" -> \"Core.Update\"."));
+                }
+
+                updateCallbacks = updateList.ToArray();
+                updateDeltaTimeCallbacks = updateDeltaTimeList.ToArray();
+
+                #endregion
+
+                Console.Trace("[Core] Init (2/3) COMPLETE.");
                 Console.Flush();
             }
         }
@@ -359,57 +409,13 @@ namespace BlackTundra.Foundation {
                 phase = CorePhase.Init_Stage3;
                 #endregion
 
-                Console.Info("[Core] Init (3/3) STARTED.");
-
-                #region call initialise methods
-
-                IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CoreInitialiseAttribute>();
-                foreach (MethodInfo method in methods) {
-                    string signature = $"{method.DeclaringType.FullName}.{method.Name}";
-                    try {
-                        method.Invoke(null, null);
-                    } catch (Exception exception) {
-                        Quit(QuitReason.FatalCrash, string.Concat("Failed to invoke \"", signature, "\"."), exception, true);
-                        return;
-                    }
-                    Console.Info(string.Concat("[Core] Invoked \"", signature, "\"."));
-                }
-
-                #endregion
-
-                #region gather update methods
-
-                // find delegate signatures:
-                Type[] updateParameterTypes = ObjectUtility.GetDelegateParameterTypes<UpdateDelegate>();
-                Type[] updateDeltaTimeParameterTypes = ObjectUtility.GetDelegateParameterTypes<UpdateDeltaTimeDelegate>();
-
-                // iterate methods:
-                methods = ObjectUtility.GetDecoratedMethods<CoreUpdateAttribute>();
-                List<UpdateDelegate> updateList = new List<UpdateDelegate>();
-                List<UpdateDeltaTimeDelegate> updateDeltaTimeList = new List<UpdateDeltaTimeDelegate>();
-                Type[] methodParameterTypes;
-                foreach (MethodInfo method in methods) {
-                    methodParameterTypes = ObjectUtility.GetMethodParameterTypes(method);
-                    if (methodParameterTypes.ContentEquals(updateParameterTypes))
-                        updateList.Add((UpdateDelegate)Delegate.CreateDelegate(typeof(UpdateDelegate), method));
-                    else if (methodParameterTypes.ContentEquals(updateDeltaTimeParameterTypes))
-                        updateDeltaTimeList.Add((UpdateDeltaTimeDelegate)Delegate.CreateDelegate(typeof(UpdateDeltaTimeDelegate), method));
-                    else {
-                        Quit(QuitReason.FatalCrash, string.Concat("[Core] Failed to bind \"", method.DeclaringType.FullName, '.', method.Name, "\" to core update method."), null, true);
-                        continue;
-                    }
-                    Console.Info(string.Concat("[Core] Bound \"", method.DeclaringType.FullName, '.', method.Name, "\" -> \"Core.Update\"."));
-                }
-
-                updateCallbacks = updateList.ToArray();
-                updateDeltaTimeCallbacks = updateDeltaTimeList.ToArray();
-
-                #endregion
-
-                Console.Info("[Core] Init (3/3) COMPLETE.");
-                Console.Flush();
+                Console.Trace("[Core] Init (3/3) STARTED.");
 
                 phase = CorePhase.Running;
+
+                Console.Trace("[Core] Init (3/3) COMPLETE.");
+                Console.Flush();
+
                 Console.Info("[Core] Init COMPLETE .");
 
             }
@@ -430,8 +436,10 @@ namespace BlackTundra.Foundation {
                 else if (exception != null) Console.Error(shutdownMessage, exception);
                 else Console.Info(shutdownMessage);
                 #region invoke terminate methods
-                IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CoreTerminateAttribute>();
-                foreach (MethodInfo method in methods) {
+                SortedList<MethodInfo> methods = ObjectUtility.GetDecoratedMethodsOrdered<CoreTerminateAttribute>();
+                MethodInfo method;
+                for (int i = 0; i < methods.Count; i++) {
+                    method = methods[i];
                     try {
                         method.Invoke(null, null);
                     } catch (Exception e) {
@@ -692,7 +700,6 @@ namespace BlackTundra.Foundation {
             "\n\tcommands: Each argument should be an individual command you want a help message for."
         )]
         private static bool HelpCommand(CommandInfo info) {
-            ConsoleWindow console = Core.consoleWindow;
             int argumentCount = info.args.Count;
             if (argumentCount == 0) { // all commands
                 Console.Command[] commands = Console.GetCommands();
@@ -703,7 +710,7 @@ namespace BlackTundra.Foundation {
                     elements[1, r] = $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(commands[r].description)}</color>";
                     if (all) elements[2, r] = $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(commands[r].usage)}</color>";
                 }
-                console.PrintTable(elements);
+                info.context.PrintTable(elements);
             } else { // list of commands
                 List<string> rows = new List<string>(argumentCount);
                 for (int r = 0; r < argumentCount; r++) {
@@ -716,7 +723,7 @@ namespace BlackTundra.Foundation {
                     rows.Add($"<color=#{Colour.DarkGray.hex}>{ConsoleUtility.Escape(command.usage)}</color>");
                     if (r != argumentCount - 1) rows.Add("\n");
                 }
-                console.Print(rows.ToArray());
+                info.context.Print(rows.ToArray());
             }
 
             return true;
@@ -729,19 +736,18 @@ namespace BlackTundra.Foundation {
 
         [Command("history", "Prints the command history buffer to the console.")]
         private static bool HistoryCommand(CommandInfo info) {
-            ConsoleWindow console = Core.consoleWindow;
             if (info.args.Count > 0) {
-                console.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
+                info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
-            string[] history = console.CommandHistory; // get command history
+            string[] history = info.context.CommandHistory; // get command history
             string value; // temporary value used to store the current command
             for (int i = history.Length - 1; i >= 0; i--) { // iterate command history
                 value = history[i]; // get the current command
                 if (value == null) continue;
-                console.Print(console.DecorateCommand(value, new StringBuilder())); // print the command to the console
+                info.context.Print(info.context.DecorateCommand(value, new StringBuilder())); // print the command to the console
             }
-            if (info.HasFlag('c', "clear")) console.ClearCommandHistory(); // clear the command history
+            if (info.HasFlag('c', "clear")) info.context.ClearCommandHistory(); // clear the command history
             return true;
         }
 
@@ -751,7 +757,7 @@ namespace BlackTundra.Foundation {
 
         [Command("clear", "Clears the console.")]
         private static bool ClearCommand(CommandInfo info) {
-            Core.consoleWindow.Clear();
+            info.context.Clear();
             return true;
         }
 
@@ -768,7 +774,7 @@ namespace BlackTundra.Foundation {
                 stringBuilder.Append(' ');
                 stringBuilder.Append(ConsoleUtility.Escape(info.args[i]));
             }
-            Core.consoleWindow.Print(stringBuilder.ToString());
+            info.context.Print(stringBuilder.ToString());
             return true;
         }
 
@@ -778,12 +784,11 @@ namespace BlackTundra.Foundation {
 
         [Command("core", "Displays core and basic system information to the console.")]
         private static bool CoreCommand(CommandInfo info) {
-            ConsoleWindow console = Core.consoleWindow;
             if (info.args.Count > 0) {
-                console.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
+                info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
-            console.PrintTable(
+            info.context.PrintTable(
                 new string[,] {
                     { "<b>Core Configuration</b>", string.Empty },
                     { $"<color=#{Colour.Gray.hex}>Core Phase/State</color>", Core.phase.ToString() },
@@ -849,7 +854,7 @@ namespace BlackTundra.Foundation {
         [Command("quit", "Force quits the game.")]
         private static bool QuitCommand(CommandInfo info) {
             if (info.args.Count > 0) {
-                Core.consoleWindow.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
+                info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
             Core.Quit(QuitReason.UserConsole);
@@ -871,10 +876,9 @@ namespace BlackTundra.Foundation {
                 "\n\tThis value cannot be lower than 0.0 but has no maximum range; however, large timescales may cause performance issues."
         )]
         private static bool TimeCommand(CommandInfo info) {
-            ConsoleWindow console = Core.consoleWindow;
             int argumentCount = info.args.Count;
             if (argumentCount == 0) { // no arguments, display timing information
-                console.PrintTable(
+                info.context.PrintTable(
                     new string[,] {
                         { $"<color=#{Colour.Gray.hex}>Time</color>", Time.time.ToString() },
                         { $"<color=#{Colour.Gray.hex}>Unscaled Time</color>", Time.unscaledTime.ToString() },
@@ -893,34 +897,34 @@ namespace BlackTundra.Foundation {
                 switch (arg.ToLower()) {
                     case "set": {
                         if (argumentCount != 3) {
-                            console.Print("Usage: time set {property} {value}");
+                            info.context.Print("Usage: time set {property} {value}");
                             return false;
                         } else if (float.TryParse(info.args[2], out float value)) {
                             switch (info.args[1].ToLower()) {
                                 case "timescale": {
                                     if (value < 0.0f) {
-                                        console.Print("The timescale property cannot be less than zero.");
+                                        info.context.Print("The timescale property cannot be less than zero.");
                                         return false;
                                     }
-                                    console.Print($"Time Scale {Time.timeScale} -> {value}.");
+                                    info.context.Print($"Time Scale {Time.timeScale} -> {value}.");
                                     Time.timeScale = value;
                                     float fixedDeltaTime = value * Core.DefaultFixedDeltaTime;
-                                    console.Print($"Fixed Delta Time {Time.fixedDeltaTime} -> {fixedDeltaTime}.");
+                                    info.context.Print($"Fixed Delta Time {Time.fixedDeltaTime} -> {fixedDeltaTime}.");
                                     Time.fixedDeltaTime = fixedDeltaTime;
                                     return true;
                                 }
                                 default: {
-                                    console.Print(string.Concat("Invalid property: ", ConsoleUtility.Escape(info.args[1])));
+                                    info.context.Print(string.Concat("Invalid property: ", ConsoleUtility.Escape(info.args[1])));
                                     return false;
                                 }
                             }
                         } else {
-                            console.Print(string.Concat("Invalid value: ", ConsoleUtility.Escape(info.args[2])));
+                            info.context.Print(string.Concat("Invalid value: ", ConsoleUtility.Escape(info.args[2])));
                             return false;
                         }
                     }
                     default: {
-                        console.Print(ConsoleUtility.UnknownArgumentMessage(arg));
+                        info.context.Print(ConsoleUtility.UnknownArgumentMessage(arg));
                         return false;
                     }
                 }
@@ -951,11 +955,10 @@ namespace BlackTundra.Foundation {
                 "\n\tvalue: New value to assign to the configuration entry."
         )]
         private static bool ConfigCommand(CommandInfo info) {
-            ConsoleWindow console = Core.consoleWindow;
             int argumentCount = info.args.Count;
             if (argumentCount == 0) {
                 const string ConfigSearchPattern = "*" + FileSystem.ConfigExtension;
-                console.Print(FileSystem.GetFiles(ConfigSearchPattern)); // no arguments specified, list all config files
+                info.context.Print(FileSystem.GetFiles(ConfigSearchPattern)); // no arguments specified, list all config files
             } else { // a config file was specified
                 #region search for files
                 string customPattern = '*' + info.args[0]; // create a custom pattern for matching against the requested file
@@ -964,10 +967,10 @@ namespace BlackTundra.Foundation {
                 string[] files = FileSystem.GetFiles(customPattern);
                 #endregion
                 if (files.Length == 0) // multiple files found
-                    console.Print($"No configuration entry found for \"{ConsoleUtility.Escape(info.args[0])}\".");
+                    info.context.Print($"No configuration entry found for \"{ConsoleUtility.Escape(info.args[0])}\".");
                 else if (files.Length > 1) { // multiple files found
-                    console.Print($"Multiple configuration files found for \"{ConsoleUtility.Escape(info.args[0])}\":");
-                    console.Print(files);
+                    info.context.Print($"Multiple configuration files found for \"{ConsoleUtility.Escape(info.args[0])}\":");
+                    info.context.Print(files);
                 } else { // only one file found (this is what the user wants)
                     #region load config
                     FileSystemReference fsr = new FileSystemReference(files[0], false, false); // get file system reference to config file
@@ -984,15 +987,15 @@ namespace BlackTundra.Foundation {
                             elements[1, i] = $"<color=#{Colour.Gray.hex}>{entry.key}</color>";
                             elements[2, i] = ConsoleUtility.Escape(entry.value);
                         }
-                        console.Print(ConsoleUtility.Escape(fsr.AbsolutePath));
-                        console.PrintTable(elements);
+                        info.context.Print(ConsoleUtility.Escape(fsr.AbsolutePath));
+                        info.context.PrintTable(elements);
                         #endregion
                     } else { // an additional argument, this sepecifies an entry to target
                         string targetEntry = info.args[1]; // get the entry to edit
                         if (argumentCount == 2) { // no further arguments; therefore, display the value of the target entry
                             #region display target value
                             var entry = configuration[targetEntry];
-                            console.Print(entry != null
+                            info.context.Print(entry != null
                                 ? ConsoleUtility.Escape(entry.ToString())
                                 : $"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(info.args[0])}\"."
                             );
@@ -1010,10 +1013,10 @@ namespace BlackTundra.Foundation {
                             #region override target value
                             configuration[targetEntry] = finalValue;
                             FileSystem.UpdateConfiguration(fsr, configuration);
-                            console.Print(ConsoleUtility.Escape(configuration[targetEntry]));
+                            info.context.Print(ConsoleUtility.Escape(configuration[targetEntry]));
                             #endregion
                         } else {
-                            console.Print($"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(info.args[0])}\".");
+                            info.context.Print($"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(info.args[0])}\".");
                         }
                     }
                 }
@@ -1028,7 +1031,6 @@ namespace BlackTundra.Foundation {
 
         [Command("cdebug", "Prints the information about a command. This is used to test the command parsing system works correctly.")]
         private static bool CommandDebugCommand(CommandInfo info) {
-            ConsoleWindow console = Core.consoleWindow;
             List<string> table = new List<string>() {
                 $"<b>Command</b>¬{info.command.name}",
                 $"<color=#{Colour.Gray.hex}>Description</color>¬{info.command.description}",
@@ -1039,7 +1041,7 @@ namespace BlackTundra.Foundation {
             for (int i = 0; i < info.args.Count; i++) table.Add($"{i}¬{info.args[i]}");
             table.Add($"<b>Flags</b>¬{info.flags.Count}");
             for (int i = 0; i < info.flags.Count; i++) table.Add($"{i}¬{info.flags[i]}");
-            console.PrintTable(table.ToArray(), '¬');
+            info.context.PrintTable(table.ToArray(), '¬');
             return true;
         }
 
@@ -1050,9 +1052,8 @@ namespace BlackTundra.Foundation {
 
         [Command("validate", "Validates the current application state.")]
         private static bool ValidateCommand(CommandInfo info) {
-            ConsoleWindow console = Core.consoleWindow;
             if (info.args.Count > 0) {
-                console.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
+                info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
             Core.Validate();

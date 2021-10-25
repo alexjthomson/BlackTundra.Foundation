@@ -1,4 +1,6 @@
-﻿using System;
+﻿using BlackTundra.Foundation.Serialization;
+
+using System;
 using System.Runtime.InteropServices;
 
 using UnityEngine;

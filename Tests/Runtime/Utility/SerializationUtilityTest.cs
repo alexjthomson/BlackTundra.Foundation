@@ -1,6 +1,7 @@
 using NUnit.Framework;
 
 using BlackTundra.Foundation.Utility;
+using BlackTundra.Foundation.Serialization;
 
 using UnityEngine;
 
@@ -43,10 +44,10 @@ namespace BlackTundra.Foundation.Tests.Utility {
         }
 
         private void ValidateSerialization<T>(in T obj) {
-            byte[] bytes = ObjectUtility.SerializeToBytes(obj);
+            byte[] bytes = ObjectSerializer.SerializeToBytes(obj);
             Assert.NotNull(bytes);
             Assert.IsNotEmpty(bytes, "Empty serialized bytes.");
-            T newObj = ObjectUtility.ToObject<T>(bytes);
+            T newObj = ObjectSerializer.ToObject<T>(bytes);
             Assert.AreEqual(obj, newObj, "New object is not equal to original.");
         }
 

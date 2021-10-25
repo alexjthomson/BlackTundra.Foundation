@@ -1,6 +1,6 @@
 using System;
 
-namespace BlackTundra.Foundation.Utility {
+namespace BlackTundra.Foundation.Serialization {
 
     /// <summary>
     /// Marks a type as a serializable implementation of another type.

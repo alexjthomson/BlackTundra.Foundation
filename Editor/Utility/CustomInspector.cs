@@ -52,7 +52,7 @@ namespace BlackTundra.Foundation.Editor.Utility {
         /// </summary>
         public void MarkAsDirty() => modified = true;
 
-        protected static void MarkAsDirty(in Object target, in SerializedObject serializedObject = null) {
+        public static void MarkAsDirty(in Object target, in SerializedObject serializedObject = null) {
             Undo.FlushUndoRecordObjects();
             serializedObject?.ApplyModifiedProperties();
             EditorUtility.SetDirty(target);
@@ -62,7 +62,7 @@ namespace BlackTundra.Foundation.Editor.Utility {
 
         #region IsPrefab
 
-        protected static bool IsPrefab(in GameObject gameObject) {
+        public static bool IsPrefab(in GameObject gameObject) {
             return gameObject != null
                 && PrefabUtility.GetPrefabAssetType(gameObject) == PrefabAssetType.Regular
                 && PrefabUtility.GetPrefabInstanceHandle(gameObject) == null

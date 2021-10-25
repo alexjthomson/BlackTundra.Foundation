@@ -34,6 +34,11 @@ namespace BlackTundra.Foundation {
         #region variable
 
         /// <summary>
+        /// <see cref="ConsoleWindow"/> that the <see cref="command"/> was created from.
+        /// </summary>
+        public readonly ConsoleWindow context;
+
+        /// <summary>
         /// Command that has been called.
         /// </summary>
         public readonly Command command;
@@ -59,7 +64,8 @@ namespace BlackTundra.Foundation {
 
         #region constructor
 
-        internal CommandInfo(in Command command, in string[] args, in string[] flags, in bool independent) {
+        internal CommandInfo(in ConsoleWindow context, in Command command, in string[] args, in string[] flags, in bool independent) {
+            this.context = context;
             this.command = command;
             this.args = Array.AsReadOnly(args);
             this.flags = Array.AsReadOnly(flags);
@@ -72,7 +78,7 @@ namespace BlackTundra.Foundation {
 
         #region ProcessCommand
 
-        internal static CommandInfo[] ProcessCommand(string command) {
+        internal static CommandInfo[] ProcessCommand(in ConsoleWindow context, string command) {
 
             command = command.Trim();
             int commandLength = command.Length;
@@ -166,7 +172,7 @@ namespace BlackTundra.Foundation {
                                 argumentList.RemoveAt(j); // remove the argument from the argument list
                             }
                         }
-                        commandInfoList.Add(new CommandInfo(cmd, argumentList.ToArray(), flagList.ToArray(), independent));
+                        commandInfoList.Add(new CommandInfo(context, cmd, argumentList.ToArray(), flagList.ToArray(), independent));
                     }
                     commandName = null;
                     argumentList.Clear();
@@ -195,7 +201,7 @@ namespace BlackTundra.Foundation {
             }
         }
 
-        internal static bool Execute(in string command) => Execute(ProcessCommand(command));
+        internal static bool Execute(in ConsoleWindow context, in string command) => Execute(ProcessCommand(context, command));
 
         /// <returns>Success state of the last executed command.</returns>
         private static bool Execute(in CommandInfo[] commandInfo) {

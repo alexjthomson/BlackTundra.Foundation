@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 using UnityEngine;
 
-namespace BlackTundra.Foundation.Utility {
+namespace BlackTundra.Foundation.Serialization {
 
     #region SerializableVector2
 
@@ -288,6 +289,43 @@ namespace BlackTundra.Foundation.Utility {
 
         public static explicit operator Quaternion(in SerializableQuaternion q) => new Quaternion(q.x, q.y, q.z, q.w);
         public static explicit operator Vector4(in SerializableQuaternion q) => new Vector4(q.x, q.y, q.z, q.w);
+
+        #endregion
+
+    }
+
+    #endregion
+
+    #region SerializableDictionary
+
+    [Serializable]
+    public sealed class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver {
+
+        #region variable
+
+        [SerializeField]
+        private List<TKey> keys = new List<TKey>();
+
+        [SerializeField]
+        private List<TValue> values = new List<TValue>();
+
+        #endregion
+
+        #region logic
+
+        public void OnBeforeSerialize() {
+            keys.Clear(); values.Clear();
+            foreach (KeyValuePair<TKey, TValue> pair in this) {
+                keys.Add(pair.Key);
+                values.Add(pair.Value);
+            }
+        }
+
+        public void OnAfterDeserialize() {
+            Clear();
+            if (keys.Count != values.Count) throw new Exception(string.Format($"Key value count mismatch (keys: {keys.Count}, values: {values.Count})."));
+            for (int i = 0; i < keys.Count; i++) Add(keys[i], values[i]);
+        }
 
         #endregion
 

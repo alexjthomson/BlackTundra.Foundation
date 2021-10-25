@@ -1,6 +1,7 @@
 ﻿//#define CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 using BlackTundra.Foundation.Collections.Generic;
@@ -295,6 +296,71 @@ namespace BlackTundra.Foundation.Collections {
 
         #endregion
 
+        #region Get
+
+        /// <summary>
+        /// Gets the entry associated with the <paramref name="key"/> and casts to type <typeparamref name="T"/>.
+        /// </summary>
+        public object Get<T>(in string key) {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            string entry = this[key];
+            if (entry == null) throw new KeyNotFoundException(key);
+            TypeCode type = Type.GetTypeCode(typeof(T));
+            return type switch {
+                TypeCode.String => entry,
+                TypeCode.Int32 => ToInt(entry, out int i) ? i : 0,
+                TypeCode.Boolean => ToBool(entry, out bool b) ? b : false,
+                TypeCode.Single => ToFloat(entry, out float f) ? f : 0.0f,
+                _ => throw new NotSupportedException(type.ToString()),
+            };
+        }
+
+        #endregion
+
+        #region GetString
+
+        public string GetString(in string key) {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            string entry = this[key];
+            if (entry == null) throw new KeyNotFoundException(key);
+            return entry;
+        }
+
+        #endregion
+
+        #region GetInt
+
+        public int GetInt(in string key) {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            string entry = this[key];
+            if (entry == null) throw new KeyNotFoundException(key);
+            return ToInt(entry, out int value) ? value : 0;
+        }
+
+        #endregion
+
+        #region GetBool
+
+        public bool GetBool(in string key) {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            string entry = this[key];
+            if (entry == null) throw new KeyNotFoundException(key);
+            return ToBool(entry, out bool value) ? value : false;
+        }
+
+        #endregion
+
+        #region GetFloat
+
+        public float GetFloat(in string key) {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            string entry = this[key];
+            if (entry == null) throw new KeyNotFoundException(key);
+            return ToFloat(entry, out float value) ? value : 0.0f;
+        }
+
+        #endregion
+
         #region ForceGet
 
         /// <summary>
@@ -311,104 +377,58 @@ namespace BlackTundra.Foundation.Collections {
         /// <param name="key">Key associated with the value trying to be accessed.</param>
         /// <param name="fallback">Fallback value to return if no valid value is found in the <see cref="Configuration"/>.</param>
         public string ForceGet(in string key, in string fallback) {
-
             if (key == null) throw new ArgumentNullException(nameof(key));
-
             string entry = this[key];
             if (entry == null) {
                 AddEntry(key, fallback, true);
                 return fallback;
             }
-
             return entry;
-
         }
 
         /// <inheritdoc cref="ForceGet(in string, in string)"/>
         public int ForceGet(in string key, in int fallback) {
-
             if (key == null) throw new ArgumentNullException(nameof(key));
-
             string entry = this[key];
             if (entry == null) {
                 AddEntry(key, fallback.ToString(), true);
                 return fallback;
             }
-
-            try {
-                return int.Parse(entry);
-            }
-#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
-            catch (FormatException exception) {
-                throw new ConfigurationSyntaxException(
-                    $"Failed to parse \"{entry}\" to an int.",
-                    -1, exception
-                );
-            }
-#else
-            catch (FormatException) {
+            if (ToInt(entry, out int value)) return value;
+            else {
                 this[key] = fallback.ToString();
                 return fallback;
             }
-#endif
         }
 
         /// <inheritdoc cref="ForceGet(in string, in string)"/>
         public bool ForceGet(in string key, in bool fallback) {
-
             if (key == null) throw new ArgumentNullException(nameof(key));
-
             string entry = this[key];
             if (entry == null) {
                 AddEntry(key, fallback ? "true" : "false", true);
                 return fallback;
             }
-
-            entry = entry.ToLower();
-            if (entry.Equals("true")) return true;
-            else if (entry.Equals("false")) return false;
+            if (ToBool(entry, out bool value)) return value;
             else {
-#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
-                throw new ConfigurationSyntaxException(
-                    $"Failed to parse \"{entry}\" to a bool.",
-                    -1
-                );
-#else
                 this[key] = fallback ? "true" : "false";
                 return fallback;
-#endif
             }
-
         }
 
         /// <inheritdoc cref="ForceGet(in string, in string)"/>
         public float ForceGet(in string key, in float fallback) {
-
             if (key == null) throw new ArgumentNullException(nameof(key));
-
             string entry = this[key];
             if (entry == null) {
                 AddEntry(key, fallback.ToString(), true);
                 return fallback;
             }
-
-            try {
-                return float.Parse(entry);
-            }
-#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
-            catch (FormatException exception) {
-                throw new ConfigurationSyntaxException(
-                    $"Failed to parse \"{entry}\" to float.",
-                    -1, exception
-                );
-            }
-#else
-            catch (FormatException) {
+            if (ToFloat(entry, out float value)) return value;
+            else {
                 this[key] = fallback.ToString();
                 return fallback;
             }
-#endif
-
         }
 
         #endregion
@@ -416,10 +436,8 @@ namespace BlackTundra.Foundation.Collections {
         #region AddEntry
 
         private void AddEntry(in string key, in string value, in bool dirty) {
-
             if (buffer.Count == buffer.Capacity) buffer.Expand(expandSize); // expand the buffer
             buffer.AddLast(new ConfigurationEntry(key, value, dirty)); // add the new configuration entry to the buffer
-
         }
 
         #endregion
@@ -430,6 +448,81 @@ namespace BlackTundra.Foundation.Collections {
         /// Clears the configuration of all entries.
         /// </summary>
         public void Clear() => buffer.Clear();
+
+        #endregion
+
+        #region ToInt
+
+        private bool ToInt(in string entry, out int value) {
+            if (entry == null) throw new ArgumentNullException(nameof(entry));
+            try {
+                value = int.Parse(entry);
+                return true;
+            }
+#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
+            catch (FormatException exception) {
+                throw new ConfigurationSyntaxException(
+                    $"Failed to parse \"{entry}\" to an int.",
+                    -1, exception
+                );
+            }
+#else
+            catch (FormatException) {
+                value = 0;
+                return false;
+            }
+#endif
+        }
+
+        #endregion
+
+        #region ToBool
+
+        private bool ToBool(in string entry, out bool value) {
+            if (entry == null) throw new ArgumentNullException(nameof(entry));
+            if (entry.Equals("true", StringComparison.OrdinalIgnoreCase)) {
+                value = true;
+                return true;
+            }
+            if (entry.Equals("false", StringComparison.OrdinalIgnoreCase)) {
+                value = false;
+                return true;
+            }
+#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
+            throw new ConfigurationSyntaxException(
+                $"Failed to parse \"{value}\" to a bool.",
+                -1
+            );
+#else
+            value = false;
+            return false;
+#endif
+        }
+
+        #endregion
+
+        #region ToFloat
+
+        private bool ToFloat(in string entry, out float value) {
+            if (entry == null) throw new ArgumentNullException(nameof(entry));
+            try {
+                value = float.Parse(entry);
+                return true;
+            }
+#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
+            catch (FormatException exception) {
+                throw new ConfigurationSyntaxException(
+                    $"Failed to parse \"{entry}\" to float.",
+                    -1, exception
+                );
+            }
+#else
+            catch (FormatException) {
+                value = 0.0f;
+                return false;
+            }
+#endif
+        }
 
         #endregion
 

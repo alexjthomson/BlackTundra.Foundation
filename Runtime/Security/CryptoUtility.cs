@@ -84,7 +84,9 @@ namespace BlackTundra.Foundation.Security {
         public static byte[] Encrypt(in byte[] content, in byte[] iv, in byte[] key) {
             if (content == null) throw new ArgumentNullException(nameof(content));
             if (iv == null) throw new ArgumentNullException(nameof(iv));
+            if (iv.Length != AesIvBlockSize) throw new ArgumentException(nameof(iv));
             if (key == null) throw new ArgumentNullException(nameof(key));
+            if (key.Length != AesKeyBlockSize) throw new ArgumentException(nameof(key));
             using var cryptoProvider = new AesCryptoServiceProvider();
             using var cryptoTransform = cryptoProvider.CreateEncryptor(key, iv);
             using var memoryStream = new MemoryStream();
@@ -141,13 +143,13 @@ namespace BlackTundra.Foundation.Security {
 
         #region Obfuscate
 
-        public static byte[] Obfuscate(in byte[] content) => Encrypt(content, AesStandardKey, AesStandardIv);
+        public static byte[] Obfuscate(in byte[] content) => Encrypt(content, AesStandardIv, AesStandardKey);
 
         #endregion
 
         #region Deobfuscate
 
-        public static byte[] Deobfuscate(in byte[] content) => Decrypt(content, AesStandardKey, AesStandardIv);
+        public static byte[] Deobfuscate(in byte[] content) => Decrypt(content, AesStandardIv, AesStandardKey);
 
         #endregion
 

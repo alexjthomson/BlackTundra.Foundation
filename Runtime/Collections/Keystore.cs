@@ -1,4 +1,5 @@
 using BlackTundra.Foundation.Collections.Generic;
+using BlackTundra.Foundation.Serialization;
 using BlackTundra.Foundation.Utility;
 
 using System;
@@ -112,7 +113,7 @@ namespace BlackTundra.Foundation.Collections {
 
         public void Set<T>(in string key, in T value) {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            Add(key, value != null ? ObjectUtility.SerializeToBytes(value, true) : new byte[0]);
+            Add(key, value != null ? ObjectSerializer.SerializeToBytes(value, true) : new byte[0]);
         }
 
         #endregion
@@ -125,7 +126,7 @@ namespace BlackTundra.Foundation.Collections {
             if (index == -1) return default;
             byte[] data = buffer[index]._data;
             if (data.Length == 0) return default;
-            return ObjectUtility.ToObject<T>(buffer[index]._data);
+            return ObjectSerializer.ToObject<T>(buffer[index]._data);
         }
 
         #endregion
@@ -137,13 +138,13 @@ namespace BlackTundra.Foundation.Collections {
             int index = IndexOf(key);
             byte[] data;
             if (index == -1) { // no entry found
-                data = defaultValue != null ? ObjectUtility.SerializeToBytes(defaultValue, true) : null;
+                data = defaultValue != null ? ObjectSerializer.SerializeToBytes(defaultValue, true) : null;
                 AddLast(new KeystoreEntry(key, data));
                 return defaultValue;
             } else { // entry found
                 data = buffer[index]._data;
                 if (data.Length == 0) return default; // null/default value
-                return ObjectUtility.ToObject<T>(data); // return deserialized value
+                return ObjectSerializer.ToObject<T>(data); // return deserialized value
             }
         }
 

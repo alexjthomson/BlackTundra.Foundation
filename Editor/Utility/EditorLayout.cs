@@ -134,17 +134,20 @@ namespace BlackTundra.Foundation.Editor.Utility {
 
         #region TextAreaField
 
-        public static string TextAreaField(in GUIContent content, in string value) {
-
+        public static string TextAreaField(in string content, in string value) {
             EditorGUILayout.BeginVertical();
-
             EditorGUILayout.LabelField(content, EditorStyles.boldLabel);
             string temp = EditorGUILayout.TextArea(value);
-
             EditorGUILayout.EndVertical();
-
             return temp;
+        }
 
+        public static string TextAreaField(in GUIContent content, in string value) {
+            EditorGUILayout.BeginVertical();
+            EditorGUILayout.LabelField(content, EditorStyles.boldLabel);
+            string temp = EditorGUILayout.TextArea(value);
+            EditorGUILayout.EndVertical();
+            return temp;
         }
 
         #endregion
@@ -619,6 +622,8 @@ namespace BlackTundra.Foundation.Editor.Utility {
             return new Vector2(x, y);
         }
 
+        public static Vector2 Vector2Field(in string content, in Vector2 value) => EditorGUILayout.Vector2Field(content, value);
+
         public static Vector2 Vector2Field(in GUIContent content, in Vector2 value) => EditorGUILayout.Vector2Field(content, value);
 
         #endregion
@@ -659,7 +664,55 @@ namespace BlackTundra.Foundation.Editor.Utility {
             return new Vector4(x, y, z, w);
         }
 
+        public static Vector4 Vector4Field(in string content, in Vector4 value) => EditorGUILayout.Vector4Field(content, value);
+
         public static Vector4 Vector4Field(in GUIContent content, in Vector4 value) => EditorGUILayout.Vector4Field(content, value);
+
+        #endregion
+
+        #region Vector2IntField
+
+        public static Vector2Int Vector2IntField(in Vector2Int value, params GUILayoutOption[] options) {
+            EditorGUILayout.BeginHorizontal(options);
+            EditorGUILayout.LabelField("x", GUILayout.Width(8.0f));
+            int x = EditorGUILayout.IntField(value.x, GUILayout.Width(48.0f));
+            EditorGUILayout.LabelField("y", GUILayout.Width(8.0f));
+            int y = EditorGUILayout.IntField(value.y, GUILayout.Width(48.0f));
+            EditorGUILayout.EndHorizontal();
+            return new Vector2Int(x, y);
+        }
+
+        public static Vector2Int Vector2IntField(in string content, in Vector2Int value) => EditorGUILayout.Vector2IntField(content, value);
+
+        public static Vector2Int Vector2IntField(in string content, in int x, in int y) => EditorGUILayout.Vector2IntField(content, new Vector2Int(x, y));
+
+        public static Vector2Int Vector2IntField(in GUIContent content, in Vector2Int value) => EditorGUILayout.Vector2IntField(content, value);
+
+        public static Vector2Int Vector2IntField(in GUIContent content, in int x, in int y) => EditorGUILayout.Vector2IntField(content, new Vector2Int(x, y));
+
+        #endregion
+
+        #region Vector3IntField
+
+        public static Vector3Int Vector3IntField(in Vector3Int value, params GUILayoutOption[] options) {
+            EditorGUILayout.BeginHorizontal(options);
+            EditorGUILayout.LabelField("x", GUILayout.Width(8.0f));
+            int x = EditorGUILayout.IntField(value.x, GUILayout.Width(48.0f));
+            EditorGUILayout.LabelField("y", GUILayout.Width(8.0f));
+            int y = EditorGUILayout.IntField(value.y, GUILayout.Width(48.0f));
+            EditorGUILayout.LabelField("z", GUILayout.Width(8.0f));
+            int z = EditorGUILayout.IntField(value.z, GUILayout.Width(48.0f));
+            EditorGUILayout.EndHorizontal();
+            return new Vector3Int(x, y, z);
+        }
+
+        public static Vector3Int Vector3IntField(in string content, in Vector3Int value) => EditorGUILayout.Vector3IntField(content, value);
+
+        public static Vector3Int Vector3IntField(in string content, in int x, int y, int z) => EditorGUILayout.Vector3IntField(content, new Vector3Int(x, y, z));
+
+        public static Vector3Int Vector3IntField(in GUIContent content, in Vector3Int value) => EditorGUILayout.Vector3IntField(content, value);
+
+        public static Vector3Int Vector3IntField(in GUIContent content, in int x, int y, int z) => EditorGUILayout.Vector3IntField(content, new Vector3Int(x, y, z));
 
         #endregion
 
@@ -682,15 +735,13 @@ namespace BlackTundra.Foundation.Editor.Utility {
 
         #region UpButton
 
-        public static bool UpButton() => GUILayout.Button("\u25b2", XButtonStyle);
-        public static bool UpButton(in float height) => GUILayout.Button("\u25b2", XButtonStyle, GUILayout.Height(height));
+        public static bool UpButton(in float width = 20.0f, in float height = 18.0f) => GUILayout.Button("\u25b2", XButtonStyle, GUILayout.Width(width), GUILayout.Height(height));
 
         #endregion
 
         #region DownButton
 
-        public static bool DownButton() => GUILayout.Button("\u25bc", XButtonStyle);
-        public static bool DownButton(in float height) => GUILayout.Button("\u25bc", XButtonStyle, GUILayout.Height(height));
+        public static bool DownButton(in float width = 20.0f, in float height = 18.0f) => GUILayout.Button("\u25bc", XButtonStyle, GUILayout.Width(width), GUILayout.Height(height));
 
         #endregion
 
