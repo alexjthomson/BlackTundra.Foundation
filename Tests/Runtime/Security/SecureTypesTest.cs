@@ -2,7 +2,7 @@ using BlackTundra.Foundation.Security;
 
 using NUnit.Framework;
 
-namespace BlackTundra.Foundation.Tests.Security {
+namespace BlackTundra.Foundation.RuntimeTests.Security {
 
     public sealed class SecureTypesTest {
 

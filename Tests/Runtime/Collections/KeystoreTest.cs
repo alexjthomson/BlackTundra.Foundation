@@ -2,7 +2,7 @@ using BlackTundra.Foundation.Collections;
 
 using NUnit.Framework;
 
-namespace BlackTundra.Foundation.Tests.Collections {
+namespace BlackTundra.Foundation.RuntimeTests.Collections {
 
     public sealed class KeystoreTest {
 

@@ -5,7 +5,7 @@ using BlackTundra.Foundation.Serialization;
 
 using UnityEngine;
 
-namespace BlackTundra.Foundation.Tests.Utility {
+namespace BlackTundra.Foundation.RuntimeTests.Utility {
 
     public sealed class SerializationUtilityTest {
 
