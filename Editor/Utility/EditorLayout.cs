@@ -42,7 +42,7 @@ namespace BlackTundra.Foundation.Editor.Utility {
 
         #region property
 
-        private static GUIStyle FoldoutStyle {
+        internal static GUIStyle FoldoutStyle {
             get {
                 if (foldoutStyle == null) {
                     foldoutStyle = new GUIStyle(EditorStyles.foldout) {
@@ -53,7 +53,7 @@ namespace BlackTundra.Foundation.Editor.Utility {
             }
         }
 
-        private static GUIStyle XButtonStyle {
+        internal static GUIStyle XButtonStyle {
             get {
                 if (xButtonStyle == null) {
                     xButtonStyle = new GUIStyle(GUI.skin.button) {

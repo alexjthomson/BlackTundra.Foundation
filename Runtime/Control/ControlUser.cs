@@ -212,7 +212,8 @@ namespace BlackTundra.Foundation.Control {
 #elif UNITY_PS4 || UNITY_XBOXONE
                 main = CreateControlUser(ControlDevices.Gamepad);
 #else
-                #error Unknown platform
+                main = CreateControlUser(ControlDevices.None, ControlDevices.All);
+                //#error Unknown platform
 #endif
                 if (main == null) Debug.LogError("Failed to create main ControlUser: device requirements not met.");
             }

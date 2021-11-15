@@ -5,7 +5,7 @@ using UnityEngine;
 namespace BlackTundra.Foundation {
 
 #if UNITY_EDITOR
-    [CreateAssetMenu(fileName = "ConsoleWindowSettings", menuName = "Settings/Console/Settings", order = -1)]
+    [CreateAssetMenu(menuName = "Configuration/Console/Window Settings", fileName = "ConsoleWindowSettings", order = -1)]
 #endif
     [Serializable]
     public sealed class ConsoleWindowSettings : ScriptableObject {

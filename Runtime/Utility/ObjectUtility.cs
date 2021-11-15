@@ -184,9 +184,9 @@ namespace BlackTundra.Foundation.Utility {
 
         #region GetDecoratedMethodsOrdered
 
-        public static SortedList<MethodInfo> GetDecoratedMethodsOrdered<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : OrderedAttribute {
+        public static OrderedList<int, MethodInfo> GetDecoratedMethodsOrdered<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : OrderedAttribute {
             var methods = types.Where(x => x.IsClass).SelectMany(x => x.GetMethods(bindingFlags));
-            SortedList<MethodInfo> list = new SortedList<MethodInfo>();
+            OrderedList<int, MethodInfo> list = new OrderedList<int, MethodInfo>();
             IEnumerable<T> attributes;
             foreach (MethodInfo info in methods) {
                 attributes = info.GetCustomAttributes<T>();

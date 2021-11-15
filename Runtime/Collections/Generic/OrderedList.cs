@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace BlackTundra.Foundation.Collections.Generic {
@@ -5,7 +6,7 @@ namespace BlackTundra.Foundation.Collections.Generic {
     /// <summary>
     /// An extension of the <see cref="List{T}"/> collection that allows elements to be sorted by an <see cref="int"/>.
     /// </summary>
-    public sealed class SortedList<T> {
+    public sealed class OrderedList<TKey, TValue> where TKey : IComparable {
 
         #region nested
 
@@ -13,9 +14,9 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// Associates an order to a value.
         /// </summary>
         public struct SortedListEntry {
-            public readonly int order;
-            public readonly T value;
-            internal SortedListEntry(in int order, in T value) {
+            public readonly TKey order;
+            public readonly TValue value;
+            internal SortedListEntry(in TKey order, in TValue value) {
                 this.order = order;
                 this.value = value;
             }
@@ -36,17 +37,19 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
         public int Count => values.Count;
 
-        public T this[in int index] => values[index].value;
+        public TValue this[in int index] => values[index].value;
 
         #endregion
 
         #region constructor
 
-        public SortedList() {
+        public OrderedList() {
             values = new List<SortedListEntry>();
         }
 
         #endregion
+
+        #region logic
 
         #region Add
 
@@ -54,15 +57,26 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// Adds an element into the <see cref="SortedList{T}"/>.
         /// </summary>
         /// <param name="order">Value used to sort/order the <paramref name="value"/> in the <see cref="SortedList{T}"/></param>
-        public void Add(in int order, in T value) {
+        public void Add(in TKey order, in TValue value) {
             for (int i = values.Count - 1; i >= 0; i--) {
-                if (order < values[i].order) {
+                if (order.CompareTo(values[i].order) <= 0) {
                     values.Insert(i, new SortedListEntry(order, value));
                     return;
                 }
             }
             values.Add(new SortedListEntry(order, value));
         }
+
+        #endregion
+
+        #region GetWeightAtIndex
+
+        public TKey GetWeightAtIndex(in int index) {
+            if (index < 0 || index >= values.Count) throw new ArgumentOutOfRangeException(nameof(index));
+            return values[index].order;
+        }
+
+        #endregion
 
         #endregion
 

@@ -642,6 +642,144 @@ namespace BlackTundra.Foundation.Utility {
 
     [Serializable]
     [StructLayout(LayoutKind.Explicit, Size = 8, Pack = 1)]
+    public struct NormalDistribution {
+
+        #region variable
+
+        /// <summary>
+        /// Mean value of the <see cref="NormalDistribution"/>.
+        /// </summary>
+        [SerializeField]
+        [FieldOffset(0)]
+        public float mean;
+
+        /// <summary>
+        /// How far from the <see cref="mean"/> one standard deviation is.
+        /// </summary>
+        /// <remarks>
+        /// This must be a non-zero positive number.
+        /// </remarks>
+        [SerializeField]
+        [FieldOffset(4)]
+        public float standardDeviation;
+
+        #endregion
+
+        #region constructor
+
+        public NormalDistribution(in float mean, in float standardDeviation) {
+            if (standardDeviation <= 0.0f) throw new ArgumentOutOfRangeException(nameof(standardDeviation));
+            this.mean = mean;
+            this.standardDeviation = standardDeviation;
+        }
+
+        #endregion
+
+        #region logic
+
+        #region PickRandom
+
+        /// <summary>
+        /// Picks a random value from this <see cref="NormalDistribution"/>.
+        /// </summary>
+        public float PickRandom() => BoxMullerTransform(UnityRandom.Range(0.0f, 1.0f), UnityRandom.Range(0.0f, 1.0f));
+
+        #endregion
+
+        #region BoxMullerTransform
+
+        /// <summary>
+        /// Takes two uniform <c>0.0f</c> to <c>1.0f</c> random numbers and produces a value from this <see cref="NormalDistribution"/> using a Box-Muller transform.
+        /// </summary>
+        /// <param name="u0">Uniform <c>0.0f</c> - <c>1.0f</c> random number.</param>
+        /// <param name="u1">Uniform <c>0.0f</c> - <c>1.0f</c> random number.</param>
+        /// <returns>Normally distributed value.</returns>
+        private float BoxMullerTransform(in float u0, in float u1) {
+            float standardNormal = Mathf.Sqrt(-2.0f * Mathf.Log(u0)) * Mathf.Sin(2.0f * Mathf.PI * u1);
+            return mean + (standardDeviation * standardNormal);
+        }
+
+        #endregion
+
+        #region ProbabilityBelow
+
+        public float ProbabilityBelow(in float value) => throw new NotImplementedException();
+
+        #endregion
+
+        #endregion
+
+    }
+
+    [Serializable]
+    [StructLayout(LayoutKind.Explicit, Size = 16, Pack = 1)]
+    public struct ClampedNormalDistribution {
+
+        #region variable
+
+        /// <summary>
+        /// <see cref="NormalDistribution"/>.
+        /// </summary>
+        [SerializeField]
+        [FieldOffset(0)]
+        public NormalDistribution distribution;
+
+        /// <summary>
+        /// Lower clamp.
+        /// </summary>
+        [SerializeField]
+        [FieldOffset(8)]
+        public float lowerClamp;
+
+        /// <summary>
+        /// Upper clamp.
+        /// </summary>
+        [SerializeField]
+        [FieldOffset(12)]
+        public float upperClamp;
+
+        #endregion
+
+        #region constructor
+
+        public ClampedNormalDistribution(in NormalDistribution distribution, in float lowerClamp, in float upperClamp) {
+            this.distribution = distribution;
+            if (lowerClamp < upperClamp) {
+                this.lowerClamp = lowerClamp;
+                this.upperClamp = upperClamp;
+            } else {
+                this.lowerClamp = upperClamp;
+                this.upperClamp = lowerClamp;
+            }
+        }
+
+        public ClampedNormalDistribution(in float mean, in float standardDeviation, in float lowerClamp, in float upperClamp) {
+            distribution = new NormalDistribution(mean, standardDeviation);
+            if (lowerClamp < upperClamp) {
+                this.lowerClamp = lowerClamp;
+                this.upperClamp = upperClamp;
+            } else {
+                this.lowerClamp = upperClamp;
+                this.upperClamp = lowerClamp;
+            }
+        }
+
+        #endregion
+
+        #region logic
+
+        #region PickRandom
+
+        public float PickRandom() => Mathf.Clamp(distribution.PickRandom(), lowerClamp, upperClamp);
+
+        #endregion
+
+        #endregion
+
+    }
+
+    [Serializable]
+    [StructLayout(LayoutKind.Explicit, Size = 8, Pack = 1)]
     public struct SmoothFloat : IEquatable<SmoothFloat>, IEquatable<float> {
 
         #region variable

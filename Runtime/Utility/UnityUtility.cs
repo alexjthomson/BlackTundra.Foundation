@@ -205,6 +205,40 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
+        #region ToTexture2D
+
+        /// <summary>
+        /// Converts a <see cref="RenderTexture"/> to a <see cref="Texture2D"/>.
+        /// </summary>
+        public static Texture2D ToTexture2D(this RenderTexture renderTexture, in TextureFormat format = TextureFormat.RGB24) {
+            Texture2D texture = new Texture2D(renderTexture.width, renderTexture.height, format, renderTexture.mipmapCount, true);
+            RenderTexture activeRenderTexture = RenderTexture.active;
+            RenderTexture.active = renderTexture;
+            texture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0, true);
+            texture.Apply();
+            RenderTexture.active = activeRenderTexture;
+            return texture;
+        }
+
+        #endregion
+
+        #region SetMaterialAt
+
+        /// <summary>
+        /// Overrides a <see cref="Material"/> at a specified material <paramref name="index"/> for a <paramref name="renderer"/>.
+        /// </summary>
+        public static void SetMaterialAt(this Renderer renderer, in int index, in Material material) {
+            Material[] originalMaterials = renderer.materials;
+            int materialCount = originalMaterials.Length;
+            Material[] materials = new Material[materialCount];
+            for (int i = materialCount - 1; i >= 0; i--) {
+                materials[i] = i == index ? material : originalMaterials[i];
+            }
+            renderer.materials = materials;
+        }
+
+        #endregion
+
         #endregion
 
     }

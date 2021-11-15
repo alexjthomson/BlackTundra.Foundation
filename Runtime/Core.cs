@@ -342,7 +342,7 @@ namespace BlackTundra.Foundation {
 
                 #region call initialise methods
 
-                SortedList<MethodInfo> methods = ObjectUtility.GetDecoratedMethodsOrdered<CoreInitialiseAttribute>();
+                OrderedList<int, MethodInfo> methods = ObjectUtility.GetDecoratedMethodsOrdered<CoreInitialiseAttribute>();
                 MethodInfo method;
                 for (int i = 0; i < methods.Count; i++) {
                     method = methods[i];
@@ -436,7 +436,7 @@ namespace BlackTundra.Foundation {
                 else if (exception != null) Console.Error(shutdownMessage, exception);
                 else Console.Info(shutdownMessage);
                 #region invoke terminate methods
-                SortedList<MethodInfo> methods = ObjectUtility.GetDecoratedMethodsOrdered<CoreTerminateAttribute>();
+                OrderedList<int, MethodInfo> methods = ObjectUtility.GetDecoratedMethodsOrdered<CoreTerminateAttribute>();
                 MethodInfo method;
                 for (int i = 0; i < methods.Count; i++) {
                     method = methods[i];
