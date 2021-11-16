@@ -634,19 +634,17 @@ namespace BlackTundra.Foundation {
 
         #region OnControlGained
 #if ENABLE_INPUT_SYSTEM
-
-        public ControlFlags OnControlGained(in ControlUser user) {
+        public ControlFlags OnControlGained() {
             focus = true;
             return ControlFlags.None;
         }
-
 #endif
         #endregion
 
         #region OnControlRevoked
 #if ENABLE_INPUT_SYSTEM
 
-        public ControlFlags OnControlRevoked(in ControlUser user) => ControlUser.ControlFlags;
+        public ControlFlags OnControlRevoked() => ControlManager.ControlFlags;
 
 #endif
         #endregion

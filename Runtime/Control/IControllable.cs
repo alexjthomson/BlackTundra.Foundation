@@ -10,21 +10,19 @@ namespace BlackTundra.Foundation.Control {
         /// <summary>
         /// Invoked when control is gained.
         /// </summary>
-        /// <param name="controlUser"><see cref="ControlUser"/> that is gaining control.</param>
         /// <returns>
         /// <see cref="ControlFlags"/> that should be set/unset after control is gained.
         /// </returns>
-        ControlFlags OnControlGained(in ControlUser controlUser);
+        ControlFlags OnControlGained();
 
         /// <summary>
         /// Invoked when control is revoked from the <see cref="ControlUser"/> currently in
         /// control.
         /// </summary>
-        /// <param name="controlUser"><see cref="ControlUser"/> that is losing control.</param>
         /// <returns>
         /// <see cref="ControlFlags"/> that should be set/unset after control is revoked.
         /// </returns>
-        ControlFlags OnControlRevoked(in ControlUser controlUser);
+        ControlFlags OnControlRevoked();
 
     }
 

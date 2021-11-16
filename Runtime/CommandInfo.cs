@@ -27,7 +27,7 @@ namespace BlackTundra.Foundation {
         /// <summary>
         /// Character used for declaring flags.
         /// </summary>
-        private const char FlagCharacter = '?';
+        private const char FlagCharacter = '-';
 
         #endregion
 
@@ -111,10 +111,10 @@ namespace BlackTundra.Foundation {
                             tokenStart = i + 1;
                             internalState = InternalState_AwaitEndStringToken;
                             if (i == lastIndex) throw new CommandSyntaxException(string.Concat("Command contains incomplete string: ", command));
-                        } else if (c == ';') {
+                        } else if (c == ';') { // end of current command
                             independent = true;
                             processCommand = true;
-                        } else if (c == '&') {
+                        } else if (c == '&') { // string togther with next command
                             independent = false;
                             processCommand = true;
                         } else if (!char.IsWhiteSpace(c)) {

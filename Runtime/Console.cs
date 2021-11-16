@@ -77,6 +77,11 @@ namespace BlackTundra.Foundation {
             /// </remarks>
             public readonly string usage;
 
+            /// <summary>
+            /// When <c>true</c>, the command is by default hidden.
+            /// </summary>
+            public readonly bool hidden;
+
             internal readonly CommandCallbackDelegate callback;
 
             #endregion
@@ -87,10 +92,11 @@ namespace BlackTundra.Foundation {
 
             #region constructor
 
-            internal Command(in string name, in string description, in string usage, in CommandCallbackDelegate callback) {
+            internal Command(in string name, in string description, in string usage, in bool hidden, in CommandCallbackDelegate callback) {
                 this.name = name;
                 this.description = description;
                 this.usage = usage;
+                this.hidden = hidden;
                 this.callback = callback;
             }
 
@@ -251,9 +257,7 @@ namespace BlackTundra.Foundation {
 
         #region Bind
 
-        public static Command Bind(in string name, in Command.CommandCallbackDelegate callback, string description = null, string usage = null) {
-
-            #region validate arguments
+        public static Command Bind(in string name, in Command.CommandCallbackDelegate callback, string description = null, string usage = null, in bool hidden = false) {
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (callback == null) throw new ArgumentNullException(nameof(callback));
             if (!Command.IsValidName(name)) throw new ArgumentException(nameof(name));
@@ -266,12 +270,9 @@ namespace BlackTundra.Foundation {
                 if (!Command.IsValidDescription(usage)) throw new ArgumentException(nameof(usage));
             }
             if (Commands.ContainsKey(name)) throw new ArgumentException(string.Concat(nameof(name), ": \"", name, "\" command already exists."));
-            #endregion
-
-            Command command = new Command(name, description, usage, callback);
+            Command command = new Command(name, description, usage, hidden, callback);
             Commands.Add(name, command);
             return command;
-
         }
 
         #endregion
@@ -298,7 +299,24 @@ namespace BlackTundra.Foundation {
 
         #region GetCommands
 
-        public static Command[] GetCommands() => Commands.Values.ToArray();
+        public static Command[] GetCommands(in bool includeHidden = false) {
+            var commands = Commands.Values;
+            if (includeHidden) return commands.ToArray();
+            else {
+                int commandCount = commands.Count;
+                Command[] commandBuffer = new Command[commands.Count];
+                int commandIndex = 0;
+                foreach (Command command in commands) {
+                    if (!command.hidden) {
+                        commandBuffer[commandIndex++] = command;
+                    }
+                }
+                if (commandCount == commandIndex) return commandBuffer;
+                Command[] trimmedCommandBuffer = new Command[commandIndex];
+                Array.Copy(commandBuffer, 0, trimmedCommandBuffer, 0, commandIndex);
+                return trimmedCommandBuffer;
+            }
+        }
 
         #endregion
 

@@ -3,6 +3,8 @@
 using System;
 using System.Runtime.InteropServices;
 
+using UnityEngine;
+
 namespace BlackTundra.Foundation.Control {
 
     /// <summary>
@@ -15,27 +17,39 @@ namespace BlackTundra.Foundation.Control {
     /// <seealso cref="IControllable.OnControlRevoked(in ControlUser)"/>
     [ComVisible(true)]
     [Flags]
-    public enum ControlFlags : uint {
+    public enum ControlFlags : int {
 
         /// <summary>
         /// Empty flag.
         /// </summary>
-        None = 0u,
+        None = 0,
 
         /// <summary>
         /// Locks the cursor to the center of the application.
         /// </summary>
-        LockCursor = 1u << 0,
+        LockCursor = 1 << 0,
 
         /// <summary>
         /// Hides the cursor so it cannot be seen.
         /// </summary>
-        HideCursor = 1u << 1,
+        HideCursor = 1 << 1,
 
     }
 
     public static class ControlFlagsUtility {
-        public static void Apply(this ControlFlags flags) => ControlUser.ControlFlags = flags;
+
+        #region variable
+
+        private static ControlFlags currentControlFlags = ControlFlags.None;
+
+        #endregion
+
+        #region logic
+
+        public static void Apply(this ControlFlags controlFlags) => ControlManager.ControlFlags = controlFlags;
+
+        #endregion
+
     }
 
 }

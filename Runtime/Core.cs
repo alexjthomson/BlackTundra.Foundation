@@ -239,7 +239,8 @@ namespace BlackTundra.Foundation {
                                 attribute.name, // use the attribute name
                                 (Console.Command.CommandCallbackDelegate)Delegate.CreateDelegate(typeof(Console.Command.CommandCallbackDelegate), method), // create delegate
                                 attribute.description,
-                                attribute.usage
+                                attribute.usage,
+                                attribute.hidden
                             );
                             Console.Info(string.Concat("[Console] Bound \"", signature, "\" -> \"", attribute.name, "\".")); // log binding
                         } else {
@@ -490,7 +491,7 @@ namespace BlackTundra.Foundation {
                 if (keyboard != null) { // the current keyboard is not null
                     if (drawConsoleWindow) { // the console window should be drawn
                         if (keyboard.escapeKey.wasReleasedThisFrame) { // the escape key was released
-                            consoleWindow.RevokeControl();
+                            consoleWindow.RevokeControl(true);
                             drawConsoleWindow = false; // stop drawing the console window
                         } else if (keyboard.enterKey.wasReleasedThisFrame) // the enter key was released
                             consoleWindow.ExecuteInput(); // execute the input of the debug console
@@ -499,8 +500,7 @@ namespace BlackTundra.Foundation {
                         else if (keyboard.downArrowKey.wasReleasedThisFrame) // the down arrow was released
                             consoleWindow.NextCommand(); // move to the next command entered into the console window
                     } else if (keyboard.slashKey.wasReleasedThisFrame) { // the console window is not currently active and the slash key was released
-                        ControlUser user = ControlUser.FindControlUser(keyboard); // get the control user using the current keyboard
-                        if (user != null && user.GainControl(consoleWindow, true)) { // gain control over the console window
+                        if (consoleWindow.GainControl(true)) { // gain control over the console window
                             Configuration configuration = FileSystem.LoadConfiguration(ConfigurationName);
                             consoleWindow.SetWindowSize(
                                 configuration.ForceGet("console.window.width", -1.0f),
@@ -693,22 +693,37 @@ namespace BlackTundra.Foundation {
         #region HelpCommand
 
         [Command(
-            "help",
-            "Displays a table of every command bound to the console.",
+            name: "help",
+            description: "Displays a table of every command bound to the console.",
+            usage:
             "help" +
+            "\n\tDisplays every command and a short description of the command." +
+            "\n\tflags:" +
+            "\n\t\tu usage" +
+            "\n\t\t\tDisplays the usage for each command in the command table." +
+            "\n\t\ta all" +
+            "\n\t\t\tDisplays hidden commands in the table." +
             "\nhelp {commands...}" +
-            "\n\tcommands: Each argument should be an individual command you want a help message for."
+            "\n\tcommands: Each argument should be an individual command you want a help message for.",
+            hidden: false
         )]
         private static bool HelpCommand(CommandInfo info) {
             int argumentCount = info.args.Count;
             if (argumentCount == 0) { // all commands
-                Console.Command[] commands = Console.GetCommands();
                 bool all = info.HasFlag('a', "all");
-                string[,] elements = new string[all ? 3 : 2, commands.Length];
-                for (int r = 0; r < commands.Length; r++) {
-                    elements[0, r] = commands[r].name;
-                    elements[1, r] = $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(commands[r].description)}</color>";
-                    if (all) elements[2, r] = $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(commands[r].usage)}</color>";
+                Console.Command[] commands = Console.GetCommands(all);
+                bool usage = info.HasFlag('u', "usage");
+                string[,] elements = new string[usage ? 3 : 2, commands.Length];
+                Console.Command command;
+                for (int i = 0; i < commands.Length; i++) {
+                    command = commands[i];
+                    elements[0, i] = command.name;
+                    elements[1, i] = command.description != null
+                        ? $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(command.description)}</color>"
+                        : string.Empty;
+                    if (usage) elements[2, i] = command.usage != null
+                        ? $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(commands[i].usage)}</color>"
+                        : string.Empty;
                 }
                 info.context.PrintTable(elements);
             } else { // list of commands
@@ -717,11 +732,19 @@ namespace BlackTundra.Foundation {
                     string value = info.args[r];
                     if (value.IsNullOrWhitespace()) continue;
                     Console.Command command = Console.GetCommand(value);
-                    rows.Add($"<b>{command.name}</b>");
-                    rows.Add($"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(command.description)}</color>");
-                    rows.Add("\nUsage:");
-                    rows.Add($"<color=#{Colour.DarkGray.hex}>{ConsoleUtility.Escape(command.usage)}</color>");
-                    if (r != argumentCount - 1) rows.Add("\n");
+                    if (command == null) {
+                        rows.Add($"<color=#{Colour.Red.hex}><i>command not found: \"{value}\"</i></color>");
+                    } else {
+                        rows.Add($"<b>{command.name}</b>");
+                        if (command.description != null) {
+                            rows.Add($"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(command.description)}</color>");
+                        }
+                        if (command.usage != null) {
+                            rows.Add("\nUsage:");
+                            rows.Add($"<color=#{Colour.DarkGray.hex}>{ConsoleUtility.Escape(command.usage)}</color>");
+                        }
+                        if (r != argumentCount - 1) rows.Add("\n");
+                    }
                 }
                 info.context.Print(rows.ToArray());
             }
@@ -734,7 +757,12 @@ namespace BlackTundra.Foundation {
 
         #region HistoryCommand
 
-        [Command("history", "Prints the command history buffer to the console.")]
+        [Command(
+            name: "history",
+            description: "Prints the command history buffer to the console.",
+            usage: null,
+            hidden: false
+        )]
         private static bool HistoryCommand(CommandInfo info) {
             if (info.args.Count > 0) {
                 info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
@@ -755,7 +783,12 @@ namespace BlackTundra.Foundation {
 
         #region ClearCommand
 
-        [Command("clear", "Clears the console.")]
+        [Command(
+            name: "clear",
+            description: "Clears the console.",
+            usage: null,
+            hidden: false
+        )]
         private static bool ClearCommand(CommandInfo info) {
             info.context.Clear();
             return true;
@@ -765,7 +798,12 @@ namespace BlackTundra.Foundation {
 
         #region EchoCommand
 
-        [Command("echo", "Prints a message to the console.", "echo \"{message}\"")]
+        [Command(
+            name: "echo",
+            description: "Prints a message to the console.",
+            usage: "echo \"{message}\"",
+            hidden: false
+        )]
         private static bool EchoCommand(CommandInfo info) {
             if (info.args.Count == 0) return false;
             StringBuilder stringBuilder = new StringBuilder(info.args.Count * 5);
@@ -782,7 +820,12 @@ namespace BlackTundra.Foundation {
 
         #region CoreCommand
 
-        [Command("core", "Displays core and basic system information to the console.")]
+        [Command(
+            name: "core",
+            description: "Displays core and basic system information to the console.",
+            usage: null,
+            hidden: false
+        )]
         private static bool CoreCommand(CommandInfo info) {
             if (info.args.Count > 0) {
                 info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
@@ -851,7 +894,12 @@ namespace BlackTundra.Foundation {
 
         #region QuitCommand
 
-        [Command("quit", "Force quits the game.")]
+        [Command(
+            name: "quit",
+            description: "Force quits the application.",
+            usage: null,
+            hidden: false
+        )]
         private static bool QuitCommand(CommandInfo info) {
             if (info.args.Count > 0) {
                 info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
@@ -866,14 +914,16 @@ namespace BlackTundra.Foundation {
         #region TimeCommand
 
         [Command(
-            "time",
-            "Displays application time information and allows for modification of application time properties.",
+            name: "time",
+            description: "Displays application time information and allows for modification of application time properties.",
+            usage:
             "time" +
                 "\n\tDisplays application time information." +
             "\ntime set timescale {value}" +
                 "\n\tAllows modification of the application timescale. The default value is 1.0." +
                 "\n\tA lower value means time will travel slower, a larger number means time travels faster." +
-                "\n\tThis value cannot be lower than 0.0 but has no maximum range; however, large timescales may cause performance issues."
+                "\n\tThis value cannot be lower than 0.0 but has no maximum range; however, large timescales may cause performance issues.",
+            hidden: false
         )]
         private static bool TimeCommand(CommandInfo info) {
             int argumentCount = info.args.Count;
@@ -937,8 +987,9 @@ namespace BlackTundra.Foundation {
         #region ConfigCommand
 
         [Command(
-            "config",
-            "Provides the ability to modify configuration entry values through the console.",
+            name: "config",
+            description: "Provides the ability to modify configuration entry values through the console.",
+            usage:
             "config" +
                 "\n\tDisplays a list of every configuration file in the local game configuration directory." +
                 "\nconfig {file}" +
@@ -952,7 +1003,8 @@ namespace BlackTundra.Foundation {
                 "\n\tOverrides a key-value-pair in a specified configuration entry and saves the changes to the configuration file." +
                 "\n\tfile: Name of the file (or a full or partial path) of the configuration file to edit." +
                 "\n\tkey: Name of the entry in the configuration file to edit." +
-                "\n\tvalue: New value to assign to the configuration entry."
+                "\n\tvalue: New value to assign to the configuration entry.",
+            hidden: false
         )]
         private static bool ConfigCommand(CommandInfo info) {
             int argumentCount = info.args.Count;
@@ -1028,8 +1080,12 @@ namespace BlackTundra.Foundation {
 
         #region CommandDebugCommand
 #if UNITY_EDITOR
-
-        [Command("cdebug", "Prints the information about a command. This is used to test the command parsing system works correctly.")]
+        [Command(
+            name: "cdebug",
+            description: "Prints the information about a command. This is used to test the command parsing system works correctly.",
+            usage: null,
+            hidden: true
+        )]
         private static bool CommandDebugCommand(CommandInfo info) {
             List<string> table = new List<string>() {
                 $"<b>Command</b>¬{info.command.name}",
@@ -1044,13 +1100,17 @@ namespace BlackTundra.Foundation {
             info.context.PrintTable(table.ToArray(), '¬');
             return true;
         }
-
 #endif
         #endregion
 
         #region ValidateCommand
 
-        [Command("validate", "Validates the current application state.")]
+        [Command(
+            name: "validate",
+            description: "Validates the current application state.",
+            usage: null,
+            hidden: true
+        )]
         private static bool ValidateCommand(CommandInfo info) {
             if (info.args.Count > 0) {
                 info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
