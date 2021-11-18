@@ -279,11 +279,11 @@ namespace BlackTundra.Foundation {
 
         #region Execute
 
-        public static bool Execute(in ConsoleWindow context, string command) {
+        public static bool Execute(string command) {
             if (command.IsNullOrWhitespace()) return true; // no command entered
             command = command.Trim();
             Info(string.Concat("[Console] Command: ", command));
-            return CommandInfo.Execute(context, command);
+            return CommandInfo.Execute(command);
         }
 
         #endregion

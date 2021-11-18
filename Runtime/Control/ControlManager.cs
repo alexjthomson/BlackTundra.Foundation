@@ -120,7 +120,7 @@ namespace BlackTundra.Foundation.Control {
                 }
             } else { // there is currently a controllable
                 //ControlStack.Pop(); // pop the current controllable from the control stack
-                InvokeOnControlRevoked(currentControllable, ref flags);
+                InvokeOnControlRevoked(currentControllable);
                 if (allowOneInstance) RemoveFromControlStack(controllable); // remove references to the controllable from the stack (and also clean it from null references because why not)
                 ControlStack.Push(controllable); // push the current controllable
                 if (!InvokeOnControlGained(controllable, ref flags)) { // failed to gain control
@@ -148,7 +148,7 @@ namespace BlackTundra.Foundation.Control {
             IControllable currentControllable = GetCurrentControllable();
             if (currentControllable == controllable) {
                 ControlFlags flags = controlFlags;
-                InvokeOnControlRevoked(controllable, ref flags);
+                InvokeOnControlRevoked(controllable);
                 if (force) RemoveFromControlStack(controllable);
                 else ControlStack.Pop();
                 currentControllable = GetCurrentControllable();
@@ -220,9 +220,9 @@ namespace BlackTundra.Foundation.Control {
 
         #region InvokeOnControlRevoked
 
-        private static bool InvokeOnControlRevoked(in IControllable controllable, ref ControlFlags flags) {
+        private static bool InvokeOnControlRevoked(in IControllable controllable) {
             try {
-                flags = controllable.OnControlRevoked();
+                controllable.OnControlRevoked();
             } catch (Exception exception) {
                 Console.Error($"[{nameof(ControlManager)}] Exception occurred while invoking \"{nameof(IControllable.OnControlRevoked)}\".", exception);
                 return false; // failed

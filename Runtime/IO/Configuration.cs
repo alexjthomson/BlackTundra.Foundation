@@ -1,16 +1,23 @@
-﻿//#define CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
-
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 using BlackTundra.Foundation.Collections.Generic;
+using BlackTundra.Foundation.Utility;
 
-namespace BlackTundra.Foundation.Collections {
+using Colour = BlackTundra.Foundation.ConsoleColour;
+
+namespace BlackTundra.Foundation.IO {
 
     public sealed class Configuration {
 
         #region constant
+
+        /// <summary>
+        /// <see cref="Dictionary{TKey, TValue}"/> containing a reference to every <see cref="Configuration"/> entry.
+        /// </summary>
+        private static readonly Dictionary<int, Configuration> ConfigurationDictionary = new Dictionary<int, Configuration>();
 
         private const int DefaultConfigurationBufferCapacity = 32;
         private const int DefaultConfigurationBufferExpandSize = 8;
@@ -20,6 +27,21 @@ namespace BlackTundra.Foundation.Collections {
         #endregion
 
         #region variable
+
+        /// <summary>
+        /// Name of the <see cref="Configuration"/>.
+        /// </summary>
+        public readonly string name;
+
+        /// <summary>
+        /// Hash of the <see cref="name"/>.
+        /// </summary>
+        private readonly int nameHash;
+
+        /// <summary>
+        /// <see cref="FileSystemReference"/> used for saving / loading.
+        /// </summary>
+        internal readonly FileSystemReference fsr;
 
         /// <summary>
         /// Buffer where all configuration entries are stored.
@@ -65,14 +87,14 @@ namespace BlackTundra.Foundation.Collections {
                 for (int i = buffer.Count - 1; i >= 0; i--) {
                     entry = buffer[i];
                     if (entry.hash == hash) {
-                        if (value == null) buffer.RemoveAt(i); // remove the value
-                        else if (entry.value != value) { // value is different
+                        if (entry.value != value) { // value is different
                             entry.value = value; // override value
                             if (dirty) {
                                 entry.dirty = true;
                                 this.dirty = true;
                             } else
                                 entry.dirty = false;
+                            entry.UpdatePropertyValue(); // update the property value for this entry
                         }
                         return;
                     }
@@ -107,17 +129,112 @@ namespace BlackTundra.Foundation.Collections {
 
         #region constructor
 
-        public Configuration(in int capacity = DefaultConfigurationBufferCapacity, in int expandSize = DefaultConfigurationBufferExpandSize) {
+        private Configuration() => throw new NotSupportedException();
+
+        private Configuration(in string name, in int capacity, in int expandSize) {
+            if (name == null) throw new ArgumentNullException(nameof(name));
             if (capacity < 1) throw new ArgumentOutOfRangeException(string.Concat(nameof(capacity), " must be greater than zero."));
             if (expandSize < 1) throw new ArgumentOutOfRangeException(string.Concat(nameof(expandSize), " must be greater than zero."));
+            nameHash = name.GetHashCode();
+            if (ConfigurationDictionary.ContainsKey(nameHash)) throw new ArgumentException($"{nameof(name)}: {nameof(Configuration)} \"{name}\" already exists.");
+            this.name = name;
+            fsr = new FileSystemReference(
+                string.Concat(
+                    FileSystem.LocalConfigDirectory,
+                    name,
+                    FileSystem.ConfigExtension
+                ),
+                true, // is local
+                false // is not a directory
+            );
             buffer = new PackedBuffer<ConfigurationEntry>(capacity);
             this.expandSize = expandSize;
             dirty = false;
+            ConfigurationDictionary.Add(nameHash, this);
+        }
+
+        private Configuration(in FileSystemReference fsr, in int capacity, in int expandSize) {
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
+            if (capacity < 1) throw new ArgumentOutOfRangeException(string.Concat(nameof(capacity), " must be greater than zero."));
+            if (expandSize < 1) throw new ArgumentOutOfRangeException(string.Concat(nameof(expandSize), " must be greater than zero."));
+            name = fsr.FileNameWithoutExtension;
+            nameHash = name.GetHashCode();
+            if (ConfigurationDictionary.ContainsKey(nameHash)) throw new ArgumentException($"{nameof(name)}: {nameof(Configuration)} \"{name}\" already exists.");
+            this.fsr = fsr;
+            buffer = new PackedBuffer<ConfigurationEntry>(capacity);
+            this.expandSize = expandSize;
+            dirty = false;
+            ConfigurationDictionary.Add(nameHash, this);
+        }
+
+        #endregion
+
+        #region destructor
+
+        ~Configuration() {
+            ConfigurationDictionary.Remove(nameHash);
         }
 
         #endregion
 
         #region logic
+
+        #region BindAttributesToConfiguration
+
+        [CoreInitialise(int.MinValue)]
+        private static void BindAttributesToConfiguration() {
+            Type context = typeof(ConfigurationEntryAttribute); // get attribute to search for
+            IEnumerable<PropertyInfo> properties = ObjectUtility.GetDecoratedProperties<ConfigurationEntryAttribute>(); // get every property that implements the attribute
+            ConfigurationEntryAttribute attribute; ConfigurationEntry entry; // temporary references
+            foreach (PropertyInfo property in properties) { // iterate each property
+                attribute = (ConfigurationEntryAttribute)property.GetCustomAttribute(context, false); // get the attribute
+                int configurationHash = attribute.configuration.GetHashCode(); // find the hash of the configuration name
+                if (!ConfigurationDictionary.TryGetValue(configurationHash, out Configuration configuration)) { // check if the configuration entry exists yet
+                    configuration = new Configuration(attribute.configuration, DefaultConfigurationBufferCapacity, DefaultConfigurationBufferExpandSize); // create the configuration entry
+                    configuration.Load(); // load any existing values
+                }
+                int index = configuration.IndexOf(attribute.key); // get the position of the target configuration key that the property aims to bind to
+                if (index == -1) { // the key does not exist, therefore it should be created
+                    entry = configuration.AddEntry(attribute.key, attribute.defaultValue, true); // create a new key with the default value assigned by the property
+                } else { // the key exists, find the entry
+                    entry = configuration.buffer[index]; // get the key
+                }
+                entry.property = property; // assign the property to the entry
+                entry.UpdatePropertyValue(); // update the value of the property based on the value of the entry
+            }
+        }
+
+        #endregion
+
+        #region SaveConfiguration
+
+        [CoreInitialise(int.MaxValue)]
+        [CoreTerminate]
+        private static void SaveConfiguration() {
+            foreach (Configuration configuration in ConfigurationDictionary.Values) {
+                configuration.Save();
+            }
+        }
+
+        #endregion
+
+        #region IndexOf
+
+        private int IndexOf(in string key) {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            return IndexOf(key.GetHashCode());
+        }
+
+        private int IndexOf(in int hash) {
+            ConfigurationEntry entry;
+            for (int i = buffer.Count - 1; i >= 0; i--) {
+                entry = buffer[i];
+                if (entry.hash == hash) return i;
+            }
+            return -1;
+        }
+        
+        #endregion
 
         #region Parse
 
@@ -224,16 +341,12 @@ namespace BlackTundra.Foundation.Collections {
                             #region override value
 
                             if (overrideExisting) { // any existing value in the configuration should be overridden
-
                                 this[key, false] = value;
-
                             } else if (rewrite) { // the source should be overridden with the value inside the configuration (if it exists)
-
                                 string existingValue = this[key, false];
                                 builder.Append(key);
                                 builder.Append(source.Substring(keyEnd + 1, valueStart - keyEnd - 1)); // add the characters between the key and value
                                 builder.Append(existingValue ?? value);
-
                             }
 
                             #endregion
@@ -308,9 +421,9 @@ namespace BlackTundra.Foundation.Collections {
             TypeCode type = Type.GetTypeCode(typeof(T));
             return type switch {
                 TypeCode.String => entry,
-                TypeCode.Int32 => ToInt(entry, out int i) ? i : 0,
-                TypeCode.Boolean => ToBool(entry, out bool b) ? b : false,
-                TypeCode.Single => ToFloat(entry, out float f) ? f : 0.0f,
+                TypeCode.Int32 => ConfigurationEntry.ToInt(entry, out int i) ? i : 0,
+                TypeCode.Boolean => ConfigurationEntry.ToBool(entry, out bool b) ? b : false,
+                TypeCode.Single => ConfigurationEntry.ToFloat(entry, out float f) ? f : 0.0f,
                 _ => throw new NotSupportedException(type.ToString()),
             };
         }
@@ -334,7 +447,7 @@ namespace BlackTundra.Foundation.Collections {
             if (key == null) throw new ArgumentNullException(nameof(key));
             string entry = this[key];
             if (entry == null) throw new KeyNotFoundException(key);
-            return ToInt(entry, out int value) ? value : 0;
+            return ConfigurationEntry.ToInt(entry, out int value) ? value : 0;
         }
 
         #endregion
@@ -345,7 +458,7 @@ namespace BlackTundra.Foundation.Collections {
             if (key == null) throw new ArgumentNullException(nameof(key));
             string entry = this[key];
             if (entry == null) throw new KeyNotFoundException(key);
-            return ToBool(entry, out bool value) ? value : false;
+            return ConfigurationEntry.ToBool(entry, out bool value) ? value : false;
         }
 
         #endregion
@@ -356,7 +469,7 @@ namespace BlackTundra.Foundation.Collections {
             if (key == null) throw new ArgumentNullException(nameof(key));
             string entry = this[key];
             if (entry == null) throw new KeyNotFoundException(key);
-            return ToFloat(entry, out float value) ? value : 0.0f;
+            return ConfigurationEntry.ToFloat(entry, out float value) ? value : 0.0f;
         }
 
         #endregion
@@ -367,11 +480,6 @@ namespace BlackTundra.Foundation.Collections {
         /// Force gets an entry from the configuration.
         /// <para>
         /// If an entry already exists in the configuration, it will be returned provided it is parsed correctly.
-#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
-        /// If it isn't parsed, a <see cref="ConfigurationSyntaxException"/> will be thrown.
-#else
-        /// If it isn't parsed, the <c>fallback</c> value will be returned instead.
-#endif
         /// </para>
         /// </summary>
         /// <param name="key">Key associated with the value trying to be accessed.</param>
@@ -394,7 +502,7 @@ namespace BlackTundra.Foundation.Collections {
                 AddEntry(key, fallback.ToString(), true);
                 return fallback;
             }
-            if (ToInt(entry, out int value)) return value;
+            if (ConfigurationEntry.ToInt(entry, out int value)) return value;
             else {
                 this[key] = fallback.ToString();
                 return fallback;
@@ -409,7 +517,7 @@ namespace BlackTundra.Foundation.Collections {
                 AddEntry(key, fallback ? "true" : "false", true);
                 return fallback;
             }
-            if (ToBool(entry, out bool value)) return value;
+            if (ConfigurationEntry.ToBool(entry, out bool value)) return value;
             else {
                 this[key] = fallback ? "true" : "false";
                 return fallback;
@@ -424,7 +532,7 @@ namespace BlackTundra.Foundation.Collections {
                 AddEntry(key, fallback.ToString(), true);
                 return fallback;
             }
-            if (ToFloat(entry, out float value)) return value;
+            if (ConfigurationEntry.ToFloat(entry, out float value)) return value;
             else {
                 this[key] = fallback.ToString();
                 return fallback;
@@ -435,9 +543,11 @@ namespace BlackTundra.Foundation.Collections {
 
         #region AddEntry
 
-        private void AddEntry(in string key, in string value, in bool dirty) {
+        private ConfigurationEntry AddEntry(in string key, in string value, in bool dirty) {
             if (buffer.Count == buffer.Capacity) buffer.Expand(expandSize); // expand the buffer
-            buffer.AddLast(new ConfigurationEntry(key, value, dirty)); // add the new configuration entry to the buffer
+            ConfigurationEntry entry = new ConfigurationEntry(key, value, dirty);
+            buffer.AddLast(entry); // add the new configuration entry to the buffer
+            return entry;
         }
 
         #endregion
@@ -451,77 +561,170 @@ namespace BlackTundra.Foundation.Collections {
 
         #endregion
 
-        #region ToInt
+        #region GetConfiguration
 
-        private bool ToInt(in string entry, out int value) {
-            if (entry == null) throw new ArgumentNullException(nameof(entry));
-            try {
-                value = int.Parse(entry);
-                return true;
+        public static Configuration GetConfiguration(in string name) {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            int hash = name.GetHashCode();
+            if (!ConfigurationDictionary.TryGetValue(hash, out Configuration configuration)) {
+                configuration = new Configuration(name, DefaultConfigurationBufferCapacity, DefaultConfigurationBufferExpandSize);
             }
-#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
-            catch (FormatException exception) {
-                throw new ConfigurationSyntaxException(
-                    $"Failed to parse \"{entry}\" to an int.",
-                    -1, exception
-                );
+            return configuration;
+        }
+
+        public static Configuration GetConfiguration(in FileSystemReference fsr) {
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
+            foreach (Configuration entry in ConfigurationDictionary.Values) {
+                if (fsr.Equals(entry.fsr)) {
+                    return entry;
+                }
             }
-#else
-            catch (FormatException) {
-                value = 0;
-                return false;
-            }
-#endif
+            Configuration configuration = new Configuration(fsr, DefaultConfigurationBufferCapacity, DefaultConfigurationBufferExpandSize);
+            return FileSystem.LoadConfiguration(configuration, FileFormat.Standard);
         }
 
         #endregion
 
-        #region ToBool
+        #region Save
 
-        private bool ToBool(in string entry, out bool value) {
-            if (entry == null) throw new ArgumentNullException(nameof(entry));
-            if (entry.Equals("true", StringComparison.OrdinalIgnoreCase)) {
-                value = true;
-                return true;
-            }
-            if (entry.Equals("false", StringComparison.OrdinalIgnoreCase)) {
-                value = false;
-                return true;
-            }
-#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
-            throw new ConfigurationSyntaxException(
-                $"Failed to parse \"{value}\" to a bool.",
-                -1
-            );
-#else
-            value = false;
-            return false;
-#endif
+        /// <summary>
+        /// Force saves the <see cref="Configuration"/>.
+        /// </summary>
+        public bool Save(in FileFormat fileFormat = FileFormat.Standard) => FileSystem.UpdateConfiguration(this, fileFormat);
+
+        #endregion
+
+        #region Load
+
+        /// <summary>
+        /// Reloads the <see cref="Configuration"/> using the values stored on the system rather than in memory.
+        /// </summary>
+        public void Load(in FileFormat fileFormat = FileFormat.Standard) {
+            FileSystem.LoadConfiguration(this, fileFormat);
+            RefreshProperties();
         }
 
         #endregion
 
-        #region ToFloat
+        #region RefreshProperties
 
-        private bool ToFloat(in string entry, out float value) {
-            if (entry == null) throw new ArgumentNullException(nameof(entry));
-            try {
-                value = float.Parse(entry);
-                return true;
+        /// <summary>
+        /// Reassigns the values of every property bound to the specified <paramref name="configurationName"/>.
+        /// </summary>
+        public static void RefreshProperties(in string configurationName) {
+            if (configurationName == null) throw new ArgumentNullException(configurationName);
+            int hash = configurationName.GetHashCode();
+            RefreshProperties(hash);
+        }
+
+        /// <summary>
+        /// Reassigns the values of every property bound to the specified configuration name <paramref name="hash"/> code.
+        /// </summary>
+        public static void RefreshProperties(in int hash) {
+            if (ConfigurationDictionary.TryGetValue(hash, out Configuration configuration)) {
+                configuration.RefreshProperties();
             }
-#if CONFIGURATION_FORCE_GET_THROW_PARSE_EXCEPTION
-            catch (FormatException exception) {
-                throw new ConfigurationSyntaxException(
-                    $"Failed to parse \"{entry}\" to float.",
-                    -1, exception
-                );
+        }
+
+        /// <summary>
+        /// Reassigns the values of every property bound to this <see cref="Configuration"/>.
+        /// </summary>
+        public void RefreshProperties() {
+            for (int i = buffer.Count - 1; i >= 0; i--) buffer[i].UpdatePropertyValue();
+        }
+
+        #endregion
+
+        #region ConfigCommand
+
+        [Command(
+            name: "config",
+            description: "Provides the ability to modify configuration entry values through the console.",
+            usage:
+            "config" +
+                "\n\tDisplays a list of every configuration file in the local game configuration directory." +
+                "\nconfig {file}" +
+                "\n\tDisplays every configuration entry in a configuration file." +
+                "\n\tfile: Name of the file (or a full or partial path) of the configuration file to view." +
+            "\nconfig {file} {key}" +
+                "\n\tDisplays the value of a configuration entry in a specified configuration file." +
+                "\n\tfile: Name of the file (or a full or partial path) of the configuration file to view." +
+                "\n\tkey: Name of the entry in the configuration file to view." +
+            "\nconfig {file} {key} {value}" +
+                "\n\tOverrides a key-value-pair in a specified configuration entry and saves the changes to the configuration file." +
+                "\n\tfile: Name of the file (or a full or partial path) of the configuration file to edit." +
+                "\n\tkey: Name of the entry in the configuration file to edit." +
+                "\n\tvalue: New value to assign to the configuration entry.",
+            hidden: false
+        )]
+        private static bool ConfigCommand(CommandInfo info) {
+            int argumentCount = info.args.Count;
+            if (argumentCount == 0) {
+                const string ConfigSearchPattern = "*" + FileSystem.ConfigExtension;
+                ConsoleWindow.Print(FileSystem.GetFiles(ConfigSearchPattern)); // no arguments specified, list all config files
+            } else { // a config file was specified
+                #region search for files
+                string customPattern = '*' + info.args[0]; // create a custom pattern for matching against the requested file
+                if (!info.args[0].EndsWith(FileSystem.ConfigExtension)) // check for config extension
+                    customPattern = string.Concat(customPattern, FileSystem.ConfigExtension); // ensure the pattern ends with the config extension
+                string[] files = FileSystem.GetFiles(customPattern);
+                #endregion
+                if (files.Length == 0) // multiple files found
+                    ConsoleWindow.Print($"No configuration entry found for \"{ConsoleUtility.Escape(info.args[0])}\".");
+                else if (files.Length > 1) { // multiple files found
+                    ConsoleWindow.Print($"Multiple configuration files found for \"{ConsoleUtility.Escape(info.args[0])}\":");
+                    ConsoleWindow.Print(files);
+                } else { // only one file found (this is what the user wants)
+                    #region load config
+                    FileSystemReference fsr = new FileSystemReference(files[0], false, false); // get file system reference to config file
+                    Configuration configuration = GetConfiguration(fsr); // load the target configuration
+                    #endregion
+                    if (argumentCount == 1) { // no further arguments; therefore, display every configuration entry to the console
+                        #region list config entries
+                        int entryCount = configuration.Length;
+                        string[,] elements = new string[3, entryCount];
+                        ConfigurationEntry entry;
+                        for (int i = 0; i < entryCount; i++) {
+                            entry = configuration[i];
+                            elements[0, i] = $"<color=#{Colour.Red.hex}>{StringUtility.ToHex(entry.hash)}</color>";
+                            elements[1, i] = $"<color=#{Colour.Gray.hex}>{entry.key}</color>";
+                            elements[2, i] = ConsoleUtility.Escape(entry.value);
+                        }
+                        ConsoleWindow.Print(ConsoleUtility.Escape(fsr.AbsolutePath));
+                        ConsoleWindow.PrintTable(elements);
+                        #endregion
+                    } else { // an additional argument, this sepecifies an entry to target
+                        string targetEntry = info.args[1]; // get the entry to edit
+                        if (argumentCount == 2) { // no further arguments; therefore, display the value of the target entry
+                            #region display target value
+                            var entry = configuration[targetEntry];
+                            ConsoleWindow.Print(entry != null
+                                ? ConsoleUtility.Escape(entry.ToString())
+                                : $"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(info.args[0])}\"."
+                            );
+                            #endregion
+                        } else if (configuration[targetEntry] != null) { // more arguments, further arguments should override the value of the entry
+                            #region construct new value
+                            StringBuilder valueBuilder = new StringBuilder((argumentCount - 2) * 7);
+                            valueBuilder.Append(info.args[2]); // append the first argument
+                            for (int i = 3; i < argumentCount; i++) { // there are more arguments
+                                valueBuilder.Append(' ');
+                                valueBuilder.Append(info.args[i]);
+                            }
+                            string finalValue = valueBuilder.ToString();
+                            #endregion
+                            #region override target value
+                            configuration[targetEntry] = finalValue;
+                            configuration.Save();
+                            ConsoleWindow.Print(ConsoleUtility.Escape(configuration[targetEntry]));
+                            #endregion
+                        } else {
+                            ConsoleWindow.Print($"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(info.args[0])}\".");
+                        }
+                    }
+                }
             }
-#else
-            catch (FormatException) {
-                value = 0.0f;
-                return false;
-            }
-#endif
+            return true;
         }
 
         #endregion

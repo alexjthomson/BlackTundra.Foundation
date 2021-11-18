@@ -22,7 +22,7 @@ namespace BlackTundra.Foundation.Control {
         /// <returns>
         /// <see cref="ControlFlags"/> that should be set/unset after control is revoked.
         /// </returns>
-        ControlFlags OnControlRevoked();
+        void OnControlRevoked();
 
     }
 

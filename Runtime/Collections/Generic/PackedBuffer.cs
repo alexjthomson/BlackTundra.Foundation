@@ -623,6 +623,17 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
         #endregion
 
+        #region Contains
+
+        /// <returns>Returns <c>true</c> if the <paramref name="value"/> is contained within the <see cref="PackedBuffer{T}"/>.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public bool Contains(in T value) {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            return IndexOf(value) != -1;
+        }
+
+        #endregion
+
         #region IndexOf
 
         public int IndexOf(in T obj) => buffer.FindIndexOf(obj);

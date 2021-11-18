@@ -83,16 +83,13 @@ namespace BlackTundra.Foundation.Collections.Generic {
         #region Expand
 
         public void Expand(in int capacity) {
-
             int length = buffer.Length;
             if (capacity <= length) throw new ArgumentOutOfRangeException("capacity must be greater than original capacity.");
-
             int newLength = length + capacity;
             T[] newBuffer = new T[newLength];
             for (int i = 0; i < length; i++) newBuffer[i] = buffer[i];
             for (int i = length; i < newLength; i++) newBuffer[i] = default;
             buffer = newBuffer;
-
         }
 
         #endregion
@@ -211,10 +208,18 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// Clears the buffer.
         /// </summary>
         public void Clear() {
-
             for (int i = 0; i < buffer.Length; i++) buffer[i] = default;
             nextIndex = 0;
+        }
 
+        /// <summary>
+        /// Clears and resizes the buffer.
+        /// </summary>
+        public void Clear(in int newCapacity) {
+            if (newCapacity < 1) throw new ArgumentOutOfRangeException(nameof(newCapacity));
+            if (newCapacity == buffer.Length) Clear();
+            else buffer = new T[newCapacity];
+            nextIndex = 0;
         }
 
         #endregion

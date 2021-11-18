@@ -6,7 +6,7 @@ namespace BlackTundra.Foundation.IO {
     /// <summary>
     /// References an object on the systems file system.
     /// </summary>
-    public sealed class FileSystemReference {
+    public sealed class FileSystemReference : IEquatable<FileSystemReference> {
 
         #region variable
 
@@ -144,6 +144,12 @@ namespace BlackTundra.Foundation.IO {
         #region ToString
 
         public sealed override string ToString() => AbsolutePath;
+
+        #endregion
+
+        #region Equals
+
+        public bool Equals(FileSystemReference fsr) => fsr != null && AbsolutePath.Equals(fsr.AbsolutePath);
 
         #endregion
 

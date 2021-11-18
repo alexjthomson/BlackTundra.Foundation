@@ -175,17 +175,28 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
+        #region GetDecoratedProperties
+
+        public static IEnumerable<PropertyInfo> GetDecoratedProperties<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute {
+            Type type = typeof(T);
+            return types.SelectMany(x => x.GetProperties()).Where(x => Attribute.IsDefined(x, type));
+        }
+
+        #endregion
+
         #region GetDecoratedMethods
 
-        public static IEnumerable<MethodInfo> GetDecoratedMethods<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute
-            => types.Where(x => x.IsClass).SelectMany(x => x.GetMethods(bindingFlags)).Where(x => x.GetCustomAttributes(typeof(T), false).FirstOrDefault() != null); // find methods decorated with correct attribute
+        public static IEnumerable<MethodInfo> GetDecoratedMethods<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute {
+            Type type = typeof(T);
+            return types.SelectMany(x => x.GetMethods(bindingFlags)).Where(x => Attribute.IsDefined(x, type)); // find methods decorated with correct attribute
+        }
 
         #endregion
 
         #region GetDecoratedMethodsOrdered
 
         public static OrderedList<int, MethodInfo> GetDecoratedMethodsOrdered<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : OrderedAttribute {
-            var methods = types.Where(x => x.IsClass).SelectMany(x => x.GetMethods(bindingFlags));
+            IEnumerable<MethodInfo> methods = types.SelectMany(x => x.GetMethods(bindingFlags));
             OrderedList<int, MethodInfo> list = new OrderedList<int, MethodInfo>();
             IEnumerable<T> attributes;
             foreach (MethodInfo info in methods) {
@@ -229,7 +240,7 @@ namespace BlackTundra.Foundation.Utility {
                     methods = type.GetMethods(bindingFlags); // get each method implemented in the method
                     for (int j = methods.Length - 1; j >= 0; j--) { // iterate each method in the class
                         method = methods[j]; // get the current method
-                        if (method.GetCustomAttributes(context, false).FirstOrDefault() != null) { // method is decorated with target type
+                        if (Attribute.IsDefined(method, context)) { // method is decorated with target type
                             parameters = method.GetParameters(); // get the method parameters for the current method
                             int parameterCount = parameters.Length; // get the number of parameters in the current method
                             parameterTypes = new Type[parameterCount]; // construct an array of target types that must match a valid implementation
@@ -269,7 +280,7 @@ namespace BlackTundra.Foundation.Utility {
             MethodInfo[] methods = obj.GetType().GetMethods(bindingFlags); // get each method implemented in the method
             for (int i = methods.Length - 1; i >= 0; i--) { // iterate each method in the class
                 method = methods[i]; // get the current method
-                if (method.GetCustomAttributes(context, false).FirstOrDefault() != null) { // method is decorated with target type
+                if (Attribute.IsDefined(method, context)) { // method is decorated with target type
                     parameters = method.GetParameters(); // get the method parameters for the current method
                     int parameterCount = parameters.Length; // get the number of parameters in the current method
                     parameterTypes = new Type[parameterCount]; // construct an array of target types that must match a valid implementation

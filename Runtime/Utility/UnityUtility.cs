@@ -153,7 +153,6 @@ namespace BlackTundra.Foundation.Utility {
         /// An <see cref="InvalidOperationException"/> will be thrown if the <paramref name="singletonReference"/> cannot be overriden for any reason.
         /// </remarks>
         public static T ManageSingleton<T>(this T instance, ref T singletonReference, in bool allowInstanceOverride = false) where T : class {
-
             if (instance == singletonReference) return singletonReference; // reference already set
             if (singletonReference != null) {
                 if (allowInstanceOverride) {
@@ -165,7 +164,6 @@ namespace BlackTundra.Foundation.Utility {
                 singletonReference = instance;
                 return null;
             }
-
         }
 
         #endregion
@@ -185,7 +183,6 @@ namespace BlackTundra.Foundation.Utility {
         /// An <see cref="InvalidOperationException"/> will be thrown if the <paramref name="singletonReference"/> cannot be overriden for any reason.
         /// </remarks>
         public static T ManageObjectSingleton<T>(this T instance, ref T singletonReference, in bool allowInstanceOverride = false) where T : Object {
-
             if (instance == singletonReference) return singletonReference;
             if (singletonReference != null) {
                 if (allowInstanceOverride) {
@@ -200,7 +197,6 @@ namespace BlackTundra.Foundation.Utility {
                 singletonReference = instance;
                 return null;
             }
-
         }
 
         #endregion

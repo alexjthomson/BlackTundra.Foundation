@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace BlackTundra.Foundation.Collections.Generic {
 
     /// <summary>
-    /// An extension of the <see cref="List{T}"/> collection that allows elements to be sorted by an <see cref="int"/>.
+    /// An extension of the <see cref="List{T}"/> collection that allows elements to be sorted from lowest value to highest value.
     /// </summary>
     public sealed class OrderedList<TKey, TValue> where TKey : IComparable {
 
@@ -59,12 +59,12 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// <param name="order">Value used to sort/order the <paramref name="value"/> in the <see cref="SortedList{T}"/></param>
         public void Add(in TKey order, in TValue value) {
             for (int i = values.Count - 1; i >= 0; i--) {
-                if (order.CompareTo(values[i].order) <= 0) {
-                    values.Insert(i, new SortedListEntry(order, value));
+                if (order.CompareTo(values[i].order) >= 0) {
+                    values.Insert(i + 1, new SortedListEntry(order, value));
                     return;
                 }
             }
-            values.Add(new SortedListEntry(order, value));
+            values.Insert(0, new SortedListEntry(order, value));
         }
 
         #endregion

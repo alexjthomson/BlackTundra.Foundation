@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BlackTundra.Foundation.Collections {
+namespace BlackTundra.Foundation.IO {
 
     public sealed class ConfigurationSyntaxException : Exception {
 

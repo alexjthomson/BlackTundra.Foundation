@@ -317,25 +317,9 @@ namespace BlackTundra.Foundation.IO {
 
         #region UpdateConfiguration
 
-        public static bool UpdateConfiguration(in string name, in Configuration configuration, in FileFormat fileFormat = FileFormat.Standard) {
-            if (name == null) throw new ArgumentNullException(nameof(name));
-            if (!StringUtility.Matches(name, FileNameRegexPattern)) throw new ArgumentException(nameof(name));
+        internal static bool UpdateConfiguration(in Configuration configuration, in FileFormat fileFormat) {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-            return UpdateConfiguration(
-                new FileSystemReference(
-                    string.Concat(LocalConfigDirectory, name, ConfigExtension),
-                    true, // is local
-                    false // is not a directory
-                ),
-                configuration,
-                fileFormat
-            );
-        }
-
-        public static bool UpdateConfiguration(in FileSystemReference fsr, in Configuration configuration, in FileFormat fileFormat = FileFormat.Standard) {
-            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
-            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-            if (!Read(fsr, out string content, fileFormat)) content = string.Empty;
+            if (!Read(configuration.fsr, out string content, fileFormat)) content = string.Empty;
             StringBuilder configBuilder;
             try {
                 configBuilder = configuration.Parse(
@@ -348,31 +332,16 @@ namespace BlackTundra.Foundation.IO {
                 exception.Handle();
                 return false;
             }
-            return Write(fsr, configBuilder.ToString(), fileFormat);
+            return Write(configuration.fsr, configBuilder.ToString(), fileFormat);
         }
 
         #endregion
 
         #region LoadConfiguration
 
-        public static Configuration LoadConfiguration(in string name, Configuration configuration = null, in FileFormat fileFormat = FileFormat.Standard) {
-            if (name == null) throw new ArgumentNullException(nameof(name));
-            if (name.IsNullOrWhitespace() || !StringUtility.Matches(name, FileNameRegexPattern)) throw new ArgumentException(nameof(name));
-            return LoadConfiguration(
-                new FileSystemReference(
-                    string.Concat(LocalConfigDirectory, name, ConfigExtension),
-                    true, // is local
-                    false // is not a directory
-                ),
-                configuration,
-                fileFormat
-            );
-        }
-
-        public static Configuration LoadConfiguration(in FileSystemReference fsr, Configuration configuration = null, in FileFormat fileFormat = FileFormat.Standard) {
-            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
-            if (configuration == null) configuration = new Configuration();
-            if (Read(fsr, out string content, fileFormat)) {
+        internal static Configuration LoadConfiguration(Configuration configuration, in FileFormat fileFormat) {
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            if (Read(configuration.fsr, out string content, fileFormat)) {
                 try {
                     configuration.Parse(
                         content,

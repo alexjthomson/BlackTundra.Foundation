@@ -3,6 +3,7 @@
 // SYSTEM:
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -11,46 +12,38 @@ using System.Text;
 
 using UnityEngine;
 
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 // FOUNDATION:
 
-using BlackTundra.Foundation.Collections;
 using BlackTundra.Foundation.IO;
 using BlackTundra.Foundation.Utility;
-
-#if ENABLE_INPUT_SYSTEM
-using BlackTundra.Foundation.Control;
-#endif
+using BlackTundra.Foundation.Collections.Generic;
 
 // DEFINES:
 
 using Object = UnityEngine.Object;
 using Colour = BlackTundra.Foundation.ConsoleColour;
-using System.Collections;
-using System.Linq;
-using BlackTundra.Foundation.Collections.Generic;
 
 #endregion
 
 namespace BlackTundra.Foundation {
-
-    #region Core
 
     public static class Core {
 
         #region constant
 
         /// <summary>
+        /// Object used to ensure all methods execute in the correct order.
+        /// </summary>
+        private static readonly object CoreLock = new object();
+
+        /// <summary>
         /// Name of the <see cref="Core"/> configuration object.
         /// </summary>
-        private const string ConfigurationName = "core";
+        public const string ConfigurationName = "core";
 
         /// <summary>
         /// Original value of <see cref="Time.fixedDeltaTime"/> on startup.
@@ -129,21 +122,6 @@ namespace BlackTundra.Foundation {
         internal static CorePhase phase = CorePhase.Idle;
 
         /// <summary>
-        /// <see cref="ConsoleWindow"/> instance.
-        /// </summary>
-        internal static ConsoleWindow consoleWindow = null;
-
-        /// <summary>
-        /// Tracks if the <see cref="consoleWindow"/> should be drawn or not.
-        /// </summary>
-        private static bool drawConsoleWindow = false;
-
-        /// <summary>
-        /// Object used to ensure all methods execute in the correct order.
-        /// </summary>
-        private static object coreLock = new object();
-
-        /// <summary>
         /// Array of <see cref="UpdateDelegate"/> callbacks that should be called every frame.
         /// </summary>
         private static UpdateDelegate[] updateCallbacks;
@@ -159,9 +137,6 @@ namespace BlackTundra.Foundation {
 
         public static Version Version { get; private set; } = Version.Invalid;
 
-        /// <inheritdoc cref="consoleWindow"/>
-        public static ConsoleWindow ConsoleWindow => consoleWindow;
-
         #endregion
 
         #region logic
@@ -172,7 +147,7 @@ namespace BlackTundra.Foundation {
 #pragma warning disable IDE0051 // remove unused private members
         private static void InitialisePostAssembliesLoaded() {
 #pragma warning restore IDE0051 // remove unused private members
-            lock (coreLock) {
+            lock (CoreLock) {
 
                 if (phase != CorePhase.Idle) return;
                 phase = CorePhase.Init_Stage1;
@@ -200,105 +175,49 @@ namespace BlackTundra.Foundation {
                 #endregion
 
                 FileSystem.Initialise(); // initialise file system
-                Configuration configuration = FileSystem.LoadConfiguration(ConfigurationName); // load core configuration
-
-                #region initialise console window
-
-                if (configuration.ForceGet("console.window.enabled", false)) { // check if the in-game console window is enabled
-                    try {
-                        consoleWindow = new ConsoleWindow(
-                            configuration.ForceGet("console.window.name", "Console"),
-                            new Vector2(
-                                configuration.ForceGet("console.window.width", -1.0f),
-                                configuration.ForceGet("console.window.height", -1.0f)
-                            ),
-                            configuration.ForceGet("console.window.echo", true),
-                            configuration.ForceGet("console.window.register_application_log_callback", true),
-                            configuration.ForceGet("console.window.buffer_size", 256),
-                            configuration.ForceGet("console.window.history_buffer_size", 32)
-                        );
-                    } catch (Exception exception) {
-                        Quit(QuitReason.FatalCrash, "Failed to construct core console window.", exception, true);
-                        return;
-                    }
-                    #region bind commands
-
-                    // find delegate parameter types:
-                    Type[] targetTypes = ObjectUtility.GetDelegateParameterTypes<Console.Command.CommandCallbackDelegate>();
-
-                    // iterate console commands:
-                    IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CommandAttribute>(); // get all console command attributes
-                    CommandAttribute attribute;
-                    Type[] methodParameterTypes;
-                    foreach (MethodInfo method in methods) { // iterate each method
-                        attribute = method.GetCustomAttribute<CommandAttribute>(); // get the command attribute on the method
-                        string signature = string.Concat(method.DeclaringType.FullName, '.', method.Name); // build method signature
-                        methodParameterTypes = ObjectUtility.GetMethodParameterTypes(method); // get method parameter types
-                        if (methodParameterTypes.ContentEquals(targetTypes)) { // parameter cound matches target count
-                            Console.Bind( // bind the method to the console as a command
-                                attribute.name, // use the attribute name
-                                (Console.Command.CommandCallbackDelegate)Delegate.CreateDelegate(typeof(Console.Command.CommandCallbackDelegate), method), // create delegate
-                                attribute.description,
-                                attribute.usage,
-                                attribute.hidden
-                            );
-                            Console.Info(string.Concat("[Console] Bound \"", signature, "\" -> \"", attribute.name, "\".")); // log binding
-                        } else {
-                            string fatalMessage = string.Concat("Console failed to bind \"", signature, "\" -> \"", attribute.name, "\"."); // the command was not bound, create error message
-#if UNITY_EDITOR
-                            Debug.LogWarning($"Failed to bind method \"{signature}\" to console. Check the method signature matches that of \"{typeof(Console.Command.CommandCallbackDelegate).FullName}\".");
-                            Debug.LogError(fatalMessage);
-#endif
-                            Console.Fatal(fatalMessage); // log the failure
-                            Quit(QuitReason.FatalCrash, fatalMessage, null, true); // quit
-                            return;
-                        }
-                    }
-
-                    #endregion
-                }
-
-                #endregion
-
-                #region set window size
-
-                string fullscreenMode = configuration.ForceGet("player.window.fullscreen", "borderless");
-
-                int windowWidth = configuration.ForceGet("player.window.size.x", 0);
-                if (windowWidth <= 0) windowWidth = Screen.width;
-                else windowWidth = Mathf.Clamp(windowWidth, 600, 7680);
-
-                int windowHeight = configuration.ForceGet("player.window.size.y", 0);
-                if (windowHeight <= 0) windowHeight = Screen.height;
-                else windowHeight = Mathf.Clamp(windowHeight, 400, 4320);
-                switch (fullscreenMode.ToLower()) {
-                    case "windowed": {
-                        Screen.SetResolution(windowWidth, windowHeight, FullScreenMode.Windowed);
-                        break;
-                    }
-                    case "borderless": {
-                        Screen.SetResolution(windowWidth, windowHeight, FullScreenMode.FullScreenWindow);
-                        break;
-                    }
-                    case "fullscreen": {
-                        Screen.SetResolution(windowWidth, windowHeight, FullScreenMode.ExclusiveFullScreen);
-                        break;
-                    }
-                    default: {
-                        configuration["player.window.fullscreen"] = "borderless";
-                        Screen.SetResolution(windowWidth, windowHeight, FullScreenMode.FullScreenWindow);
-                        break;
-                    }
-                }
-                Console.Info($"[Core] Updated resolution (w:{windowWidth}px, h:{windowHeight}px, mode: \"{fullscreenMode}\").");
-
-                #endregion
 
                 try {
-                    FileSystem.UpdateConfiguration(ConfigurationName, configuration);
+                    ConsoleWindow.Initialise();
                 } catch (Exception exception) {
-                    exception.Handle("Failed to save core configuration after initialisation.");
+                    Quit(QuitReason.FatalCrash, "Failed to construct core console window.", exception, true);
+                    return;
                 }
+
+                #region bind commands
+
+                // find delegate parameter types:
+                Type[] targetTypes = ObjectUtility.GetDelegateParameterTypes<Console.Command.CommandCallbackDelegate>();
+
+                // iterate console commands:
+                IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CommandAttribute>(); // get all console command attributes
+                CommandAttribute attribute;
+                Type[] methodParameterTypes;
+                foreach (MethodInfo method in methods) { // iterate each method
+                    attribute = method.GetCustomAttribute<CommandAttribute>(); // get the command attribute on the method
+                    string signature = string.Concat(method.DeclaringType.FullName, '.', method.Name); // build method signature
+                    methodParameterTypes = ObjectUtility.GetMethodParameterTypes(method); // get method parameter types
+                    if (methodParameterTypes.ContentEquals(targetTypes)) { // parameter cound matches target count
+                        Console.Bind( // bind the method to the console as a command
+                            attribute.name, // use the attribute name
+                            (Console.Command.CommandCallbackDelegate)Delegate.CreateDelegate(typeof(Console.Command.CommandCallbackDelegate), method), // create delegate
+                            attribute.description,
+                            attribute.usage,
+                            attribute.hidden
+                        );
+                        Console.Info(string.Concat("[Console] Bound \"", signature, "\" -> \"", attribute.name, "\".")); // log binding
+                    } else {
+                        string fatalMessage = string.Concat("Console failed to bind \"", signature, "\" -> \"", attribute.name, "\"."); // the command was not bound, create error message
+#if UNITY_EDITOR
+                        Debug.LogWarning($"Failed to bind method \"{signature}\" to console. Check the method signature matches that of \"{typeof(Console.Command.CommandCallbackDelegate).FullName}\".");
+                        Debug.LogError(fatalMessage);
+#endif
+                        Console.Fatal(fatalMessage); // log the failure
+                        Quit(QuitReason.FatalCrash, fatalMessage, null, true); // quit
+                        return;
+                    }
+                }
+
+                #endregion
 
                 UnityEventLogger.Initialise();
 
@@ -315,7 +234,7 @@ namespace BlackTundra.Foundation {
 #pragma warning disable IDE0051 // remove unread private members
         private static void InitialisePostSceneLoad() {
 #pragma warning restore IDE0051 // remove unread private members
-            lock (coreLock) {
+            lock (CoreLock) {
 
                 #region check phase
                 if (phase != CorePhase.Init_Stage1) return;
@@ -403,7 +322,7 @@ namespace BlackTundra.Foundation {
         /// </summary>
         internal static void OnInstanceStart() {
 
-            lock (coreLock) {
+            lock (CoreLock) {
 
                 #region check phase
                 if (phase != CorePhase.Init_Stage2) return; // invalid entry point
@@ -428,7 +347,7 @@ namespace BlackTundra.Foundation {
         #region Quit
 
         public static void Quit(in QuitReason quitReason = QuitReason.Unknown, in string message = null, in Exception exception = null, in bool fatal = false) {
-            lock (coreLock) {
+            lock (CoreLock) {
                 if (phase >= CorePhase.Shutdown) return; // already shutdown
                 phase = CorePhase.Shutdown;
                 string shutdownMessage = $"[Core] Shutdown (reason: \"{quitReason}\", fatal: {(fatal ? "true" : "false")})";
@@ -465,6 +384,9 @@ namespace BlackTundra.Foundation {
                 #region shutdown console
                 try { Console.Shutdown(); } catch (Exception e) { e.Handle(); }
                 #endregion
+                #region shutdown console window
+                try { ConsoleWindow.Terminate(); } catch (Exception e) { e.Handle(); }
+                #endregion
                 #region shutdown application
 #if UNITY_EDITOR
                 EditorApplication.isPlaying = false;
@@ -484,62 +406,7 @@ namespace BlackTundra.Foundation {
         /// </summary>
         internal static void Update() {
 
-            #region console window
-            if (consoleWindow != null) { // console window instance exists
-#if ENABLE_INPUT_SYSTEM
-                Keyboard keyboard = Keyboard.current; // get the current keyboard
-                if (keyboard != null) { // the current keyboard is not null
-                    if (drawConsoleWindow) { // the console window should be drawn
-                        if (keyboard.escapeKey.wasReleasedThisFrame) { // the escape key was released
-                            consoleWindow.RevokeControl(true);
-                            drawConsoleWindow = false; // stop drawing the console window
-                        } else if (keyboard.enterKey.wasReleasedThisFrame) // the enter key was released
-                            consoleWindow.ExecuteInput(); // execute the input of the debug console
-                        else if (keyboard.upArrowKey.wasReleasedThisFrame) // the up arrow was released
-                            consoleWindow.PreviousCommand(); // move to the previous command entered into the console window
-                        else if (keyboard.downArrowKey.wasReleasedThisFrame) // the down arrow was released
-                            consoleWindow.NextCommand(); // move to the next command entered into the console window
-                    } else if (keyboard.slashKey.wasReleasedThisFrame) { // the console window is not currently active and the slash key was released
-                        if (consoleWindow.GainControl(true)) { // gain control over the console window
-                            Configuration configuration = FileSystem.LoadConfiguration(ConfigurationName);
-                            consoleWindow.SetWindowSize(
-                                configuration.ForceGet("console.window.width", -1.0f),
-                                configuration.ForceGet("console.window.height", -1.0f)
-                            );
-                            FileSystem.UpdateConfiguration(ConfigurationName, configuration);
-                            drawConsoleWindow = true; // start drawing the console window
-                        }
-                    }
-                }
-#else
-                if (drawConsoleWindow) { // drawing console window
-                    if (Input.GetKeyDown(KeyCode.Escape)) { // exit
-                        drawConsoleWindow = false;
-                    } else if (Input.GetKeyDown(KeyCode.Return)) { // execute
-                        consoleWindow.ExecuteInput();
-                    } else if (Input.GetKeyDown(KeyCode.UpArrow)) { // previous command
-                        consoleWindow.PreviousCommand();
-                    } else if (Input.GetKeyDown(KeyCode.DownArrow)) { // next command
-                        consoleWindow.NextCommand();
-                    }
-                } else if (Input.GetKeyDown(KeyCode.Slash)) { // not drawing console, open console
-                    drawConsoleWindow = true;
-                    Configuration configuration = FileSystem.LoadConfiguration(ConfigurationName);
-                    consoleWindow.SetWindowSize(
-                        configuration.ForceGet("console.window.width", -1.0f),
-                        configuration.ForceGet("console.window.height", -1.0f)
-                    );
-                    try {
-                        FileSystem.UpdateConfiguration(ConfigurationName, configuration);
-                    } catch (Exception exception) {
-                        exception.Handle("Failed to save core configuration after initialisation.");
-                    }
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                }
-#endif
-            }
-            #endregion
+            ConsoleWindow.Update();
 
             #region update callbacks
 
@@ -612,11 +479,7 @@ namespace BlackTundra.Foundation {
         /// Called by <see cref="CoreInstance.OnGUI"/>.
         /// </summary>
         internal static void OnGUI() {
-
-            #region console window
-            if (drawConsoleWindow) consoleWindow.Draw();
-            #endregion
-
+            ConsoleWindow.Draw();
         }
 
         #endregion
@@ -679,16 +542,7 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
-    }
-
-    #endregion
-
-    #region CoreConsoleCommands
-
-    /// <summary>
-    /// Contains core console commands.
-    /// </summary>
-    internal static class CoreConsoleCommands {
+        #region default commands
 
         #region HelpCommand
 
@@ -725,7 +579,7 @@ namespace BlackTundra.Foundation {
                         ? $"<color=#{Colour.Gray.hex}>{ConsoleUtility.Escape(commands[i].usage)}</color>"
                         : string.Empty;
                 }
-                info.context.PrintTable(elements);
+                ConsoleWindow.PrintTable(elements);
             } else { // list of commands
                 List<string> rows = new List<string>(argumentCount);
                 for (int r = 0; r < argumentCount; r++) {
@@ -746,7 +600,7 @@ namespace BlackTundra.Foundation {
                         if (r != argumentCount - 1) rows.Add("\n");
                     }
                 }
-                info.context.Print(rows.ToArray());
+                ConsoleWindow.Print(rows.ToArray());
             }
 
             return true;
@@ -765,17 +619,17 @@ namespace BlackTundra.Foundation {
         )]
         private static bool HistoryCommand(CommandInfo info) {
             if (info.args.Count > 0) {
-                info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
+                ConsoleWindow.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
-            string[] history = info.context.CommandHistory; // get command history
+            string[] history = ConsoleWindow.CommandHistory; // get command history
             string value; // temporary value used to store the current command
             for (int i = history.Length - 1; i >= 0; i--) { // iterate command history
                 value = history[i]; // get the current command
                 if (value == null) continue;
-                info.context.Print(info.context.DecorateCommand(value, new StringBuilder())); // print the command to the console
+                ConsoleWindow.Print(ConsoleWindow.DecorateCommand(value, new StringBuilder())); // print the command to the console
             }
-            if (info.HasFlag('c', "clear")) info.context.ClearCommandHistory(); // clear the command history
+            if (info.HasFlag('c', "clear")) ConsoleWindow.ClearCommandHistory(); // clear the command history
             return true;
         }
 
@@ -790,7 +644,7 @@ namespace BlackTundra.Foundation {
             hidden: false
         )]
         private static bool ClearCommand(CommandInfo info) {
-            info.context.Clear();
+            ConsoleWindow.Clear();
             return true;
         }
 
@@ -812,7 +666,7 @@ namespace BlackTundra.Foundation {
                 stringBuilder.Append(' ');
                 stringBuilder.Append(ConsoleUtility.Escape(info.args[i]));
             }
-            info.context.Print(stringBuilder.ToString());
+            ConsoleWindow.Print(stringBuilder.ToString());
             return true;
         }
 
@@ -828,10 +682,10 @@ namespace BlackTundra.Foundation {
         )]
         private static bool CoreCommand(CommandInfo info) {
             if (info.args.Count > 0) {
-                info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
+                ConsoleWindow.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
-            info.context.PrintTable(
+            ConsoleWindow.PrintTable(
                 new string[,] {
                     { "<b>Core Configuration</b>", string.Empty },
                     { $"<color=#{Colour.Gray.hex}>Core Phase/State</color>", Core.phase.ToString() },
@@ -902,7 +756,7 @@ namespace BlackTundra.Foundation {
         )]
         private static bool QuitCommand(CommandInfo info) {
             if (info.args.Count > 0) {
-                info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
+                ConsoleWindow.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
             Core.Quit(QuitReason.UserConsole);
@@ -928,7 +782,7 @@ namespace BlackTundra.Foundation {
         private static bool TimeCommand(CommandInfo info) {
             int argumentCount = info.args.Count;
             if (argumentCount == 0) { // no arguments, display timing information
-                info.context.PrintTable(
+                ConsoleWindow.PrintTable(
                     new string[,] {
                         { $"<color=#{Colour.Gray.hex}>Time</color>", Time.time.ToString() },
                         { $"<color=#{Colour.Gray.hex}>Unscaled Time</color>", Time.unscaledTime.ToString() },
@@ -947,129 +801,35 @@ namespace BlackTundra.Foundation {
                 switch (arg.ToLower()) {
                     case "set": {
                         if (argumentCount != 3) {
-                            info.context.Print("Usage: time set {property} {value}");
+                            ConsoleWindow.Print("Usage: time set {property} {value}");
                             return false;
                         } else if (float.TryParse(info.args[2], out float value)) {
                             switch (info.args[1].ToLower()) {
                                 case "timescale": {
                                     if (value < 0.0f) {
-                                        info.context.Print("The timescale property cannot be less than zero.");
+                                        ConsoleWindow.Print("The timescale property cannot be less than zero.");
                                         return false;
                                     }
-                                    info.context.Print($"Time Scale {Time.timeScale} -> {value}.");
+                                    ConsoleWindow.Print($"Time Scale {Time.timeScale} -> {value}.");
                                     Time.timeScale = value;
                                     float fixedDeltaTime = value * Core.DefaultFixedDeltaTime;
-                                    info.context.Print($"Fixed Delta Time {Time.fixedDeltaTime} -> {fixedDeltaTime}.");
+                                    ConsoleWindow.Print($"Fixed Delta Time {Time.fixedDeltaTime} -> {fixedDeltaTime}.");
                                     Time.fixedDeltaTime = fixedDeltaTime;
                                     return true;
                                 }
                                 default: {
-                                    info.context.Print(string.Concat("Invalid property: ", ConsoleUtility.Escape(info.args[1])));
+                                    ConsoleWindow.Print(string.Concat("Invalid property: ", ConsoleUtility.Escape(info.args[1])));
                                     return false;
                                 }
                             }
                         } else {
-                            info.context.Print(string.Concat("Invalid value: ", ConsoleUtility.Escape(info.args[2])));
+                            ConsoleWindow.Print(string.Concat("Invalid value: ", ConsoleUtility.Escape(info.args[2])));
                             return false;
                         }
                     }
                     default: {
-                        info.context.Print(ConsoleUtility.UnknownArgumentMessage(arg));
+                        ConsoleWindow.Print(ConsoleUtility.UnknownArgumentMessage(arg));
                         return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        #endregion
-
-        #region ConfigCommand
-
-        [Command(
-            name: "config",
-            description: "Provides the ability to modify configuration entry values through the console.",
-            usage:
-            "config" +
-                "\n\tDisplays a list of every configuration file in the local game configuration directory." +
-                "\nconfig {file}" +
-                "\n\tDisplays every configuration entry in a configuration file." +
-                "\n\tfile: Name of the file (or a full or partial path) of the configuration file to view." +
-            "\nconfig {file} {key}" +
-                "\n\tDisplays the value of a configuration entry in a specified configuration file." +
-                "\n\tfile: Name of the file (or a full or partial path) of the configuration file to view." +
-                "\n\tkey: Name of the entry in the configuration file to view." +
-            "\nconfig {file} {key} {value}" +
-                "\n\tOverrides a key-value-pair in a specified configuration entry and saves the changes to the configuration file." +
-                "\n\tfile: Name of the file (or a full or partial path) of the configuration file to edit." +
-                "\n\tkey: Name of the entry in the configuration file to edit." +
-                "\n\tvalue: New value to assign to the configuration entry.",
-            hidden: false
-        )]
-        private static bool ConfigCommand(CommandInfo info) {
-            int argumentCount = info.args.Count;
-            if (argumentCount == 0) {
-                const string ConfigSearchPattern = "*" + FileSystem.ConfigExtension;
-                info.context.Print(FileSystem.GetFiles(ConfigSearchPattern)); // no arguments specified, list all config files
-            } else { // a config file was specified
-                #region search for files
-                string customPattern = '*' + info.args[0]; // create a custom pattern for matching against the requested file
-                if (!info.args[0].EndsWith(FileSystem.ConfigExtension)) // check for config extension
-                    customPattern = string.Concat(customPattern, FileSystem.ConfigExtension); // ensure the pattern ends with the config extension
-                string[] files = FileSystem.GetFiles(customPattern);
-                #endregion
-                if (files.Length == 0) // multiple files found
-                    info.context.Print($"No configuration entry found for \"{ConsoleUtility.Escape(info.args[0])}\".");
-                else if (files.Length > 1) { // multiple files found
-                    info.context.Print($"Multiple configuration files found for \"{ConsoleUtility.Escape(info.args[0])}\":");
-                    info.context.Print(files);
-                } else { // only one file found (this is what the user wants)
-                    #region load config
-                    FileSystemReference fsr = new FileSystemReference(files[0], false, false); // get file system reference to config file
-                    Configuration configuration = FileSystem.LoadConfiguration(fsr); // load the target configuration
-                    #endregion
-                    if (argumentCount == 1) { // no further arguments; therefore, display every configuration entry to the console
-                        #region list config entries
-                        int entryCount = configuration.Length;
-                        string[,] elements = new string[3, entryCount];
-                        ConfigurationEntry entry;
-                        for (int i = 0; i < entryCount; i++) {
-                            entry = configuration[i];
-                            elements[0, i] = $"<color=#{Colour.Red.hex}>{StringUtility.ToHex(entry.hash)}</color>";
-                            elements[1, i] = $"<color=#{Colour.Gray.hex}>{entry.key}</color>";
-                            elements[2, i] = ConsoleUtility.Escape(entry.value);
-                        }
-                        info.context.Print(ConsoleUtility.Escape(fsr.AbsolutePath));
-                        info.context.PrintTable(elements);
-                        #endregion
-                    } else { // an additional argument, this sepecifies an entry to target
-                        string targetEntry = info.args[1]; // get the entry to edit
-                        if (argumentCount == 2) { // no further arguments; therefore, display the value of the target entry
-                            #region display target value
-                            var entry = configuration[targetEntry];
-                            info.context.Print(entry != null
-                                ? ConsoleUtility.Escape(entry.ToString())
-                                : $"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(info.args[0])}\"."
-                            );
-                            #endregion
-                        } else if (configuration[targetEntry] != null) { // more arguments, further arguments should override the value of the entry
-                            #region construct new value
-                            StringBuilder valueBuilder = new StringBuilder((argumentCount - 2) * 7);
-                            valueBuilder.Append(info.args[2]); // append the first argument
-                            for (int i = 3; i < argumentCount; i++) { // there are more arguments
-                                valueBuilder.Append(' ');
-                                valueBuilder.Append(info.args[i]);
-                            }
-                            string finalValue = valueBuilder.ToString();
-                            #endregion
-                            #region override target value
-                            configuration[targetEntry] = finalValue;
-                            FileSystem.UpdateConfiguration(fsr, configuration);
-                            info.context.Print(ConsoleUtility.Escape(configuration[targetEntry]));
-                            #endregion
-                        } else {
-                            info.context.Print($"\"{ConsoleUtility.Escape(targetEntry)}\" not found in \"{ConsoleUtility.Escape(info.args[0])}\".");
-                        }
                     }
                 }
             }
@@ -1097,7 +857,7 @@ namespace BlackTundra.Foundation {
             for (int i = 0; i < info.args.Count; i++) table.Add($"{i}¬{info.args[i]}");
             table.Add($"<b>Flags</b>¬{info.flags.Count}");
             for (int i = 0; i < info.flags.Count; i++) table.Add($"{i}¬{info.flags[i]}");
-            info.context.PrintTable(table.ToArray(), '¬');
+            ConsoleWindow.PrintTable(table.ToArray(), '¬');
             return true;
         }
 #endif
@@ -1113,7 +873,7 @@ namespace BlackTundra.Foundation {
         )]
         private static bool ValidateCommand(CommandInfo info) {
             if (info.args.Count > 0) {
-                info.context.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
+                ConsoleWindow.Print(ConsoleUtility.UnknownArgumentMessage(info.args));
                 return false;
             }
             Core.Validate();
@@ -1122,8 +882,8 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
-    }
+        #endregion
 
-    #endregion
+    }
 
 }

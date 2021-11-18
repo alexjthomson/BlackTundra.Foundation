@@ -4,21 +4,24 @@ using System.Text;
 using UnityEngine;
 
 #if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
+
+#if ENABLE_INPUT_SYSTEM
 using BlackTundra.Foundation.Control;
 #endif
 using BlackTundra.Foundation.Utility;
 using BlackTundra.Foundation.Logging;
 using BlackTundra.Foundation.Collections.Generic;
+using BlackTundra.Foundation.IO;
 
 namespace BlackTundra.Foundation {
 
-    public sealed class ConsoleWindow
-#if ENABLE_INPUT_SYSTEM
-        : IControllable
-#endif
-        {
+    public static class ConsoleWindow {
 
         #region constant
+
+        private const int WindowID = 10000;
 
         public const int MaxWidth = 8192;
         public const int MaxHeight = 4096;
@@ -26,116 +29,227 @@ namespace BlackTundra.Foundation {
         private const int WindowMargin = 16;
         private const int TitleBarHeight = 16;
 
+        private const int DefaultEntryBufferSize = 256;
+        private static readonly RollingBuffer<LogEntry> EntryBuffer = new RollingBuffer<LogEntry>(DefaultEntryBufferSize, true);
+
+        private const int DefaultHistoryBufferSize = 32;
+
+#if ENABLE_INPUT_SYSTEM
+        /// <summary>
+        /// Used so the control system can control the <see cref="ConsoleWindow"/>.
+        /// </summary>
+        private static readonly ConsoleWindowControlHandle ControlHandle = new ConsoleWindowControlHandle();
+#endif
+
         #endregion
 
         #region nested
+#if ENABLE_INPUT_SYSTEM
 
+        /// <summary>
+        /// Class used simply to allow the control system to see the <see cref="ConsoleWindow"/> as something it can control.
+        /// </summary>
+        private sealed class ConsoleWindowControlHandle : IControllable {
+            public ControlFlags OnControlGained() {
+                focus = true;
+                return ControlFlags.None;
+            }
+            public void OnControlRevoked() { }
+        }
+
+#endif
         #endregion
 
         #region variable
 
-        public readonly string name;
+        /// <summary>
+        /// Tracks if the <see cref="ConsoleWindow"/> should be drawn or not.
+        /// </summary>
+        private static bool draw = false;
 
-        private readonly RollingBuffer<LogEntry> entryBuffer;
-        private readonly bool echo;
+        private static Rect windowRect;
+        private static readonly Rect titleBarRect;
 
-        private readonly string[] inputHistoryBuffer;
-        private int inputHistoryIndex;
+        private static Vector2 scrollPosition;
+        private static string input;
 
-        private readonly int windowId;
-        private Rect windowRect;
-        private readonly Rect titleBarRect;
+        private static int fontWidth;
 
-        private Vector2 scrollPosition;
-        private string input;
+        private static GUIStyle entryStyle = null;
+        private static GUIStyle inputStyle = null;
 
-        private readonly int fontWidth;
+        private static bool focus = true;
 
-        private GUIStyle entryStyle = null;
-        private GUIStyle inputStyle = null;
+        private static string[] inputHistoryBuffer = new string[DefaultHistoryBufferSize];
+        private static int inputHistoryIndex;
 
-        private bool focus = true;
-
-        private static int rollingWindowId = 100000;
         private static ConsoleWindowSettings settings = null;
 
         #endregion
 
         #region property
 
-        public string[] CommandHistory {
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.enabled", false)]
+        public static bool IsEnabled { get; set; }
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.name", "Console")]
+        public static string WindowName {
+            get => name;
+            set {
+                name = value;
+            }
+        }
+        private static string name;
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.width", -1)]
+        public static float Width {
+            get => width;
+            set {
+                width = value <= 0.0f
+                    ? Screen.width - (WindowMargin * 2)
+                    : Mathf.Min(width, MaxWidth);
+                UpdateRect();
+            }
+        }
+        private static float width;
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.height", -1)]
+        public static float Height {
+            get => height;
+            set {
+                height = value <= 0.0f
+                    ? Screen.height - (WindowMargin * 2)
+                    : Mathf.Min(height, MaxHeight);
+                UpdateRect();
+            }
+        }
+        private static float height;
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.echo", true)]
+        public static bool Echo { get; set; }
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.echo", true)]
+        public static bool RegisterApplicationLogCallback {
+            get => registerApplicationLogCallback;
+            set {
+                if (registerApplicationLogCallback == value) return;
+                registerApplicationLogCallback = value;
+                Application.logMessageReceived -= ApplicationLogCallback;
+                if (value) {
+                    Application.logMessageReceived -= ApplicationLogCallback;
+                }
+            }
+        }
+        private static bool registerApplicationLogCallback = false;
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.entry_buffer_size", DefaultEntryBufferSize)]
+        public static int WindowEntryBufferSize {
+            get => EntryBuffer.Length;
+            set {
+                if (value < 1) throw new ArgumentOutOfRangeException();
+                EntryBuffer.Clear(value);
+            }
+        }
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.history_buffer_size", DefaultHistoryBufferSize)]
+        public static int HistoryBufferSize {
+            get => inputHistoryBuffer.Length;
+            set {
+                if (value < 1) throw new ArgumentOutOfRangeException();
+                inputHistoryBuffer = new string[value];
+                inputHistoryIndex = 0;
+            }
+        }
+
+        public static string[] CommandHistory {
             get {
                 int bufferSize = inputHistoryBuffer.Length;
                 string[] buffer = new string[bufferSize];
-                Array.Copy(inputHistoryBuffer, buffer, bufferSize);
+                Array.Copy(inputHistoryBuffer, 0, buffer, 0, bufferSize);
                 return buffer;
             }
         }
 
         #endregion
 
-        #region constructor
+        #region logic
 
-        public ConsoleWindow(in string name, in Vector2 windowSize, in bool echo = true, in bool registerApplicationLogCallback = false, in int capacity = 128, in int inputHistoryCapcity = 32) {
+        #region Initialise
 
-            this.name = name ?? throw new ArgumentNullException(nameof(name));
-            entryBuffer = new RollingBuffer<LogEntry>(capacity, true);
-            this.echo = echo;
-
-            inputHistoryBuffer = new string[inputHistoryCapcity];
-            inputHistoryIndex = 0;
-
-            windowId = rollingWindowId++;
-            SetWindowSize(windowSize.x, windowSize.y);
-            titleBarRect = new Rect(0, 0, MaxWidth, TitleBarHeight);
-
-            scrollPosition = Vector2.zero;
-            input = string.Empty;
-
-            entryStyle = null;
-
-            Console.OnPushLogEntry += OnConsolePushLogEntry;
-            if (registerApplicationLogCallback) Application.logMessageReceived += ApplicationLogCallback;
-
+        internal static void Initialise() {
             if (settings == null) settings = SettingsManager.GetSettings<ConsoleWindowSettings>();
-
             if (settings.font == null) throw new NullReferenceException("settings.font");
             settings.font.RequestCharactersInTexture(" ", settings.fontSize);
             if (!settings.font.GetCharacterInfo(' ', out CharacterInfo info, settings.fontSize)) throw new NotSupportedException("Invalid font.");
             fontWidth = info.advance;
-
+            Console.OnPushLogEntry -= OnConsolePushLogEntry;
+            Console.OnPushLogEntry += OnConsolePushLogEntry;
         }
 
         #endregion
 
-        #region destructor
+        #region Terminate
 
-        ~ConsoleWindow() {
-
+        internal static void Terminate() {
             Application.logMessageReceived -= ApplicationLogCallback;
             Console.OnPushLogEntry -= OnConsolePushLogEntry;
-
         }
 
         #endregion
 
-        #region logic
+        #region Update
 
-        #region SetWindowSize
+        /// <summary>
+        /// Called every frame by the <see cref="Core.Update"/> method.
+        /// </summary>
+        internal static void Update() {
+            if (!IsEnabled) return;
+#if ENABLE_INPUT_SYSTEM
+            Keyboard keyboard = Keyboard.current; // get the current keyboard
+            if (keyboard != null) { // the current keyboard is not null
+                if (draw) { // the console window should be drawn
+                    if (keyboard.escapeKey.wasReleasedThisFrame) { // the escape key was released
+                        ControlHandle.RevokeControl(true);
+                        draw = false; // stop drawing the console window
+                    } else if (keyboard.enterKey.wasReleasedThisFrame) // the enter key was released
+                        ExecuteInput(); // execute the input of the debug console
+                    else if (keyboard.upArrowKey.wasReleasedThisFrame) // the up arrow was released
+                        PreviousCommand(); // move to the previous command entered into the console window
+                    else if (keyboard.downArrowKey.wasReleasedThisFrame) // the down arrow was released
+                        NextCommand(); // move to the next command entered into the console window
+                } else if (keyboard.slashKey.wasReleasedThisFrame) { // the console window is not currently active and the slash key was released
+                    if (ControlHandle.GainControl(true)) { // gain control over the console window
+                        UpdateRect();
+                        draw = true; // start drawing the console window
+                    }
+                }
+            }
+#else
+            if (draw) { // drawing console window
+                if (Input.GetKeyDown(KeyCode.Escape)) { // exit
+                    draw = false;
+                } else if (Input.GetKeyDown(KeyCode.Return)) { // execute
+                    ExecuteInput();
+                } else if (Input.GetKeyDown(KeyCode.UpArrow)) { // previous command
+                    PreviousCommand();
+                } else if (Input.GetKeyDown(KeyCode.DownArrow)) { // next command
+                    NextCommand();
+                }
+            } else if (Input.GetKeyDown(KeyCode.Slash)) { // not drawing console, open console
+                UpdateRect();
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                draw = true;
+            }
+#endif
+        }
 
-        public void SetWindowSize(in float width, in float height) {
+        #endregion
 
-            windowRect = new Rect(
-                WindowMargin,
-                WindowMargin,
-                width <= 0.0f
-                    ? Screen.width - (WindowMargin * 2)
-                    : Mathf.Min(width, MaxWidth),
-                height <= 0.0f
-                    ? Screen.height - (WindowMargin * 2)
-                    : Mathf.Min(height, MaxHeight)
-            );
+        #region UpdateRect
 
+        private static void UpdateRect() {
+            windowRect = new Rect(WindowMargin, WindowMargin, width, height);
         }
 
         #endregion
@@ -145,8 +259,8 @@ namespace BlackTundra.Foundation {
         /// <summary>
         /// Draw must be called from an OnGUI() method.
         /// </summary>
-        public void Draw() {
-
+        internal static void Draw() {
+            if (!draw || !IsEnabled) return;
             if (entryStyle == null) {
                 entryStyle = new GUIStyle() {
                     name = "DebugConsoleEntryStyle",
@@ -176,16 +290,14 @@ namespace BlackTundra.Foundation {
             
             GUI.contentColor = Color.white;
             GUI.backgroundColor = Color.black;
-
-            windowRect = GUILayout.Window(windowId, windowRect, DrawWindow, name);
-
+            windowRect = GUILayout.Window(WindowID, windowRect, DrawWindow, name);
         }
 
         #endregion
 
         #region DrawWindow
 
-        private void DrawWindow(int windowId) {
+        private static void DrawWindow(int windowId) {
 
             GUILayout.BeginVertical();
 
@@ -197,15 +309,15 @@ namespace BlackTundra.Foundation {
 
             #region content
 
-            lock (entryBuffer) { // lock entry buffer
+            lock (EntryBuffer) { // lock entry buffer
 
                 StringBuilder entryBufferBuilder = new StringBuilder(); // create a string builder to build the content for the console window
 
                 LogEntry entry; // used to store a reference to the current entry being processed
                 bool firstElement = true; // stores if the first element has been placed yet
-                for (int i = 0; i < entryBuffer.Length; i++) { // iterate through every entry in the entry buffer
+                for (int i = 0; i < EntryBuffer.Length; i++) { // iterate through every entry in the entry buffer
 
-                    entry = entryBuffer[i]; // get the current entry
+                    entry = EntryBuffer[i]; // get the current entry
                     if (entry == null) continue; // the entry is null, skip this entry
 
                     if (!firstElement) entryBufferBuilder.Append('\n'); // new line required
@@ -261,7 +373,7 @@ namespace BlackTundra.Foundation {
 
         #region PreviousCommand
 
-        public void PreviousCommand() {
+        private static void PreviousCommand() {
             if (input != null && input.Equals(inputHistoryBuffer[inputHistoryIndex])) { // move to previous index
                 if (++inputHistoryIndex >= inputHistoryBuffer.Length) inputHistoryIndex = inputHistoryBuffer.Length - 1;
                 else {
@@ -276,7 +388,7 @@ namespace BlackTundra.Foundation {
 
         #region NextCommand
 
-        public void NextCommand() {
+        private static void NextCommand() {
             if (input != null && input.Equals(inputHistoryBuffer[inputHistoryIndex])) { // move to next index
                 if (inputHistoryIndex <= 0) {
                     inputHistoryIndex = 0;
@@ -289,7 +401,7 @@ namespace BlackTundra.Foundation {
 
         #region DecorateCommand
 
-        public string DecorateCommand(string command, in StringBuilder stringBuilder) {
+        public static string DecorateCommand(string command, in StringBuilder stringBuilder) {
 
             if (command == null) throw new ArgumentNullException(nameof(command));
             if (stringBuilder == null) throw new ArgumentNullException(nameof(stringBuilder));
@@ -389,7 +501,7 @@ namespace BlackTundra.Foundation {
 
         #region ExecuteInput
 
-        public void ExecuteInput() {
+        private static void ExecuteInput() {
             focus = true;
             if (!string.IsNullOrWhiteSpace(input)) {
                 inputHistoryBuffer.ShiftRight();
@@ -398,10 +510,10 @@ namespace BlackTundra.Foundation {
                 scrollPosition.y = float.MaxValue;
                 string displayCommand = DecorateCommand(input, new StringBuilder());
                 LogEntry echoEntry = null;
-                if (echo) echoEntry = Print($"<color=#{ConsoleColour.Green.hex}>></color> " + displayCommand);
+                if (Echo) echoEntry = Print($"<color=#{ConsoleColour.Green.hex}>></color> " + displayCommand);
                 try {
-                    if (!Console.Execute(this, input) && echoEntry != null) { // execute command
-                        entryBuffer.Replace( // execution failed, change colour of echo message
+                    if (!Console.Execute(input) && echoEntry != null) { // execute command
+                        EntryBuffer.Replace( // execution failed, change colour of echo message
                             echoEntry,
                             new LogEntry($"<color=#{ConsoleColour.Red.hex}>></color> " + displayCommand)
                         );
@@ -417,24 +529,24 @@ namespace BlackTundra.Foundation {
 
         #region Print
 
-        public LogEntry Print(in string message) {
+        public static LogEntry Print(in string message) {
             if (message == null) throw new ArgumentNullException(nameof(message));
             LogEntry entry = new LogEntry(message);
-            lock (entryBuffer) entryBuffer.Push(entry, out _);
+            lock (EntryBuffer) EntryBuffer.Push(entry, out _);
             return entry;
         }
 
-        public LogEntry[] Print(in string[] messages) {
+        public static LogEntry[] Print(in string[] messages) {
             if (messages == null) throw new ArgumentNullException(nameof(messages));
             int messageCount = messages.Length;
             LogEntry[] entryBuffer = new LogEntry[messageCount];
             if (messageCount > 0) {
                 LogEntry entry;
-                lock (this.entryBuffer) {
+                lock (EntryBuffer) {
                     for (int i = 0; i < messageCount; i++) {
                         entry = new LogEntry(messages[i]);
                         entryBuffer[i] = entry;
-                        this.entryBuffer.Push(entry, out _);
+                        EntryBuffer.Push(entry, out _);
                     }
                 }
             }
@@ -452,7 +564,7 @@ namespace BlackTundra.Foundation {
         /// <param name="header">When <c>true</c>, the first row will be highlighted.</param>
         /// <param name="inverted">When <c>true</c>, rows and columns will be swapped.</param>
         /// <param name="spacing">Number of spaces to place between columns.</param>
-        public void PrintTable(string[,] elements, in bool header = false, in bool inverted = false, in int spacing = 3) {
+        public static void PrintTable(string[,] elements, in bool header = false, in bool inverted = false, in int spacing = 3) {
 
             if (elements == null) throw new ArgumentNullException(nameof(elements));
             if (spacing < 0) throw new ArgumentOutOfRangeException(string.Concat(nameof(spacing), " must be positive."));
@@ -517,11 +629,11 @@ namespace BlackTundra.Foundation {
                 if (c < finalColumnIndex) columnSizes[c] = maximumColumnSize + spacing; // store maximum column size
             }
 
-            lock (entryBuffer) { // lock on the entity buffer
+            lock (EntryBuffer) { // lock on the entity buffer
                 for (int r = 0; r < rows; r++) { // iterate each row
                     int lines = rowLineCount[r]; // get the number of lines for this row
                     if (lines == 0) { // row is empty
-                        entryBuffer.Push(LogEntry.Empty, out _); // add empty line
+                        EntryBuffer.Push(LogEntry.Empty, out _); // add empty line
                     } else { // row is not empty
                         int[] lengths = null;
                         int columnWidth = 0;
@@ -544,14 +656,14 @@ namespace BlackTundra.Foundation {
                                 } else if (c < finalColumnIndex) lineBuilder.Append(' ', columnWidth); // there is no content for this line, create a blank line
                             }
                             if (header && r == 0) lineBuilder.Append("</b>"); // close the bold tag if this is the header row
-                            entryBuffer.Push(new LogEntry(lineBuilder.ToString()), out _); // push the line to the entry buffer
+                            EntryBuffer.Push(new LogEntry(lineBuilder.ToString()), out _); // push the line to the entry buffer
                         }
                     }
                 }
             }
         }
 
-        public void PrintTable(in string[] rows, in char splitCharacter, in bool header = false, in int spacing = 3) {
+        public static void PrintTable(in string[] rows, in char splitCharacter, in bool header = false, in int spacing = 3) {
 
             if (rows == null) throw new ArgumentNullException(nameof(rows));
 
@@ -588,9 +700,9 @@ namespace BlackTundra.Foundation {
 
         #region OnConsolePushLogEntry
 
-        private void OnConsolePushLogEntry(LogEntry entry) {
-            lock (entryBuffer) {
-                entryBuffer.Push(entry, out _);
+        private static void OnConsolePushLogEntry(LogEntry entry) {
+            lock (EntryBuffer) {
+                EntryBuffer.Push(entry, out _);
             }
         }
 
@@ -598,9 +710,9 @@ namespace BlackTundra.Foundation {
 
         #region ApplicationLogCallback
 
-        private void ApplicationLogCallback(string message, string stacktrace, LogType type) {
-            lock (entryBuffer) {
-                entryBuffer.Push(
+        private static void ApplicationLogCallback(string message, string stacktrace, LogType type) {
+            lock (EntryBuffer) {
+                EntryBuffer.Push(
                     new LogEntry(
                         type.ToLogLevel(),
                         stacktrace.IsNullOrWhitespace() ? message.Trim() : $"{message.Trim()}\n{stacktrace.Trim()}"
@@ -617,36 +729,19 @@ namespace BlackTundra.Foundation {
         /// <summary>
         /// Clears the debug console.
         /// </summary>
-        public void Clear() {
-            lock (entryBuffer) entryBuffer.Clear();
+        public static void Clear() {
+            lock (EntryBuffer) EntryBuffer.Clear();
         }
 
         #endregion
 
         #region ClearCommandHistory
 
-        public void ClearCommandHistory() {
+        public static void ClearCommandHistory() {
             for (int i = inputHistoryBuffer.Length - 1; i >= 0; i--) inputHistoryBuffer[i] = null;
             inputHistoryIndex = 0;
         }
 
-        #endregion
-
-        #region OnControlGained
-#if ENABLE_INPUT_SYSTEM
-        public ControlFlags OnControlGained() {
-            focus = true;
-            return ControlFlags.None;
-        }
-#endif
-        #endregion
-
-        #region OnControlRevoked
-#if ENABLE_INPUT_SYSTEM
-
-        public ControlFlags OnControlRevoked() => ControlManager.ControlFlags;
-
-#endif
         #endregion
 
         #endregion
