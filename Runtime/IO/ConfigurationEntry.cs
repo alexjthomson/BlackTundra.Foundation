@@ -54,7 +54,18 @@ namespace BlackTundra.Foundation.IO {
 #pragma warning disable IDE1006 // naming styles
         public string value {
 #pragma warning restore IDE1006 // naming styles
-            get => _property != null ? _property.GetValue(null).ToString() : _value;
+            get {
+                if (_property != null) {
+                    object propertyValue = _property.GetValue(null);
+                    TypeCode typeCode = Type.GetTypeCode(_property.PropertyType);
+                    return typeCode switch {
+                        TypeCode.String => propertyValue != null ? propertyValue.ToString() : string.Empty,
+                        TypeCode.Int32 or TypeCode.Single => propertyValue != null ? propertyValue.ToString() : "0",
+                        TypeCode.Boolean => propertyValue != null && propertyValue.ToString().Equals("true", StringComparison.OrdinalIgnoreCase) ? "true" : "false",
+                        _ => string.Empty,
+                    };
+                } else return _value;
+            }
             set {
                 if (value == null) throw new ArgumentNullException();
                 if (_property != null) SetPropertyValue(value);

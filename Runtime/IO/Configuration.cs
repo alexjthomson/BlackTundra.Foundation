@@ -321,47 +321,38 @@ namespace BlackTundra.Foundation.IO {
                         if (escape) escape = false;
                         else if (c == '\\') escape = true;
                         else if (c == ';') { // end of statement
-
-                            #region find key
-
+                                             // find key:
                             int length = keyEnd - keyStart + 1;
                             if (length < 1) throw new ConfigurationSyntaxException("Empty key found", keyStart);
                             string key = source.Substring(keyStart, length);
 
-                            #endregion
+                            string value;
+                            if (valueStart != -1) { // when the value start is -1, it means there is an equals but no value supplied afterwards
+                                // find value:
+                                length = valueEnd - valueStart + 1;
+                                value = length <= 0 ? string.Empty : source.Substring(valueStart, length);
+                            } else { // there is no value, simply default to an empty string
+                                value = string.Empty;
+                            }
 
-                            #region find value
-
-                            length = valueEnd - valueStart + 1;
-                            string value = length <= 0 ? string.Empty : source.Substring(valueStart, length);
-
-                            #endregion
-
-                            #region override value
-
+                            // override value:
                             if (overrideExisting) { // any existing value in the configuration should be overridden
                                 this[key, false] = value;
                             } else if (rewrite) { // the source should be overridden with the value inside the configuration (if it exists)
                                 string existingValue = this[key, false];
                                 builder.Append(key);
-                                builder.Append(source.Substring(keyEnd + 1, valueStart - keyEnd - 1)); // add the characters between the key and value
+                                if (valueStart != -1)
+                                    builder.Append(source.Substring(keyEnd + 1, valueStart - keyEnd - 1)); // add the characters between the key and value
+                                else
+                                    builder.Append(" = "); // manually construct section between key and value since it was malformed in the source
                                 builder.Append(existingValue ?? value);
                             }
-
-                            #endregion
-
-                            #region reset
-
+                            // reset:
                             keyStart = -1;
                             keyEnd = -1;
-
                             valueStart = -1;
                             //valueEnd = -1; // not required to be reset
-
                             noKey = true;
-
-                            #endregion
-
                         } else if (c == '#') { // comment
 
                             whitespace = true;
