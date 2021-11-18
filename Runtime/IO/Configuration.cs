@@ -74,7 +74,7 @@ namespace BlackTundra.Foundation.IO {
                 for (int i = buffer.Count - 1; i >= 0; i--) {
                     entry = buffer[i];
                     if (entry.hash == hash) {
-                        if (!dirty) entry.dirty = false; // set as not dirty
+                        if (!dirty) entry._dirty = false; // set as not dirty
                         return entry.value;
                     }
                 }
@@ -90,11 +90,10 @@ namespace BlackTundra.Foundation.IO {
                         if (entry.value != value) { // value is different
                             entry.value = value; // override value
                             if (dirty) {
-                                entry.dirty = true;
+                                entry._dirty = true;
                                 this.dirty = true;
                             } else
-                                entry.dirty = false;
-                            entry.UpdatePropertyValue(); // update the property value for this entry
+                                entry._dirty = false;
                         }
                         return;
                     }
@@ -392,12 +391,12 @@ namespace BlackTundra.Foundation.IO {
                 ConfigurationEntry entry;
                 for (int i = 0; i < buffer.Count; i++) { // iterate through values in buffer
                     entry = buffer[i];
-                    if (entry.dirty) { // value is dirty
-                        builder.Append(entry.key);
+                    if (entry._dirty) { // value is dirty
+                        builder.Append(entry._key);
                         builder.Append(" = ");
                         builder.Append(entry.value);
                         builder.Append(EndOfStatement);
-                        if (overrideIsDirty) entry.dirty = false; // no longer dirty
+                        if (overrideIsDirty) entry._dirty = false; // no longer dirty
                     }
                 }
                 if (overrideIsDirty) dirty = false;
@@ -687,7 +686,7 @@ namespace BlackTundra.Foundation.IO {
                         for (int i = 0; i < entryCount; i++) {
                             entry = configuration[i];
                             elements[0, i] = $"<color=#{Colour.Red.hex}>{StringUtility.ToHex(entry.hash)}</color>";
-                            elements[1, i] = $"<color=#{Colour.Gray.hex}>{entry.key}</color>";
+                            elements[1, i] = $"<color=#{Colour.Gray.hex}>{entry._key}</color>";
                             elements[2, i] = ConsoleUtility.Escape(entry.value);
                         }
                         ConsoleWindow.Print(ConsoleUtility.Escape(fsr.AbsolutePath));

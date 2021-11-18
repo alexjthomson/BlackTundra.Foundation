@@ -15,7 +15,7 @@ namespace BlackTundra.Foundation.IO {
         /// <summary>
         /// String key of the configuration entry.
         /// </summary>
-        internal readonly string key;
+        internal readonly string _key;
 
         /// <summary>
         /// Cached hash code used to identify the entry quickly.
@@ -25,17 +25,17 @@ namespace BlackTundra.Foundation.IO {
         /// <summary>
         /// Value of the entry.
         /// </summary>
-        internal string value;
+        private string _value;
 
         /// <summary>
         /// Is the entry dirty.
         /// </summary>
-        internal bool dirty;
+        internal bool _dirty;
 
         /// <summary>
         /// <see cref="PropertyInfo"/> that this <see cref="ConfigurationEntry"/> is bound to.
         /// </summary>
-        internal PropertyInfo property;
+        private PropertyInfo _property;
 
         #endregion
 
@@ -44,28 +44,51 @@ namespace BlackTundra.Foundation.IO {
         /// <summary>
         /// Gets the key associated with the entry.
         /// </summary>
-        public string Key => key;
+#pragma warning disable IDE1006 // naming styles
+        public string key => _key;
+#pragma warning restore IDE1006 // naming styles
 
         /// <summary>
         /// Gets the value associated with the entry.
         /// </summary>
-        public string Value => value;
+#pragma warning disable IDE1006 // naming styles
+        public string value {
+#pragma warning restore IDE1006 // naming styles
+            get => _property != null ? _property.GetValue(null).ToString() : _value;
+            set {
+                if (value == null) throw new ArgumentNullException();
+                if (_property != null) SetPropertyValue(value);
+                _value = value;
+            }
+        }
+
+#pragma warning disable IDE1006 // naming styles
+        public PropertyInfo property {
+#pragma warning restore IDE1006 // naming styles
+            get => _property;
+            internal set {
+                if (value == null) throw new ArgumentNullException();
+                _property = value;
+            }
+        }
 
         /// <summary>
         /// Indicates if the entry is dirty or not.
         /// </summary>
-        public bool IsDirty => dirty;
+        public bool IsDirty => _dirty;
 
         #endregion
 
         #region constructor
 
         internal ConfigurationEntry(in string key, in string value, in bool dirty) {
-            this.key = key ?? throw new ArgumentNullException(nameof(key));
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            _key = key;
             hash = key.GetHashCode();
-            this.value = value ?? throw new ArgumentNullException(nameof(value));
-            this.dirty = dirty;
-            property = null;
+            _value = value;
+            _dirty = dirty;
+            _property = null;
         }
 
         #endregion
@@ -74,15 +97,15 @@ namespace BlackTundra.Foundation.IO {
 
         #region Equals
 
-        public bool Equals(ConfigurationEntry entry) => entry != null && ((value == null && entry.value == null) || value.Equals(entry.value));
+        public bool Equals(ConfigurationEntry entry) => entry != null && ((_value == null && entry._value == null) || _value.Equals(entry._value));
 
-        public bool Equals(string value) => (this.value == null && value == null) || this.value.Equals(value);
+        public bool Equals(string value) => (this._value == null && value == null) || this._value.Equals(value);
 
         #endregion
 
         #region ToString
 
-        public sealed override string ToString() => $"{key}: {value}";
+        public sealed override string ToString() => $"{_key}: {_value}";
 
         #endregion
 
@@ -164,43 +187,52 @@ namespace BlackTundra.Foundation.IO {
         #region UpdatePropertyValue
 
         /// <summary>
-        /// Updates the value of the <see cref="property"/> with the current <see cref="value"/> of the <see cref="ConfigurationEntry"/>.
+        /// Updates the value of the <see cref="_property"/> with the current <see cref="_value"/> of the <see cref="ConfigurationEntry"/>.
         /// </summary>
         internal void UpdatePropertyValue() {
-            if (property == null) return;
-            Type type = property.PropertyType;
+            if (_property == null) return;
+            SetPropertyValue(_value);
+        }
+
+        #endregion
+
+        #region SetPropertyValue
+
+        private void SetPropertyValue(in string value) {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            Type type = _property.PropertyType;
             TypeCode typeCode = Type.GetTypeCode(type);
             switch (typeCode) {
                 case TypeCode.String: {
-                    property.SetValue(null, value);
+                    _property.SetValue(null, value);
                     break;
                 }
                 case TypeCode.Int32: {
                     if (ToInt(value, out int v)) {
-                        property.SetValue(null, v);
+                        _property.SetValue(null, v);
                     } else {
-                        Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{property.Name}\": Failed to parse value to int.");
+                        Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{_property.Name}\": Failed to parse value to int.");
                     }
                     break;
                 }
                 case TypeCode.Boolean: {
                     if (ToBool(value, out bool v)) {
-                        property.SetValue(null, v);
+                        _property.SetValue(null, v);
                     } else {
-                        Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{property.Name}\": Failed to parse value to bool.");
+                        Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{_property.Name}\": Failed to parse value to bool.");
                     }
                     break;
                 }
                 case TypeCode.Single: {
                     if (ToFloat(value, out float v)) {
-                        property.SetValue(null, v);
+                        _property.SetValue(null, v);
                     } else {
-                        Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{property.Name}\": Failed to parse value to float.");
+                        Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{_property.Name}\": Failed to parse value to float.");
                     }
                     break;
                 }
                 default: {
-                    Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{property.Name}\": Unsupported property type \"{type.FullName}\".");
+                    Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{_property.Name}\": Unsupported property type \"{type.FullName}\".");
                     break;
                 }
             }
