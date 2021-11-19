@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using BlackTundra.Foundation.IO;
 using BlackTundra.Foundation.Logging;
 using BlackTundra.Foundation.Utility;
 
@@ -130,6 +131,12 @@ namespace BlackTundra.Foundation {
         #region property
 
         public static int TotalCommands => Commands.Count;
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.logger.log_level", "warning")]
+        private static string LoggerLogLevel {
+            get => Logger.LogLevel.distinctName;
+            set => Logger.LogLevel = LogLevel.Parse(value);
+        }
 
         #endregion
 

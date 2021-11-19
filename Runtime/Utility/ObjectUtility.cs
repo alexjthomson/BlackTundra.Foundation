@@ -179,7 +179,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static IEnumerable<PropertyInfo> GetDecoratedProperties<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute {
             Type type = typeof(T);
-            return types.SelectMany(x => x.GetProperties()).Where(x => Attribute.IsDefined(x, type));
+            return types.SelectMany(x => x.GetProperties(bindingFlags)).Where(x => Attribute.IsDefined(x, type));
         }
 
         #endregion

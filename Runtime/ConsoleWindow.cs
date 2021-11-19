@@ -29,6 +29,8 @@ namespace BlackTundra.Foundation {
         private const int WindowMargin = 16;
         private const int TitleBarHeight = 16;
 
+        private static readonly Rect TitleBarRect = new Rect(0, 0, MaxWidth, TitleBarHeight);
+
         private const int DefaultEntryBufferSize = 256;
         private static readonly RollingBuffer<LogEntry> EntryBuffer = new RollingBuffer<LogEntry>(DefaultEntryBufferSize, true);
 
@@ -68,7 +70,6 @@ namespace BlackTundra.Foundation {
         private static bool draw = false;
 
         private static Rect windowRect;
-        private static readonly Rect titleBarRect;
 
         private static Vector2 scrollPosition;
         private static string input;
@@ -105,9 +106,7 @@ namespace BlackTundra.Foundation {
         public static float Width {
             get => width;
             set {
-                width = value <= 0.0f
-                    ? Screen.width - (WindowMargin * 2)
-                    : Mathf.Min(width, MaxWidth);
+                width = value;
                 UpdateRect();
             }
         }
@@ -117,9 +116,7 @@ namespace BlackTundra.Foundation {
         public static float Height {
             get => height;
             set {
-                height = value <= 0.0f
-                    ? Screen.height - (WindowMargin * 2)
-                    : Mathf.Min(height, MaxHeight);
+                height = value;
                 UpdateRect();
             }
         }
@@ -128,7 +125,29 @@ namespace BlackTundra.Foundation {
         [ConfigurationEntry(Core.ConfigurationName, "console.window.echo", true)]
         public static bool Echo { get; set; }
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window.echo", true)]
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.register_console_callback", true)]
+        public static bool RegisterConsoleCallback {
+            get => registerConsoleCallback;
+            set {
+                if (registerConsoleCallback != value) {
+                    registerConsoleCallback = value;
+                    Console.OnPushLogEntry -= OnConsolePushLogEntry;
+                    if (value) {
+                        Console.OnPushLogEntry += OnConsolePushLogEntry;
+                    }
+                }
+            }
+        }
+        private static bool registerConsoleCallback = false;
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.console_callback_log_level", "warning")]
+        private static string ConsoleCallbackLogLevel {
+            get => consoleCallbackLogLevel.distinctName ?? "none";
+            set => consoleCallbackLogLevel = LogLevel.Parse(value);
+        }
+        private static LogLevel consoleCallbackLogLevel = LogLevel.Info;
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.register_application_callback", true)]
         public static bool RegisterApplicationLogCallback {
             get => registerApplicationLogCallback;
             set {
@@ -141,6 +160,13 @@ namespace BlackTundra.Foundation {
             }
         }
         private static bool registerApplicationLogCallback = false;
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.window.application_callback_log_level", "warning")]
+        private static string ApplicationLogLevel {
+            get => applicationLogLevel.ToString().ToLower();
+            set => applicationLogLevel = LogLevel.Parse(value).unityLogType;
+        }
+        private static LogType applicationLogLevel;
 
         [ConfigurationEntry(Core.ConfigurationName, "console.window.entry_buffer_size", DefaultEntryBufferSize)]
         public static int WindowEntryBufferSize {
@@ -182,8 +208,6 @@ namespace BlackTundra.Foundation {
             settings.font.RequestCharactersInTexture(" ", settings.fontSize);
             if (!settings.font.GetCharacterInfo(' ', out CharacterInfo info, settings.fontSize)) throw new NotSupportedException("Invalid font.");
             fontWidth = info.advance;
-            Console.OnPushLogEntry -= OnConsolePushLogEntry;
-            Console.OnPushLogEntry += OnConsolePushLogEntry;
         }
 
         #endregion
@@ -249,7 +273,16 @@ namespace BlackTundra.Foundation {
         #region UpdateRect
 
         private static void UpdateRect() {
-            windowRect = new Rect(WindowMargin, WindowMargin, width, height);
+            windowRect = new Rect(
+                WindowMargin,
+                WindowMargin,
+                width <= 0.0f
+                    ? Screen.width - (WindowMargin * 2)
+                    : Mathf.Min(width, MaxWidth),
+                height <= 0.0f
+                    ? Screen.height - (WindowMargin * 2)
+                    : Mathf.Min(height, MaxHeight)
+            );
         }
 
         #endregion
@@ -357,7 +390,7 @@ namespace BlackTundra.Foundation {
 
             #region drag window
 
-            GUI.DragWindow(titleBarRect); // make the window draggable
+            GUI.DragWindow(TitleBarRect); // make the window draggable
 
             if (focus) {
                 GUI.FocusWindow(windowId);
@@ -519,7 +552,7 @@ namespace BlackTundra.Foundation {
                         );
                     }
                 } catch (Exception exception) {
-                    exception.Handle();
+                    Console.Error($"[{nameof(ConsoleWindow)}] Failed to execute command.", exception);
                 }
             }
             input = string.Empty;
@@ -701,6 +734,7 @@ namespace BlackTundra.Foundation {
         #region OnConsolePushLogEntry
 
         private static void OnConsolePushLogEntry(LogEntry entry) {
+            if (entry.logLevel.priority < consoleCallbackLogLevel.priority) return;
             lock (EntryBuffer) {
                 EntryBuffer.Push(entry, out _);
             }
@@ -711,6 +745,7 @@ namespace BlackTundra.Foundation {
         #region ApplicationLogCallback
 
         private static void ApplicationLogCallback(string message, string stacktrace, LogType type) {
+            if (type < applicationLogLevel) return;
             lock (EntryBuffer) {
                 EntryBuffer.Push(
                     new LogEntry(

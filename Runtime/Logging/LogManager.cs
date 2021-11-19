@@ -23,6 +23,11 @@ namespace BlackTundra.Foundation.Logging {
         public const int DefaultLoggerCapacity = 16;
 
         /// <summary>
+        /// Default <see cref="LogLevel"/> of a <see cref="Logger"/>.
+        /// </summary>
+        public static readonly LogLevel DefaultLoggerLogLevel = LogLevel.Info;
+
+        /// <summary>
         /// Default callback when a <see cref="Logger"/> buffer is full.
         /// This is used by the <see cref="RootLogger"/>.
         /// </summary>
@@ -51,7 +56,7 @@ namespace BlackTundra.Foundation.Logging {
         #region constructor
 
         static LogManager() {
-            RootLogger = new Logger(typeof(LogManager), RootLoggerName, DefaultLoggerCapacity, DefaultLoggerBufferFullDelegate);
+            RootLogger = new Logger(typeof(LogManager), RootLoggerName, DefaultLoggerCapacity, DefaultLoggerLogLevel, DefaultLoggerBufferFullDelegate);
             LoggerDictionary = new Dictionary<string, Logger>() {
                 { RootLoggerName, RootLogger }
             };
@@ -91,7 +96,7 @@ namespace BlackTundra.Foundation.Logging {
             string name = string.Concat("c_", type.FullName); // calculate the name of the context logger
             if (LoggerDictionary.TryGetValue(name, out Logger logger)) return logger; // try find the logger if it already exists
             else { // if no logger exists, create one
-                logger = new Logger(type, name, DefaultLoggerCapacity, DefaultLoggerBufferFullDelegate);
+                logger = new Logger(type, name, DefaultLoggerCapacity, DefaultLoggerLogLevel, DefaultLoggerBufferFullDelegate);
                 LoggerDictionary.Add(name, logger);
                 return logger;
             }

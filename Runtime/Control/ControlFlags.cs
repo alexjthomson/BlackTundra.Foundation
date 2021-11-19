@@ -37,19 +37,7 @@ namespace BlackTundra.Foundation.Control {
     }
 
     public static class ControlFlagsUtility {
-
-        #region variable
-
-        private static ControlFlags currentControlFlags = ControlFlags.None;
-
-        #endregion
-
-        #region logic
-
         public static void Apply(this ControlFlags controlFlags) => ControlManager.ControlFlags = controlFlags;
-
-        #endregion
-
     }
 
 }

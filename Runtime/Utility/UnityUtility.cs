@@ -90,6 +90,24 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
+        #region GetBounds
+
+        /// <summary>
+        /// Gets the bounds of a <paramref name="gameObject"/> by combining the bounds of all colliders on the object (including child objects).
+        /// </summary>
+        public static Bounds GetBounds(this GameObject gameObject) {
+            Collider[] colliders = gameObject.GetComponentsInChildren<Collider>();
+            Collider collider;
+            Bounds bounds = new Bounds(gameObject.transform.position, Vector3.zero);
+            for (int i = colliders.Length - 1; i >= 0; i--) {
+                collider = colliders[i];
+                bounds.Encapsulate(collider.bounds);
+            }
+            return bounds;
+        }
+
+        #endregion
+
         #region ToGameObject
 
         /// <summary>

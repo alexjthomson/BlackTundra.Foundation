@@ -46,14 +46,14 @@ namespace BlackTundra.Foundation.Logging {
         /// <summary>
         /// Formatted text that describes the <see cref="LogEntry"/> used in logs.
         /// </summary>
-        public string FormattedLogEntry => logLevel == LogLevel.None
+        public string FormattedLogEntry => logLevel.Equals(LogLevel.None)
             ? string.Concat(content, Environment.NewLine)
             : string.Concat(timestamp.ToFormattedString(), " [", logLevel.logName, "] ", content, Environment.NewLine);
 
         /// <summary>
         /// Formatted text that describes the <see cref="LogEntry"/> used in rich text GUI.
         /// </summary>
-        public string FormattedRichTextEntry => logLevel == LogLevel.None
+        public string FormattedRichTextEntry => logLevel.Equals(LogLevel.None)
             ? content
             : string.Concat(
                 FormattedRichTextF1, logLevel.colour.hex,
@@ -67,7 +67,7 @@ namespace BlackTundra.Foundation.Logging {
         /// <remarks>
         /// This can be used to display in other consoles that do not support rich text.
         /// </remarks>
-        public string FormattedPlainTextEntry => logLevel == LogLevel.None ? content : string.Concat('[', logLevel.logName, "] ", content);
+        public string FormattedPlainTextEntry => logLevel.Equals(LogLevel.None) ? content : string.Concat('[', logLevel.logName, "] ", content);
 
         /// <summary>
         /// Constructs a formatted timestamp.
@@ -92,14 +92,16 @@ namespace BlackTundra.Foundation.Logging {
         }
 
         internal LogEntry(in LogLevel logLevel, in string content) {
-            this.logLevel = logLevel ?? throw new ArgumentNullException(nameof(logLevel));
-            this.content = content ?? throw new ArgumentNullException(nameof(content));
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            this.logLevel = logLevel;
+            this.content = content;
             timestamp = DateTime.UtcNow;
         }
 
         internal LogEntry(in LogLevel logLevel, in DateTime timestamp, in string content) {
-            this.logLevel = logLevel ?? throw new ArgumentNullException(nameof(logLevel));
-            this.content = content ?? throw new ArgumentNullException(nameof(content));
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            this.logLevel = logLevel;
+            this.content = content;
             this.timestamp = timestamp;
         }
 
