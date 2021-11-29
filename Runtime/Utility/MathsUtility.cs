@@ -790,24 +790,12 @@ namespace BlackTundra.Foundation.Utility {
         [FieldOffset(0)]
         public float value;
 
-        /// <summary>
-        /// Target value of the <see cref="SmoothFloat"/>.
-        /// </summary>
-        [FieldOffset(4)]
-        public float target;
-
         #endregion
 
         #region constructor
 
         public SmoothFloat(in float value) {
             this.value = value;
-            target = value;
-        }
-
-        public SmoothFloat(in float value, in float target) {
-            this.value = value;
-            this.target = target;
         }
 
         #endregion
@@ -820,7 +808,7 @@ namespace BlackTundra.Foundation.Utility {
         /// Applys a change towards the target value.
         /// </summary>
         /// <returns>Returns <c>true</c> if a change occurred.</returns>
-        public bool Apply(in float deltaTime) {
+        public bool Apply(in float target, in float deltaTime) {
             if (value == target) return false;
             if (value < target) {
                 value += deltaTime;
