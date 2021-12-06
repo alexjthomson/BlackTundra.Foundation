@@ -317,9 +317,9 @@ namespace BlackTundra.Foundation.IO {
 
         #region UpdateConfiguration
 
-        internal static bool UpdateConfiguration(in Configuration configuration, in FileFormat fileFormat) {
+        internal static bool UpdateConfiguration(in Configuration configuration) {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-            if (!Read(configuration.fsr, out string content, fileFormat)) content = string.Empty;
+            if (!Read(configuration.fsr, out string content, configuration.format)) content = string.Empty;
             StringBuilder configBuilder;
             try {
                 configBuilder = configuration.Parse(
@@ -332,16 +332,16 @@ namespace BlackTundra.Foundation.IO {
                 exception.Handle();
                 return false;
             }
-            return Write(configuration.fsr, configBuilder.ToString(), fileFormat);
+            return Write(configuration.fsr, configBuilder.ToString(), configuration.format);
         }
 
         #endregion
 
         #region LoadConfiguration
 
-        internal static Configuration LoadConfiguration(Configuration configuration, in FileFormat fileFormat) {
+        internal static Configuration LoadConfiguration(Configuration configuration) {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-            if (Read(configuration.fsr, out string content, fileFormat)) {
+            if (Read(configuration.fsr, out string content, configuration.format)) {
                 try {
                     configuration.Parse(
                         content,

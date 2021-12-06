@@ -14,6 +14,7 @@ namespace BlackTundra.Foundation.Utility {
 #pragma warning disable IDE1006 // naming styles
         T min { get; }
         T max { get; }
+        T range { get; }
 #pragma warning restore IDE1006 // naming styles
 
         #endregion
@@ -46,6 +47,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public int min => _min;
         public int max => _max;
+        public int range => _max - _min;
 
         #endregion
 
@@ -89,6 +91,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public float min => _min;
         public float max => _max;
+        public float range => _max - _min;
 
         #endregion
 
@@ -132,6 +135,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public Vector2 min => (Vector2)_min;
         public Vector2 max => (Vector2)_max;
+        public Vector2 range => (Vector2)(_max - _min);
 
         #endregion
 
@@ -180,6 +184,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public Vector3 min => (Vector3)_min;
         public Vector3 max => (Vector3)_max;
+        public Vector3 range => (Vector3)(_max - _min);
 
         #endregion
 

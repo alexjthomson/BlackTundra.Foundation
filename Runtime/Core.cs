@@ -183,6 +183,17 @@ namespace BlackTundra.Foundation {
                     return;
                 }
 
+                #region initialise platform
+#if USE_STEAMWORKS
+                try {
+                    Platform.Steamworks.SteamManager.Initialise();
+                } catch (Exception exception) {
+                    Quit(QuitReason.FatalCrash, "Failed to initialise Steamworks.NET.", exception, true);
+                    return;
+                }
+#endif
+                #endregion
+
                 #region bind commands
 
                 // find delegate parameter types:
@@ -728,6 +739,19 @@ namespace BlackTundra.Foundation {
                     { $"<color=#{Colour.Gray.hex}>Shadow Distance</color>", QualitySettings.shadowDistance.ToString() },
                     { $"<color=#{Colour.Gray.hex}>Target Frame Rate</color>", Application.targetFrameRate.ToString() },
                     { string.Empty, string.Empty },
+                    { "<b>Platform Information</b>", string.Empty },
+#if USE_STEAMWORKS
+                    { $"<color=#{Colour.Gray.hex}>Application ID</color>", Platform.Steamworks.SteamManager.AppID.ToString() },
+                    { $"<color=#{Colour.Gray.hex}>Steam Auth Ticket Size</color>", Platform.Steamworks.SteamManager.SteamAuthTicketSize.ToString() },
+                    { string.Empty, string.Empty },
+                    { $"<color=#{Colour.Gray.hex}>Steam ID</color>", Platform.Steamworks.SteamManager.SteamID.ToString() },
+                    { $"<color=#{Colour.Gray.hex}>Display Name</color>", Platform.Steamworks.SteamManager.DisplayName.ToString() },
+                    { $"<color=#{Colour.Gray.hex}>Online Status</color>", Platform.Steamworks.SteamManager.OnlineStatus.ToString() },
+                    { $"<color=#{Colour.Gray.hex}>Friend Count</color>", Platform.Steamworks.SteamManager.FriendCount.ToString() },
+                    { string.Empty, string.Empty },
+#else
+                    { "<i>unknown platform</i>", string.Empty },
+#endif
                     { "<b>System Information</b>", string.Empty },
                     { $"<color=#{Colour.Gray.hex}>System Name</color>", SystemInfo.deviceName },
                     { $"<color=#{Colour.Gray.hex}>System ID</color>", SystemInfo.deviceUniqueIdentifier },

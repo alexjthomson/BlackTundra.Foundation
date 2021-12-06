@@ -1,5 +1,7 @@
 #if USE_STEAMWORKS
 
+using BlackTundra.Foundation.IO;
+
 using Steamworks;
 
 using System;
@@ -15,6 +17,8 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
     public static class SteamManager {
 
         #region constant
+
+        private const string ConfigurationFile = "platform.dat";
 
         /// <summary>
         /// Number of bytes in a Steam authentication ticket.
@@ -38,9 +42,9 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
 
         #region property
 
-        public static AppId_t AppId { get; private set; }
+        public static AppId_t AppID { get; private set; } = (AppId_t)480;
 
-        public static CSteamID SteamId => SteamUser.GetSteamID();
+        public static CSteamID SteamID => SteamUser.GetSteamID();
 
         public static string DisplayName => SteamFriends.GetPersonaName();
 
@@ -52,12 +56,9 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
 
         #region logic
 
-        #region InitialisePostAssembliesLoaded
+        #region Initialise
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-#pragma warning disable IDE0051 // remove unused private members
-        private static void InitialisePostAssembliesLoaded() {
-#pragma warning restore IDE0051 // remove unused private members
+        internal static void Initialise() {
 
             #region system checks
             if (!Packsize.Test()) {
@@ -70,8 +71,19 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
             }
             #endregion
 
-            // set app id here
-            AppId = (AppId_t)480;
+            #region load configuration
+
+            Configuration configuration = Configuration.GetConfiguration(
+                new FileSystemReference(
+                    string.Concat(
+                        FileSystem.LocalDataDirectory,
+                        ConfigurationFile
+                    ), true, false
+                ), FileFormat.Obfuscated
+            );
+            AppID = (AppId_t)uint.Parse(configuration.ForceGet("steam.application.id", "480"));
+
+            #endregion
 
             #region steam checks
             try {
@@ -85,7 +97,7 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
                  * Valve documentation:
                  * https://partner.steamgames.com/doc/sdk/api#initialization_and_shutdown
                  */
-                if (SteamAPI.RestartAppIfNecessary(AppId)) { // check if the application needs to restart
+                if (SteamAPI.RestartAppIfNecessary(AppID)) { // check if the application needs to restart
                     Core.Quit(QuitReason.InternalSelfQuit, "[Steamworks.NET] The application was not launched through the Steam client.");
                     return;
                 }
@@ -124,7 +136,7 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
             #endregion
 
             initialised = true;
-            Console.Info(string.Concat("[Steamworks.NET] Initialisation complete (x64_id: ", AppId ,")."));
+            Console.Info(string.Concat("[Steamworks.NET] Initialisation complete (x64_id: ", AppID ,")."));
 
         }
 
