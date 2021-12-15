@@ -90,15 +90,18 @@ namespace BlackTundra.Foundation {
 
         #region property
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window.enabled", false)]
-        public static bool IsEnabled { get; set; }
+        [ConfigurationEntry(Core.ConfigurationName, "console.window", "enabled")]
+        private static string _IsEnabled {
+            get => _enabled ? "enabled" : "disabled";
+            set => _enabled = string.Equals(value, "enabled", StringComparison.OrdinalIgnoreCase);
+        }
+        private static bool _enabled = false;
+        public static bool IsEnabled => _enabled;
 
         [ConfigurationEntry(Core.ConfigurationName, "console.window.name", "Console")]
         public static string WindowName {
             get => name;
-            set {
-                name = value;
-            }
+            set => name = value;
         }
         private static string name;
 
@@ -122,53 +125,69 @@ namespace BlackTundra.Foundation {
         }
         private static float height;
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window.echo", true)]
+        [ConfigurationEntry(Core.ConfigurationName, "console.echo", true)]
         public static bool Echo { get; set; }
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window.register_console_callback", true)]
-        public static bool RegisterConsoleCallback {
-            get => registerConsoleCallback;
+        [ConfigurationEntry(Core.ConfigurationName, "console.application", "enabled")]
+        private static string RegisterConsoleCallback {
+            get => registerConsoleCallback ? "enabled" : "disabled";
             set {
-                if (registerConsoleCallback != value) {
-                    registerConsoleCallback = value;
+                bool state = string.Equals(value, "enabled", StringComparison.OrdinalIgnoreCase);
+                if (registerConsoleCallback != state) {
+                    registerConsoleCallback = state;
                     Console.OnPushLogEntry -= OnConsolePushLogEntry;
-                    if (value) {
-                        Console.OnPushLogEntry += OnConsolePushLogEntry;
-                    }
+                    if (state) Console.OnPushLogEntry += OnConsolePushLogEntry;
                 }
             }
         }
         private static bool registerConsoleCallback = false;
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window.console_callback_log_level", "warning")]
+        [ConfigurationEntry(Core.ConfigurationName, "console.application.log_level", "warning")]
         private static string ConsoleCallbackLogLevel {
             get => consoleCallbackLogLevel.distinctName ?? "none";
             set => consoleCallbackLogLevel = LogLevel.Parse(value);
         }
         private static LogLevel consoleCallbackLogLevel = LogLevel.Info;
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window.register_application_callback", true)]
-        public static bool RegisterApplicationLogCallback {
-            get => registerApplicationLogCallback;
+        [ConfigurationEntry(Core.ConfigurationName, "console.engine", "enabled")]
+        public static string RegisterApplicationLogCallback {
+            get => registerApplicationLogCallback ? "enabled" : "disabled";
             set {
-                if (registerApplicationLogCallback == value) return;
-                registerApplicationLogCallback = value;
-                Application.logMessageReceived -= ApplicationLogCallback;
-                if (value) {
+                bool state = string.Equals(value, "enabled", StringComparison.OrdinalIgnoreCase);
+                if (registerApplicationLogCallback != state) {
+                    registerApplicationLogCallback = state;
                     Application.logMessageReceived -= ApplicationLogCallback;
+                    if (state) Application.logMessageReceived += ApplicationLogCallback;
                 }
             }
         }
         private static bool registerApplicationLogCallback = false;
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window.application_callback_log_level", "warning")]
+        [ConfigurationEntry(Core.ConfigurationName, "console.engine.log_level", "warning")]
         private static string ApplicationLogLevel {
             get => applicationLogLevel.ToString().ToLower();
-            set => applicationLogLevel = LogLevel.Parse(value).unityLogType;
+            set {
+                LogLevel logLevel = LogLevel.Parse(value);
+                applicationLogLevel = logLevel.unityLogType;
+                applicationLogPriority = logLevel.priority;
+            }
         }
         private static LogType applicationLogLevel;
+        private static int applicationLogPriority;
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window.entry_buffer_size", DefaultEntryBufferSize)]
+        [ConfigurationEntry(Core.ConfigurationName, "console.engine.stacktrace_level", "warning")]
+        private static string ApplicationStacktraceLevel {
+            get => applicationStacktraceLevel.ToString().ToLower();
+            set {
+                LogLevel logLevel = LogLevel.Parse(value);
+                applicationStacktraceLevel = logLevel.unityLogType;
+                applicationStacktracePriority = logLevel.priority;
+            }
+        }
+        private static LogType applicationStacktraceLevel;
+        private static int applicationStacktracePriority;
+
+        [ConfigurationEntry(Core.ConfigurationName, "console.entry_buffer_size", DefaultEntryBufferSize)]
         public static int WindowEntryBufferSize {
             get => EntryBuffer.Length;
             set {
@@ -177,7 +196,7 @@ namespace BlackTundra.Foundation {
             }
         }
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window.history_buffer_size", DefaultHistoryBufferSize)]
+        [ConfigurationEntry(Core.ConfigurationName, "console.history_buffer_size", DefaultHistoryBufferSize)]
         public static int HistoryBufferSize {
             get => inputHistoryBuffer.Length;
             set {
@@ -227,7 +246,7 @@ namespace BlackTundra.Foundation {
         /// Called every frame by the <see cref="Core.Update"/> method.
         /// </summary>
         internal static void Update() {
-            if (!IsEnabled) return;
+            if (!_enabled) return;
 #if ENABLE_INPUT_SYSTEM
             Keyboard keyboard = Keyboard.current; // get the current keyboard
             if (keyboard != null) { // the current keyboard is not null
@@ -293,7 +312,7 @@ namespace BlackTundra.Foundation {
         /// Draw must be called from an OnGUI() method.
         /// </summary>
         internal static void Draw() {
-            if (!draw || !IsEnabled) return;
+            if (!draw || !_enabled) return;
             if (entryStyle == null) {
                 entryStyle = new GUIStyle() {
                     name = "DebugConsoleEntryStyle",
@@ -745,12 +764,16 @@ namespace BlackTundra.Foundation {
         #region ApplicationLogCallback
 
         private static void ApplicationLogCallback(string message, string stacktrace, LogType type) {
-            if (type < applicationLogLevel) return;
+            LogLevel logLevel = type.ToLogLevel();
+            int priority = logLevel.priority;
+            if (priority < applicationLogPriority) return;
             lock (EntryBuffer) {
                 EntryBuffer.Push(
                     new LogEntry(
-                        type.ToLogLevel(),
-                        stacktrace.IsNullOrWhitespace() ? message.Trim() : $"{message.Trim()}\n{stacktrace.Trim()}"
+                        logLevel,
+                        priority < applicationStacktracePriority || stacktrace.IsNullOrWhitespace()
+                            ? message.Trim()
+                            : $"{message.Trim()}\n{stacktrace.Trim()}"
                     ),
                     out _
                 );

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -12,6 +13,46 @@ namespace BlackTundra.Foundation.IO {
 
     public sealed class Configuration {
 
+        #region nested
+
+        #region ConfigurationSortKeyDescriptor
+
+        /// <summary>
+        /// Used while sorting configuration entries. This describes a configuration entry key and the index in the
+        /// <see cref="buffer"/> that the descriptor is reffering to.
+        /// </summary>
+        private struct ConfigurationSortKeyDescriptor {
+
+            #region variable
+
+            /// <summary>
+            /// Index in the <see cref="buffer"/> of the original <see cref="ConfigurationEntry"/> that this is
+            /// describing the key of.
+            /// </summary>
+            internal readonly int index;
+
+            /// <summary>
+            /// Key of the <see cref="ConfigurationEntry"/> being described.
+            /// </summary>
+            internal readonly string key;
+
+            #endregion
+
+            #region constructor
+
+            internal ConfigurationSortKeyDescriptor(in int index, in string key) {
+                this.index = index;
+                this.key = key;
+            }
+
+            #endregion
+
+        }
+
+        #endregion
+
+        #endregion
+
         #region constant
 
         /// <summary>
@@ -22,6 +63,9 @@ namespace BlackTundra.Foundation.IO {
         private const int DefaultConfigurationBufferCapacity = 32;
         private const int DefaultConfigurationBufferExpandSize = 8;
 
+        /// <summary>
+        /// String used at the end of a configuration statement when converting <see cref="Configuration"/> to a string.
+        /// </summary>
         private readonly static string EndOfStatement = ';' + Environment.NewLine;
 
         #endregion
@@ -544,6 +588,7 @@ namespace BlackTundra.Foundation.IO {
             if (buffer.Count == buffer.Capacity) buffer.Expand(expandSize); // expand the buffer
             ConfigurationEntry entry = new ConfigurationEntry(key, value, dirty);
             buffer.AddLast(entry); // add the new configuration entry to the buffer
+            if (dirty) this.dirty = true; // mark as dirty
             return entry;
         }
 
@@ -554,7 +599,10 @@ namespace BlackTundra.Foundation.IO {
         /// <summary>
         /// Clears the configuration of all entries.
         /// </summary>
-        public void Clear() => buffer.Clear();
+        public void Clear() {
+            buffer.Clear();
+            dirty = true;
+        }
 
         #endregion
 
@@ -599,7 +647,12 @@ namespace BlackTundra.Foundation.IO {
         /// <summary>
         /// Force saves the <see cref="Configuration"/>.
         /// </summary>
-        public bool Save() => FileSystem.UpdateConfiguration(this);
+        public bool Save() {
+            Sort();
+            bool success = FileSystem.UpdateConfiguration(this);
+            dirty = false;
+            return success;
+        }
 
         #endregion
 
@@ -611,6 +664,36 @@ namespace BlackTundra.Foundation.IO {
         public void Load() {
             FileSystem.LoadConfiguration(this);
             RefreshProperties();
+        }
+
+        #endregion
+
+        #region Sort
+
+        /// <summary>
+        /// Sorts the <see cref="buffer"/> <see cref="ConfigurationEntry"/> instances alphabetically by key.
+        /// </summary>
+        private void Sort() {
+            UnityEngine.Debug.Log("sorting");
+            UnityEngine.Debug.Log(Parse(string.Empty, true, false, false).ToString());
+            // split keys by seperator and find depth:
+            int depth = 1;
+            int count = buffer.Count;
+            ConfigurationSortKeyDescriptor[] keys = new ConfigurationSortKeyDescriptor[count];
+            ConfigurationEntry entry;
+            for (int i = count - 1; i >= 0; i--) {
+                entry = buffer[i];
+                keys[i] = new ConfigurationSortKeyDescriptor(i, entry._key);
+            }
+            // sort:
+            keys.Sort((x, y) => string.Compare(x.key, y.key, StringComparison.OrdinalIgnoreCase));
+            // finalize:
+            int[] map = new int[count];
+            for (int i = count - 1; i >= 0; i--) {
+                map[i] = keys[i].index;
+            }
+            buffer.Remap(map);
+            UnityEngine.Debug.Log(Parse(string.Empty, true, false, false).ToString());
         }
 
         #endregion

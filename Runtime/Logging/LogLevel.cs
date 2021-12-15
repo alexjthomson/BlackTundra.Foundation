@@ -110,14 +110,21 @@ namespace BlackTundra.Foundation.Logging {
         /// Converts a <see cref="LogType"/> to a <see cref="LogLevel"/>.
         /// </summary>
         public static LogLevel ToLogLevel(this LogType type) {
-            switch (type) {
-                case LogType.Log: return LogLevel.Info;
-                case LogType.Warning: return LogLevel.Warning;
-                case LogType.Error:
-                case LogType.Assert:
-                case LogType.Exception: return LogLevel.Error;
-                default: throw new NotSupportedException();
-            }
+            return type switch {
+                LogType.Log => LogLevel.Info,
+                LogType.Warning => LogLevel.Warning,
+                LogType.Error or LogType.Assert or LogType.Exception => LogLevel.Error,
+                _ => throw new NotSupportedException(),
+            };
+        }
+
+        public static int ToLogPriority(this LogType type) {
+            return type switch {
+                LogType.Log => LogLevel.Info.priority,
+                LogType.Warning => LogLevel.Warning.priority,
+                LogType.Error or LogType.Assert or LogType.Exception => LogLevel.Error.priority,
+                _ => throw new NotSupportedException(),
+            };
         }
 
         #endregion

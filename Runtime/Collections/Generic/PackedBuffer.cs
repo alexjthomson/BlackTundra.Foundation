@@ -694,6 +694,38 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
         #endregion
 
+        #region Remap
+
+        /// <summary>
+        /// Remaps (rearranges) the <see cref="PackedBuffer{T}"/> elements based off of an <paramref name="indexMap"/>.
+        /// </summary>
+        /// <param name="indexMap">
+        /// Maps the current index in the <see cref="PackedBuffer{T}"/> to a new index. This array must be the same length as the
+        /// current <see cref="Count">number of elements in the <see cref="PackedBuffer{T}"/></see>.
+        /// </param>
+        /// <remarks>
+        /// No checks are performed to ensure that every element is remapped. It is up to the provider of the <paramref name="indexMap"/>
+        /// to ensure the map remaps every element.
+        /// </remarks>
+        public void Remap(in int[] indexMap) {
+            if (indexMap == null) throw new ArgumentNullException(nameof(indexMap));
+            int bufferLength = buffer.Length;
+            int count = lastIndex == -1 ? bufferLength : lastIndex;
+            if (count != indexMap.Length) throw new ArgumentException($"{nameof(indexMap)} must have same length as {nameof(Count)}.");
+            if (count < 2) return;
+            T[] newBuffer = new T[bufferLength];
+            int index;
+            for (int i = count - 1; i >= 0; i--) {
+                index = indexMap[i];
+                if (index < 0 || index >= count) throw new ArgumentException($"{nameof(indexMap)} has invalid mapping at index {i}: `{index}`. Must be in range `0` (inclusive) -> `{count}` (exclusive).");
+                newBuffer[i] = buffer[index];
+            }
+            Array.Copy(newBuffer, 0, buffer, 0, count);
+            Pack(); // pack, this ensures that if any elements are missed, the empty gaps are removed
+        }
+
+        #endregion
+
         #endregion
 
     }
