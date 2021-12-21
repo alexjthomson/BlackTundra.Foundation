@@ -31,6 +31,8 @@ namespace BlackTundra.Foundation.Control {
         /// </summary>
         private static readonly PackedBuffer<InputDevice> InputDeviceBuffer = new PackedBuffer<InputDevice>(4);
 
+        private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter(nameof(ControlManager));
+
         #endregion
 
         #region variable
@@ -210,7 +212,7 @@ namespace BlackTundra.Foundation.Control {
             try {
                 flags = controllable.OnControlGained();
             } catch (Exception exception) {
-                Console.Error($"[{nameof(ControlManager)}] Exception occurred while invoking \"{nameof(IControllable.OnControlGained)}\".", exception);
+                ConsoleFormatter.Error($"Exception occurred while invoking `{nameof(IControllable.OnControlGained)}`.", exception);
                 return false; // failed
             }
             return true; // successful
@@ -224,7 +226,7 @@ namespace BlackTundra.Foundation.Control {
             try {
                 controllable.OnControlRevoked();
             } catch (Exception exception) {
-                Console.Error($"[{nameof(ControlManager)}] Exception occurred while invoking \"{nameof(IControllable.OnControlRevoked)}\".", exception);
+                ConsoleFormatter.Error($"Exception occurred while invoking `{nameof(IControllable.OnControlRevoked)}`.", exception);
                 return false; // failed
             }
             return true; // successful

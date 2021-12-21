@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-using BlackTundra.Foundation.IO;
+﻿using BlackTundra.Foundation.IO;
 using BlackTundra.Foundation.Logging;
 using BlackTundra.Foundation.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BlackTundra.Foundation {
 
@@ -34,6 +34,11 @@ namespace BlackTundra.Foundation {
         /// String that replaces the \t (tab) special character.
         /// </summary>
         private const string TabSpaces = "    ";
+
+        /// <summary>
+        /// <see cref="ConsoleFormatter"/> used by the <see cref="Console"/>.
+        /// </summary>
+        private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter(nameof(Console));
 
         #endregion
 
@@ -143,7 +148,7 @@ namespace BlackTundra.Foundation {
         #region constructor
 
         static Console() {
-            Logger.OnPushLogEntry += OnPushLogEntry;
+            Logger.OnPushLogEntry += PushLogEntry;
 #if UNITY_EDITOR
             Logger.OnPushLogEntry += PushToUnityDebugConsole;
 #endif
@@ -152,6 +157,12 @@ namespace BlackTundra.Foundation {
         #endregion
 
         #region logic
+
+        #region PushLogEntry
+
+        private static void PushLogEntry(LogEntry log) => OnPushLogEntry?.Invoke(log);
+
+        #endregion
 
         #region PushToUnityDebugConsole
 #if UNITY_EDITOR
@@ -211,7 +222,7 @@ namespace BlackTundra.Foundation {
         #region Info
         public static void Info(in string message) => Logger.Push(LogLevel.Info, message);
         #endregion
-        
+
         #region Warning
         public static void Warning(in string message) => Logger.Push(LogLevel.Warning, message);
         #endregion
@@ -289,7 +300,7 @@ namespace BlackTundra.Foundation {
         public static bool Execute(string command) {
             if (command.IsNullOrWhitespace()) return true; // no command entered
             command = command.Trim();
-            Info(string.Concat("[Console] Command: ", command));
+            ConsoleFormatter.Info(string.Concat("Command: ", command));
             return CommandInfo.Execute(command);
         }
 

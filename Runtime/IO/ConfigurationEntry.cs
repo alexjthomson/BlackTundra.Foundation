@@ -10,6 +10,12 @@ namespace BlackTundra.Foundation.IO {
     /// </summary>
     public sealed class ConfigurationEntry : IEquatable<ConfigurationEntry>, IEquatable<string> {
 
+        #region constant
+
+        private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter(nameof(ConfigurationEntry));
+
+        #endregion
+
         #region variable
 
         /// <summary>
@@ -222,7 +228,7 @@ namespace BlackTundra.Foundation.IO {
                     if (ToInt(value, out int v)) {
                         _property.SetValue(null, v);
                     } else {
-                        Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{_property.Name}\": Failed to parse value to int.");
+                        ConsoleFormatter.Error($"Failed to update property `{_property.Name}`: Failed to parse value to int.");
                     }
                     break;
                 }
@@ -230,7 +236,7 @@ namespace BlackTundra.Foundation.IO {
                     if (ToBool(value, out bool v)) {
                         _property.SetValue(null, v);
                     } else {
-                        Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{_property.Name}\": Failed to parse value to bool.");
+                        ConsoleFormatter.Error($"Failed to update property `{_property.Name}`: Failed to parse value to bool.");
                     }
                     break;
                 }
@@ -238,12 +244,12 @@ namespace BlackTundra.Foundation.IO {
                     if (ToFloat(value, out float v)) {
                         _property.SetValue(null, v);
                     } else {
-                        Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{_property.Name}\": Failed to parse value to float.");
+                        ConsoleFormatter.Error($"Failed to update property `{_property.Name}`: Failed to parse value to float.");
                     }
                     break;
                 }
                 default: {
-                    Console.Error($"[{nameof(ConfigurationEntry)}] Failed to update property \"{_property.Name}\": Unsupported property type \"{type.FullName}\".");
+                    ConsoleFormatter.Error($"Failed to update property `{_property.Name}`: Unsupported property type \"{type.FullName}\".");
                     break;
                 }
             }

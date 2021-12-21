@@ -32,7 +32,7 @@ namespace BlackTundra.Foundation.Serialization {
             IEnumerable<Type> serializableImplementations = ObjectUtility.GetDecoratedTypes<SerializableImplementationOfAttribute>();
             foreach (Type implementation in serializableImplementations) {
                 if (!implementation.HasAttribute<SerializableAttribute>()) {
-                    Console.Error($"Invalid serializable implementation \"{implementation.FullName}\": Not decorated with {typeof(SerializableAttribute).FullName}.");
+                    ObjectUtility.ConsoleFormatter.Error($"Invalid serializable implementation `{implementation.FullName}`: Not decorated with {typeof(SerializableAttribute).FullName}.");
                     continue;
                 }
                 SerializableImplementationOfAttribute[] attributes = implementation.GetAttributes<SerializableImplementationOfAttribute>();
@@ -40,7 +40,7 @@ namespace BlackTundra.Foundation.Serialization {
                 for (int i = attributes.Length - 1; i >= 0; i--) {
                     attribute = attributes[i];
                     if (TypeOverrideDictionary.TryGetValue(attribute.target, out Type original)) { // already contains implementation
-                        Console.Error($"Duplicate serializable implementation of type \"{attribute.target.FullName}\" (original: \"{original.FullName}\", current: \"{implementation.FullName}\").");
+                        ObjectUtility.ConsoleFormatter.Error($"Duplicate serializable implementation of type `{attribute.target.FullName}` (original: `{original.FullName}`, current: `{implementation.FullName}`).");
                         continue;
                     }
                     ConstructorInfo constructorInfo = implementation.GetConstructor( // get constructor information for target type
@@ -50,11 +50,11 @@ namespace BlackTundra.Foundation.Serialization {
                         null
                     );
                     if (constructorInfo == null) { // no constructor for target type
-                        Console.Error($"Type \"{implementation.FullName}\" contains an invalid serializable implementation of type \"{attribute.target.FullName}\": No constructor with signature \"({attribute.target.FullName})\" found.");
+                        ObjectUtility.ConsoleFormatter.Error($"Type `{implementation.FullName}` contains an invalid serializable implementation of type `{attribute.target.FullName}`: No constructor with signature `({attribute.target.FullName})` found.");
                         continue;
                     }
                     TypeOverrideDictionary.Add(attribute.target, implementation); // register this implementation as a serializable implementation of the target type
-                    Console.Info($"[ObjectUtility] Bound \"{attribute.target.FullName}\" -> \"{implementation.FullName}\"");
+                    ObjectUtility.ConsoleFormatter.Info($"Bound `{attribute.target.FullName}` -> `{implementation.FullName}`");
                 }
             }
         }
@@ -86,7 +86,7 @@ namespace BlackTundra.Foundation.Serialization {
                         type = newType;
                         serializeFromMemory = true; // mark as true, the object can now be serialized from memory
                     } else {
-                        Console.Error($"Failed to find constructor for object serialization type override {type.FullName} -> {newType.FullName}."); // log failure
+                        ObjectUtility.ConsoleFormatter.Error($"Failed to find constructor for object serialization type override {type.FullName} -> {newType.FullName}."); // log failure
                     }
                 }
                 if (!serializeFromMemory) throw new NotSupportedException($"Cannot serialize object of type \"{type.FullName}\".");
@@ -112,7 +112,7 @@ namespace BlackTundra.Foundation.Serialization {
                     try {
                         binaryFormatter.Serialize(memoryStream, obj); // try to serialize the object to the memory stream
                     } catch (SerializationException exception) {
-                        Console.Error($"Failed to serialize object of type \"{type.FullName}\".", exception);
+                        ObjectUtility.ConsoleFormatter.Error($"Failed to serialize object of type \"{type.FullName}\".", exception);
                         throw exception;
                     }
                     return memoryStream.ToArray().AddFirst(flag); // convert the contents of the memory stream to a byte array and make sure to add the flag to the start

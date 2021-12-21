@@ -1,9 +1,10 @@
-﻿using System;
+﻿using BlackTundra.Foundation.Utility;
+
+using System;
 
 using UnityEditor;
-using UnityEngine;
 
-using BlackTundra.Foundation.Utility;
+using UnityEngine;
 
 namespace BlackTundra.Foundation.Editor.Utility {
 

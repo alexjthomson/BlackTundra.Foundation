@@ -204,7 +204,7 @@ namespace BlackTundra.Foundation.Collections {
         }
 
         #endregion
-        
+
         #region IndexOf
 
         public int IndexOf(in string key) {

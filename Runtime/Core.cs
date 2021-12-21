@@ -55,6 +55,11 @@ namespace BlackTundra.Foundation {
         /// </summary>
         private static readonly Queue<Action> ExecutionQueue = new Queue<Action>();
 
+        /// <summary>
+        /// <see cref="ConsoleFormatter"/> used for logging by the <see cref="Core"/>.
+        /// </summary>
+        private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter(nameof(Core));
+
         #endregion
 
         #region delegate
@@ -77,7 +82,7 @@ namespace BlackTundra.Foundation {
         /// Describes the phase the <see cref="Core"/> is currently in.
         /// </summary>
         internal enum CorePhase : int {
-            
+
             /// <summary>
             /// While the <see cref="Core"/> is <see cref="Idle"/>, it has not yet had <see cref="Initialise"/> called.
             /// </summary>
@@ -153,7 +158,7 @@ namespace BlackTundra.Foundation {
                 phase = CorePhase.Init_Stage1;
                 string separator = new string('-', 64);
                 Console.Empty(string.Concat(separator, ' ', DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), ' ', separator));
-                Console.Trace("[Core] Init (1/3) STARTED.");
+                ConsoleFormatter.Trace("Init (1/3) STARTED.");
 
                 #region bind play mode shutdown hook
 #if UNITY_EDITOR
@@ -166,12 +171,12 @@ namespace BlackTundra.Foundation {
                     Version = Version.Parse(Application.version);
                 } catch (FormatException exception) {
 #if UNITY_EDITOR
-                    Debug.LogWarning("Make sure the project version is formatted correctly: \"{major}.{minor}.{release}{release_type}\".", instance);
+                    Debug.LogWarning("Make sure the project version is formatted correctly: `{major}.{minor}.{release}{release_type}`.", instance);
 #endif
-                    Quit(QuitReason.CoreSelfQuit, $"Failed to parse application version (version: \"{Application.version}\").", exception, true);
+                    Quit(QuitReason.CoreSelfQuit, $"Failed to parse application version (version: `{Application.version}`).", exception, true);
                     throw exception;
                 }
-                Console.Info(string.Concat("[Core] Version: ", Version.ToString()));
+                ConsoleFormatter.Info(string.Concat("Version: ", Version.ToString()));
                 #endregion
 
                 FileSystem.Initialise(); // initialise file system
@@ -215,14 +220,14 @@ namespace BlackTundra.Foundation {
                             attribute.usage,
                             attribute.hidden
                         );
-                        Console.Info(string.Concat("[Console] Bound \"", signature, "\" -> \"", attribute.name, "\".")); // log binding
+                        ConsoleFormatter.Info(string.Concat("Bound `", signature, "` -> `", attribute.name, "`.")); // log binding
                     } else {
-                        string fatalMessage = string.Concat("Console failed to bind \"", signature, "\" -> \"", attribute.name, "\"."); // the command was not bound, create error message
+                        string fatalMessage = string.Concat("Console failed to bind `", signature, "` -> `", attribute.name, "`."); // the command was not bound, create error message
 #if UNITY_EDITOR
-                        Debug.LogWarning($"Failed to bind method \"{signature}\" to console. Check the method signature matches that of \"{typeof(Console.Command.CommandCallbackDelegate).FullName}\".");
+                        Debug.LogWarning($"Failed to bind method `{signature}` to console. Check the method signature matches that of `{typeof(Console.Command.CommandCallbackDelegate).FullName}`.");
                         Debug.LogError(fatalMessage);
 #endif
-                        Console.Fatal(fatalMessage); // log the failure
+                        ConsoleFormatter.Fatal(fatalMessage); // log the failure
                         Quit(QuitReason.FatalCrash, fatalMessage, null, true); // quit
                         return;
                     }
@@ -232,7 +237,7 @@ namespace BlackTundra.Foundation {
 
                 UnityEventLogger.Initialise();
 
-                Console.Trace("[Core] Init (1/3) COMPLETE.");
+                ConsoleFormatter.Trace("Init (1/3) COMPLETE.");
                 Console.Flush();
             }
         }
@@ -252,7 +257,7 @@ namespace BlackTundra.Foundation {
                 phase = CorePhase.Init_Stage2;
                 #endregion
 
-                Console.Trace("[Core] Init (2/3) STARTED.");
+                ConsoleFormatter.Trace("Init (2/3) STARTED.");
 
                 #region update instance
                 if (instance == null) {
@@ -266,7 +271,7 @@ namespace BlackTundra.Foundation {
                         };
                         Object.DontDestroyOnLoad(gameObject);
                         instance = gameObject.GetComponent<CoreInstance>();
-                        Console.Info($"[Core] Instantiated \"CoreInstance\" GameObject.");
+                        ConsoleFormatter.Info($"Instantiated `{nameof(CoreInstance)}` GameObject.");
                     }
                 }
                 #endregion
@@ -281,10 +286,10 @@ namespace BlackTundra.Foundation {
                     try {
                         method.Invoke(null, null);
                     } catch (Exception exception) {
-                        Quit(QuitReason.FatalCrash, string.Concat("Failed to invoke \"", signature, "\"."), exception, true);
+                        Quit(QuitReason.FatalCrash, string.Concat("Failed to invoke `", signature, "`."), exception, true);
                         return;
                     }
-                    Console.Info(string.Concat("[Core] Invoked \"", signature, "\"."));
+                    ConsoleFormatter.Info(string.Concat("Invoked `", signature, "`."));
                 }
 
                 #endregion
@@ -308,10 +313,10 @@ namespace BlackTundra.Foundation {
                     else if (methodParameterTypes.ContentEquals(updateDeltaTimeParameterTypes))
                         updateDeltaTimeList.Add((UpdateDeltaTimeDelegate)Delegate.CreateDelegate(typeof(UpdateDeltaTimeDelegate), method));
                     else {
-                        Quit(QuitReason.FatalCrash, string.Concat("[Core] Failed to bind \"", method.DeclaringType.FullName, '.', method.Name, "\" to core update method."), null, true);
+                        Quit(QuitReason.FatalCrash, string.Concat("Failed to bind \"", method.DeclaringType.FullName, '.', method.Name, "\" to core update method."), null, true);
                         continue;
                     }
-                    Console.Info(string.Concat("[Core] Bound \"", method.DeclaringType.FullName, '.', method.Name, "\" -> \"Core.Update\"."));
+                    ConsoleFormatter.Info(string.Concat("Bound `", method.DeclaringType.FullName, '.', method.Name, "` -> `Core.Update`."));
                 }
 
                 updateCallbacks = updateList.ToArray();
@@ -319,7 +324,7 @@ namespace BlackTundra.Foundation {
 
                 #endregion
 
-                Console.Trace("[Core] Init (2/3) COMPLETE.");
+                ConsoleFormatter.Trace("Init (2/3) COMPLETE.");
                 Console.Flush();
             }
         }
@@ -340,14 +345,14 @@ namespace BlackTundra.Foundation {
                 phase = CorePhase.Init_Stage3;
                 #endregion
 
-                Console.Trace("[Core] Init (3/3) STARTED.");
+                ConsoleFormatter.Trace("Init (3/3) STARTED.");
 
                 phase = CorePhase.Running;
 
-                Console.Trace("[Core] Init (3/3) COMPLETE.");
+                ConsoleFormatter.Trace("Init (3/3) COMPLETE.");
                 Console.Flush();
 
-                Console.Info("[Core] Init COMPLETE .");
+                ConsoleFormatter.Info("Init COMPLETE.");
 
             }
 
@@ -361,11 +366,11 @@ namespace BlackTundra.Foundation {
             lock (CoreLock) {
                 if (phase >= CorePhase.Shutdown) return; // already shutdown
                 phase = CorePhase.Shutdown;
-                string shutdownMessage = $"[Core] Shutdown (reason: \"{quitReason}\", fatal: {(fatal ? "true" : "false")})";
+                string shutdownMessage = $"Shutdown (reason: `{quitReason}`, fatal: {(fatal ? "true" : "false")})";
                 if (message != null) shutdownMessage = string.Concat(shutdownMessage, ": ", message);
-                if (fatal) Console.Fatal(shutdownMessage, exception);
-                else if (exception != null) Console.Error(shutdownMessage, exception);
-                else Console.Info(shutdownMessage);
+                if (fatal) ConsoleFormatter.Fatal(shutdownMessage, exception);
+                else if (exception != null) ConsoleFormatter.Error(shutdownMessage, exception);
+                else ConsoleFormatter.Info(shutdownMessage);
                 #region invoke terminate methods
                 OrderedList<int, MethodInfo> methods = ObjectUtility.GetDecoratedMethodsOrdered<CoreTerminateAttribute>();
                 MethodInfo method;
@@ -374,13 +379,13 @@ namespace BlackTundra.Foundation {
                     try {
                         method.Invoke(null, null);
                     } catch (Exception e) {
-                        Console.Fatal(
+                        ConsoleFormatter.Fatal(
                             string.Concat(
-                                "[Core] Failed to invoke \"",
+                                "Failed to invoke `",
                                 method.DeclaringType.FullName,
                                 '.',
                                 method.Name,
-                                "\"."
+                                "`."
                             ), e
                         );
                     }
@@ -430,13 +435,13 @@ namespace BlackTundra.Foundation {
                         callback.Invoke();
                     } catch (Exception exception) {
                         MethodInfo methodInfo = callback.GetMethodInfo();
-                        Console.Error(
+                        ConsoleFormatter.Error(
                             string.Concat(
-                                "An unhandled exception occurred while invoking \"",
+                                "An unhandled exception occurred while invoking `",
                                 methodInfo.DeclaringType.FullName,
                                 '.',
                                 methodInfo.Name,
-                                "\"."
+                                "`."
                             ), exception
                         );
                     }
@@ -453,13 +458,13 @@ namespace BlackTundra.Foundation {
                         callback.Invoke(deltaTime);
                     } catch (Exception exception) {
                         MethodInfo methodInfo = callback.GetMethodInfo();
-                        Console.Error(
+                        ConsoleFormatter.Error(
                             string.Concat(
-                                "An unhandled exception occurred while invoking \"",
+                                "An unhandled exception occurred while invoking `",
                                 methodInfo.DeclaringType.FullName,
                                 '.',
                                 methodInfo.Name,
-                                "\"."
+                                "`."
                             ), exception
                         );
                     }
@@ -519,18 +524,18 @@ namespace BlackTundra.Foundation {
             foreach (MethodInfo method in methods) {
                 string signature = $"{method.DeclaringType.FullName}.{method.Name}";
                 if (ObjectUtility.GetMethodParameterTypes(method).Length != 0) {
-                    Console.Fatal(string.Concat("[Core] Invalid validate method \"", signature, "\"."));
+                    ConsoleFormatter.Fatal(string.Concat("Invalid validate method \"", signature, "\"."));
                     continue;
                 }
                 try {
                     method.Invoke(null, null);
                 } catch (Exception exception) {
-                    Console.Error(string.Concat("[Core] Failed to invoke validate method \"", signature, "\"."), exception);
+                    ConsoleFormatter.Error(string.Concat("Failed to invoke validate method \"", signature, "\"."), exception);
                     continue;
                 }
-                Console.Info(string.Concat("[Core] Invoked \"", signature, "\"."));
+                ConsoleFormatter.Info(string.Concat("Invoked \"", signature, "\"."));
             }
-            Console.Info("[Core] Validate completed.");
+            ConsoleFormatter.Info("Validate completed.");
         }
 
         #endregion

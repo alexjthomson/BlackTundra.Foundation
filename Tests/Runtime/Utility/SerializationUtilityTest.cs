@@ -1,7 +1,7 @@
-using NUnit.Framework;
-
-using BlackTundra.Foundation.Utility;
 using BlackTundra.Foundation.Serialization;
+using BlackTundra.Foundation.Utility;
+
+using NUnit.Framework;
 
 using UnityEngine;
 

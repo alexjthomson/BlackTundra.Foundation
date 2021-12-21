@@ -94,7 +94,7 @@ namespace BlackTundra.Foundation.Utility {
         #region AddFirst
 
         public void AddFirst(in T element) {
-            
+
             linkedList.AddFirst(element);
             modified = true;
 

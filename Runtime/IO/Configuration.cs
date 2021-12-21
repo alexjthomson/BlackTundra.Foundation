@@ -1,11 +1,10 @@
-﻿using System;
+﻿using BlackTundra.Foundation.Collections.Generic;
+using BlackTundra.Foundation.Utility;
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-
-using BlackTundra.Foundation.Collections.Generic;
-using BlackTundra.Foundation.Utility;
 
 using Colour = BlackTundra.Foundation.ConsoleColour;
 
@@ -283,7 +282,7 @@ namespace BlackTundra.Foundation.IO {
             }
             return -1;
         }
-        
+
         #endregion
 
         #region Parse

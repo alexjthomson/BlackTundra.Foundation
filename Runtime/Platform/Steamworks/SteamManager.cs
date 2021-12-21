@@ -7,8 +7,6 @@ using Steamworks;
 using System;
 using System.Text;
 
-using UnityEngine;
-
 namespace BlackTundra.Foundation.Platform.Steamworks {
 
     /// <summary>
@@ -24,6 +22,11 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
         /// Number of bytes in a Steam authentication ticket.
         /// </summary>
         public const int SteamAuthTicketSize = 64;
+
+        /// <summary>
+        /// <see cref="ConsoleFormatter"/> used by the <see cref="SteamManager"/>.
+        /// </summary>
+        private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter("Steamworks.NET");
 
         #endregion
 
@@ -98,11 +101,11 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
                  * https://partner.steamgames.com/doc/sdk/api#initialization_and_shutdown
                  */
                 if (SteamAPI.RestartAppIfNecessary(AppID)) { // check if the application needs to restart
-                    Core.Quit(QuitReason.InternalSelfQuit, "[Steamworks.NET] The application was not launched through the Steam client.");
+                    Core.Quit(QuitReason.InternalSelfQuit, ConsoleFormatter.Format("The application was not launched through the Steam client."));
                     return;
                 }
             } catch (DllNotFoundException exception) { // failed to find steamworks dll
-                Core.Quit(QuitReason.FatalCrash, "[Steamworks.NET] Failed to load \"[lib]steam_api.dll/so/dylib\".", exception, true);
+                Core.Quit(QuitReason.FatalCrash, ConsoleFormatter.Format("Failed to load \"[lib]steam_api.dll/so/dylib\"."), exception, true);
                 return;
             }
             #endregion
@@ -122,11 +125,11 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
              */
             try {
                 if (!SteamAPI.Init()) {
-                    Core.Quit(QuitReason.FatalCrash, "[Steamworks.NET] Failed to initialise SteamAPI.", null, true);
+                    Core.Quit(QuitReason.FatalCrash, ConsoleFormatter.Format("Failed to initialise SteamAPI."), null, true);
                     return;
                 }
             } catch (Exception exception) {
-                Core.Quit(QuitReason.FatalCrash, "[Steamworks.NET] Failed to initialise SteamAPI.", exception, true);
+                Core.Quit(QuitReason.FatalCrash, ConsoleFormatter.Format("Failed to initialise SteamAPI."), exception, true);
                 return;
             }
             #endregion
@@ -136,8 +139,7 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
             #endregion
 
             initialised = true;
-            Console.Info(string.Concat("[Steamworks.NET] Initialisation complete (x64_id: ", AppID ,")."));
-
+            ConsoleFormatter.Info("Initialisation complete (x64_id: {AppID}).");
         }
 
         #endregion
@@ -155,7 +157,7 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
 
         #region SteamAPIWarningMessageHook
 
-        private static void SteamAPIWarningMessageHook(int severity, StringBuilder text) => Console.Warning(string.Concat("[Steamworks.NET] (severity: ", severity, "): ", text));
+        private static void SteamAPIWarningMessageHook(int severity, StringBuilder text) => ConsoleFormatter.Warning($"(severity: {severity}): {text}");
 
         #endregion
 

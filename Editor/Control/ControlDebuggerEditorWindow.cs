@@ -1,13 +1,11 @@
 ﻿#if ENABLE_INPUT_SYSTEM
 
-using System.Collections.Generic;
-
-using UnityEngine;
-using UnityEditor;
-
 using BlackTundra.Foundation.Control;
 using BlackTundra.Foundation.Editor.Utility;
-using BlackTundra.Foundation.Collections.Generic;
+
+using UnityEditor;
+
+using UnityEngine;
 
 namespace BlackTundra.Foundation.Editor.Control {
 

@@ -1,10 +1,11 @@
-﻿using System;
+﻿using BlackTundra.Foundation.Collections.Generic;
+
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
-using System.Linq;
-using BlackTundra.Foundation.Collections.Generic;
 
 namespace BlackTundra.Foundation.Utility {
 
@@ -24,6 +25,11 @@ namespace BlackTundra.Foundation.Utility {
         /// An array containing a reference to every <see cref="Type"/>.
         /// </summary>
         private static readonly Type[] types;
+
+        /// <summary>
+        /// <see cref="ConsoleFormatter"/> used by the <see cref="ObjectUtility"/>
+        /// </summary>
+        internal static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter(nameof(ObjectUtility));
 
         #endregion
 
@@ -333,7 +339,7 @@ namespace BlackTundra.Foundation.Utility {
                 try {
                     method.Invoke(null, args);
                 } catch (Exception exception) {
-                    Console.Error($"Failed to invoked method \"{method.Name}\".", exception);
+                    ConsoleFormatter.Error($"Failed to invoked method \"{method.Name}\".", exception);
                 }
             }
         }

@@ -11,13 +11,13 @@ namespace BlackTundra.Foundation.Logging {
 
         #region constant
 
-        public static readonly LogLevel None    = new LogLevel(-3, null     , null   , LogType.Log     , ConsoleColour.White  );
-        public static readonly LogLevel Trace   = new LogLevel(-2, "trace"  , "TRACE", LogType.Log     , ConsoleColour.Trace  );
-        public static readonly LogLevel Debug   = new LogLevel(-1, "debug"  , "DEBUG", LogType.Log     , ConsoleColour.Debug  );
-        public static readonly LogLevel Info    = new LogLevel( 0, "info"   , "INFO" , LogType.Log     , ConsoleColour.Info   );
-        public static readonly LogLevel Warning = new LogLevel( 1, "warning", "WARN" , LogType.Warning , ConsoleColour.Warning);
-        public static readonly LogLevel Error   = new LogLevel( 2, "error"  , "ERROR", LogType.Error   , ConsoleColour.Error  );
-        public static readonly LogLevel Fatal   = new LogLevel( 3, "fatal"  , "FATAL", LogType.Error   , ConsoleColour.Fatal  );
+        public static readonly LogLevel None = new LogLevel(-3, null, null, LogType.Log, ConsoleColour.White);
+        public static readonly LogLevel Trace = new LogLevel(-2, "trace", "TRACE", LogType.Log, ConsoleColour.Trace);
+        public static readonly LogLevel Debug = new LogLevel(-1, "debug", "DEBUG", LogType.Log, ConsoleColour.Debug);
+        public static readonly LogLevel Info = new LogLevel(0, "info", "INFO", LogType.Log, ConsoleColour.Info);
+        public static readonly LogLevel Warning = new LogLevel(1, "warning", "WARN", LogType.Warning, ConsoleColour.Warning);
+        public static readonly LogLevel Error = new LogLevel(2, "error", "ERROR", LogType.Error, ConsoleColour.Error);
+        public static readonly LogLevel Fatal = new LogLevel(3, "fatal", "FATAL", LogType.Error, ConsoleColour.Fatal);
 
         private static readonly LogLevel[] LogLevels = new LogLevel[] {
             None, Trace, Debug, Info, Warning, Error, Fatal

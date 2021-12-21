@@ -43,6 +43,8 @@ namespace BlackTundra.Foundation {
         private static readonly ConsoleWindowControlHandle ControlHandle = new ConsoleWindowControlHandle();
 #endif
 
+        private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter(nameof(ConsoleWindow));
+
         #endregion
 
         #region nested
@@ -90,7 +92,13 @@ namespace BlackTundra.Foundation {
 
         #region property
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.window", "enabled")]
+        [ConfigurationEntry(Core.ConfigurationName, "console.window",
+#if UNITY_EDITOR
+            "enabled"
+#else
+            "disabled"
+#endif
+        )]
         private static string _IsEnabled {
             get => _enabled ? "enabled" : "disabled";
             set => _enabled = string.Equals(value, "enabled", StringComparison.OrdinalIgnoreCase);
@@ -339,7 +347,7 @@ namespace BlackTundra.Foundation {
                     fontSize = settings.fontSize
                 };
             }
-            
+
             GUI.contentColor = Color.white;
             GUI.backgroundColor = Color.black;
             windowRect = GUILayout.Window(WindowID, windowRect, DrawWindow, name);
@@ -571,7 +579,7 @@ namespace BlackTundra.Foundation {
                         );
                     }
                 } catch (Exception exception) {
-                    Console.Error($"[{nameof(ConsoleWindow)}] Failed to execute command.", exception);
+                    ConsoleFormatter.Error("Failed to execute command.", exception);
                 }
             }
             input = string.Empty;
@@ -620,7 +628,7 @@ namespace BlackTundra.Foundation {
 
             if (elements == null) throw new ArgumentNullException(nameof(elements));
             if (spacing < 0) throw new ArgumentOutOfRangeException(string.Concat(nameof(spacing), " must be positive."));
-            
+
             int columns = elements.GetLength(0);
             if (columns == 0) return;
 

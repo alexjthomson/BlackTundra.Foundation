@@ -1,9 +1,9 @@
+using BlackTundra.Foundation.IO;
+using BlackTundra.Foundation.Utility;
+
 using System;
 using System.Collections.Generic;
 using System.Text;
-
-using BlackTundra.Foundation.IO;
-using BlackTundra.Foundation.Utility;
 
 namespace BlackTundra.Foundation.Logging {
 

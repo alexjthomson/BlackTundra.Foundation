@@ -1,9 +1,9 @@
+using BlackTundra.Foundation.Utility;
+
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
-
-using BlackTundra.Foundation.Utility;
 
 namespace BlackTundra.Foundation.Security {
 

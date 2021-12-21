@@ -90,6 +90,45 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
+        #region GetColliders
+
+        public static Collider[] GetColliders(this GameObject gameObject, in bool includeTriggers) {
+            Collider[] colliders = gameObject.GetComponentsInChildren<Collider>();
+            if (includeTriggers) return colliders;
+            int colliderCount = colliders.Length;
+            Collider[] colliderBuffer = new Collider[colliderCount];
+            int index = 0;
+            Collider collider;
+            for (int i = colliderCount - 1; i >= 0; i--) {
+                collider = colliders[i];
+                if (!collider.isTrigger) colliderBuffer[index++] = collider;
+            }
+            colliders = new Collider[index];
+            Array.Copy(colliderBuffer, 0, colliders, 0, index);
+            return colliders;
+        }
+
+        #endregion
+
+        #region GetTriggers
+
+        public static Collider[] GetTriggers(this GameObject gameObject) {
+            Collider[] colliders = gameObject.GetComponentsInChildren<Collider>();
+            int colliderCount = colliders.Length;
+            Collider[] colliderBuffer = new Collider[colliderCount];
+            int index = 0;
+            Collider collider;
+            for (int i = colliderCount - 1; i >= 0; i--) {
+                collider = colliders[i];
+                if (collider.isTrigger) colliderBuffer[index++] = collider;
+            }
+            colliders = new Collider[index];
+            Array.Copy(colliderBuffer, 0, colliders, 0, index);
+            return colliders;
+        }
+
+        #endregion
+
         #region GetBounds
 
         /// <summary>

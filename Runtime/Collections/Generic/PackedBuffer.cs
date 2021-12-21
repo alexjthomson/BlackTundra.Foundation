@@ -4,11 +4,11 @@
  * - Implement any remaining built-in C# interfaces so the buffer can be used like LinkedList<T> and Queue<T>.
  */
 
+using BlackTundra.Foundation.Utility;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
-using BlackTundra.Foundation.Utility;
 
 namespace BlackTundra.Foundation.Collections.Generic {
 

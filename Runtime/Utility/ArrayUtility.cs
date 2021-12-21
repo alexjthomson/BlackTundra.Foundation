@@ -359,7 +359,7 @@ namespace BlackTundra.Foundation.Utility {
             int count = original.Length;
             if (distance > count) throw new ArgumentOutOfRangeException(nameof(distance));
             if (distance == count) return; // no offset required
-            
+
             T[] lastValues = new T[distance]; // store the last values of the array
             Array.Copy(original, count - distance, lastValues, 0, distance);
             //for (int i = count - distance; i < count; i++) lastValues[i] = original[i]; // get the last values of the array

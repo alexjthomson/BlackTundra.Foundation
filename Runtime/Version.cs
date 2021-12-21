@@ -1,7 +1,7 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using BlackTundra.Foundation.Utility;
 
-using BlackTundra.Foundation.Utility;
+using System;
+using System.Runtime.InteropServices;
 
 namespace BlackTundra.Foundation {
 
@@ -140,12 +140,13 @@ namespace BlackTundra.Foundation {
                 case ReleaseType.Alpha: return 'a';
                 case ReleaseType.Beta: return 'b';
                 case ReleaseType.Final: return 'f';
-                default: throw new FormatException(
-                    string.Format(
-                        "Unknown release type: \"ReleaseType.{0}\".",
-                        type.ToString()
-                    )
-                );
+                default:
+                    throw new FormatException(
+               string.Format(
+                   "Unknown release type: \"ReleaseType.{0}\".",
+                   type.ToString()
+               )
+           );
 
             }
 

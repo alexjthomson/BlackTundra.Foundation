@@ -57,7 +57,7 @@ namespace BlackTundra.Foundation {
 
             if (startIndex < 0) startIndex = 0;
             else if (startIndex >= length) startIndex = length - 1;
-            
+
             StringBuilder messageBuilder = new StringBuilder(24 + (argCount * 8));
             messageBuilder.Append("Unknown arguments: \"").Append(Escape(args[startIndex])).Append('\"');
             for (int i = startIndex + 1; i < length; i++) messageBuilder.Append(", \"").Append(Escape(args[i])).Append('\"');

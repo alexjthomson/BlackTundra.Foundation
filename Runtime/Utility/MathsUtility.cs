@@ -95,16 +95,11 @@ namespace BlackTundra.Foundation.Utility {
         #region ClosestPointOnLine
 
         public static Vector3 ClosestPointOnLine(in Vector3 point, in Vector3 lineStart, in Vector3 lineEnd) {
-
             Vector3 line = lineEnd - lineStart;
             Vector3 startToPoint = point - lineStart;
-
             float sqrLength = line.sqrMagnitude;
-
             if (sqrLength == 0.0f) return lineStart;
-
             return lineStart + (line * Mathf.Clamp01(Vector3.Dot(startToPoint, line) / sqrLength));
-
         }
 
         #endregion

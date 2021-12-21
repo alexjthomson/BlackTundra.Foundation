@@ -1,6 +1,6 @@
-using System;
-
 using BlackTundra.Foundation.Utility;
+
+using System;
 
 namespace BlackTundra.Foundation.Logging {
 
