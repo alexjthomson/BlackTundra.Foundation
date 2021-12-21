@@ -171,7 +171,7 @@ namespace BlackTundra.Foundation {
         /// and therefore the in-game <see cref="ConsoleWindow"/> cannot be seen.
         /// </summary>
         private static void PushToUnityDebugConsole(LogEntry entry) {
-            if (!UnityEngine.Application.isEditor || UnityEngine.Application.isPlaying) return; // application is not in the Unity editor
+            if (Core.IsRunning) return; // core is running
             int priority = entry.logLevel.priority;
             if (priority <= LogLevel.Info.priority) {
                 UnityEngine.Debug.Log(entry.FormattedPlainTextEntry);

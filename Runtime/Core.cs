@@ -142,6 +142,11 @@ namespace BlackTundra.Foundation {
 
         public static Version Version { get; private set; } = Version.Invalid;
 
+        /// <summary>
+        /// Tracks if the <see cref="Core"/> is running.
+        /// </summary>
+        public static bool IsRunning { get; private set; } = false;
+
         #endregion
 
         #region logic
@@ -250,6 +255,7 @@ namespace BlackTundra.Foundation {
 #pragma warning disable IDE0051 // remove unread private members
         private static void InitialisePostSceneLoad() {
 #pragma warning restore IDE0051 // remove unread private members
+            IsRunning = true;
             lock (CoreLock) {
 
                 #region check phase
@@ -411,6 +417,7 @@ namespace BlackTundra.Foundation {
 #endif
                 #endregion
             }
+            IsRunning = false;
         }
 
         #endregion
