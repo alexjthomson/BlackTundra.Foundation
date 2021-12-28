@@ -337,31 +337,23 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
-        #region InitialiseAwake
+        #region OnInstanceStart
 
         /// <summary>
         /// Called by <see cref="CoreInstance.Start"/>.
         /// </summary>
         internal static void OnInstanceStart() {
-
             lock (CoreLock) {
-
                 #region check phase
                 if (phase != CorePhase.Init_Stage2) return; // invalid entry point
                 phase = CorePhase.Init_Stage3;
                 #endregion
-
                 ConsoleFormatter.Trace("Init (3/3) STARTED.");
-
                 phase = CorePhase.Running;
-
                 ConsoleFormatter.Trace("Init (3/3) COMPLETE.");
                 Console.Flush();
-
                 ConsoleFormatter.Info("Init COMPLETE.");
-
             }
-
         }
 
         #endregion

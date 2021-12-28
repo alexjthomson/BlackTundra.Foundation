@@ -1,5 +1,9 @@
 #if USE_STEAMWORKS
 
+#if ENABLE_IL2CPP
+using AOT;
+#endif
+
 using BlackTundra.Foundation.IO;
 
 using Steamworks;
@@ -89,6 +93,7 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
             #endregion
 
             #region steam checks
+#if UNITY_EDITOR || !DEVELOPMENT_BUILD
             try {
                 /*
                  * If Steam is not running or the game wasn't started through Steam, SteamAPI.RestartAppIfNecessary starts the
@@ -108,6 +113,7 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
                 Core.Quit(QuitReason.FatalCrash, ConsoleFormatter.Format("Failed to load \"[lib]steam_api.dll/so/dylib\"."), exception, true);
                 return;
             }
+#endif
             #endregion
 
             #region initialise api
@@ -129,7 +135,11 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
                     return;
                 }
             } catch (Exception exception) {
+#if !DEVELOPMENT_BUILD
                 Core.Quit(QuitReason.FatalCrash, ConsoleFormatter.Format("Failed to initialise SteamAPI."), exception, true);
+#else
+                ConsoleFormatter.Error("Failed to initialise SteamAPI. Normally this would result in a fatal crash, this is ignored in development builds.");
+#endif
                 return;
             }
             #endregion
@@ -157,7 +167,12 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
 
         #region SteamAPIWarningMessageHook
 
-        private static void SteamAPIWarningMessageHook(int severity, StringBuilder text) => ConsoleFormatter.Warning($"(severity: {severity}): {text}");
+#if ENABLE_IL2CPP
+        [MonoPInvokeCallback(typeof(SteamAPIWarningMessageHook_t))]
+#endif
+        private static void SteamAPIWarningMessageHook(int severity, StringBuilder text) {
+            ConsoleFormatter.Warning($"(severity: {severity}): {text}");
+        }
 
         #endregion
 

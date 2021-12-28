@@ -17,10 +17,13 @@
     "url": "https://blacktundra.com"
   },
   "samples": [
-	{
-		"displayName": "Console Window Settings",
-		"description": "Pre-configured settings for the console window, including a font.",
-		"path": "Samples~/ConsoleWindowSettings"
-	}
-  ]
+    {
+      "displayName": "Console Window Settings",
+      "description": "Pre-configured settings for the console window, including a font.",
+      "path": "Samples~/ConsoleWindowSettings"
+    }
+  ],
+  "dependencies": {
+    "com.unity.inputsystem": "1.1.1"
+  }
 }

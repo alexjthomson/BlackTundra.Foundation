@@ -22,6 +22,11 @@
             "name": "com.blacktundra.world",
             "expression": "1.0.0",
             "define": "USE_BEZIER_MATHS"
+        },
+        {
+            "name": "com.unity.xr.interaction.toolkit",
+            "expression": "1.0.0",
+            "define": "USE_XR_TOOLKIT"
         }
     ],
     "noEngineReferences": false

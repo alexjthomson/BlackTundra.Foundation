@@ -673,10 +673,7 @@ namespace BlackTundra.Foundation.IO {
         /// Sorts the <see cref="buffer"/> <see cref="ConfigurationEntry"/> instances alphabetically by key.
         /// </summary>
         private void Sort() {
-            UnityEngine.Debug.Log("sorting");
-            UnityEngine.Debug.Log(Parse(string.Empty, true, false, false).ToString());
             // split keys by seperator and find depth:
-            int depth = 1;
             int count = buffer.Count;
             ConfigurationSortKeyDescriptor[] keys = new ConfigurationSortKeyDescriptor[count];
             ConfigurationEntry entry;
@@ -760,9 +757,15 @@ namespace BlackTundra.Foundation.IO {
                     table[1, index] = configuration.fsr.ToString();
                     table[2, index] = configuration.format.ToString();
 #else
-                    table[0, index] = configuration.nameHash.ToHex();
-                    table[1, index] = "N/A";
-                    table[2, index] = configuration.format == FileFormat.Standard ? "Unlocked" : "Locked";
+                    if (configuration.format == FileFormat.Standard) {
+                        table[0, index] = configuration.name;
+                        table[1, index] = configuration.fsr.ToString();
+                        table[2, index] = "Unlocked";
+                    } else {
+                        table[0, index] = configuration.nameHash.ToHex();
+                        table[1, index] = "N/A";
+                        table[2, index] = "Locked";
+                    }
 #endif
                     table[3, index] = configuration.dirty ? "Pending" : "Pushed";
                     index++;
@@ -785,14 +788,14 @@ namespace BlackTundra.Foundation.IO {
                     table[1, 1] = configuration.fsr.ToString();
                     table[2, 1] = configuration.format.ToString();
 #else
-                    if (FileFormat.Standard == FileFormat.Standard) {
+                    if (configuration.format == FileFormat.Standard) {
                         table[0, 1] = configuration.name;
                         table[1, 1] = configuration.fsr.ToString();
-                        table[2, 1] = configuration.format.ToString();
+                        table[2, 1] = "Unlocked";
                     } else {
                         table[0, 1] = configuration.nameHash.ToHex();
                         table[1, 1] = "N/A";
-                        table[2, 1] = configuration.format == FileFormat.Standard ? "Unlocked" : "Locked";
+                        table[2, 1] = "Locked";
                     }
 #endif
                     table[3, 1] = configuration.dirty ? "Pending" : "Pushed";
