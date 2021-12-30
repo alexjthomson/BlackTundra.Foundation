@@ -56,6 +56,20 @@ namespace BlackTundra.Foundation {
         private static readonly Queue<Action> ExecutionQueue = new Queue<Action>();
 
         /// <summary>
+        /// Command line flags used to launch the application.
+        /// </summary>
+        /// <remarks>
+        /// Flags must have an `-` character prefix in the command line when the application is launched. Flags are not stored
+        /// with the `-` character prefix in this <see cref="HashSet{T}"/>.
+        /// </remarks>
+        private static readonly HashSet<string> LaunchFlagHashSet = new HashSet<string>();
+
+        /// <summary>
+        /// Launch flag that indicates the application was launched in headless mode.
+        /// </summary>
+        private const string HeadlessLaunchFlag = "batchmode";
+
+        /// <summary>
         /// <see cref="ConsoleFormatter"/> used for logging by the <see cref="Core"/>.
         /// </summary>
         private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter(nameof(Core));
@@ -136,16 +150,29 @@ namespace BlackTundra.Foundation {
         /// </summary>
         private static UpdateDeltaTimeDelegate[] updateDeltaTimeCallbacks;
 
+        /// <summary>
+        /// Tracks if the application was launched in headless mode.
+        /// </summary>
+        private static bool headless = false;
+
         #endregion
 
         #region property
-
+        
+        /// <summary>
+        /// <see cref="Version"/> of the application.
+        /// </summary>
         public static Version Version { get; private set; } = Version.Invalid;
 
         /// <summary>
         /// Tracks if the <see cref="Core"/> is running.
         /// </summary>
         public static bool IsRunning { get; private set; } = false;
+
+        /// <summary>
+        /// <c>true</c> if the application was launched in headless mode.
+        /// </summary>
+        public static bool IsHeadless => headless;
 
         #endregion
 
@@ -154,9 +181,7 @@ namespace BlackTundra.Foundation {
         #region InitialisePostAssembliesLoaded
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-#pragma warning disable IDE0051 // remove unused private members
         private static void InitialisePostAssembliesLoaded() {
-#pragma warning restore IDE0051 // remove unused private members
             lock (CoreLock) {
 
                 if (phase != CorePhase.Idle) return;
@@ -184,13 +209,29 @@ namespace BlackTundra.Foundation {
                 ConsoleFormatter.Info(string.Concat("Version: ", Version.ToString()));
                 #endregion
 
+                #region process command line arguments
+
+                string[] arguments = Environment.GetCommandLineArgs();
+                string argument;
+                for (int i = arguments.Length - 1; i >= 0; i--) {
+                    argument = arguments[i];
+                    if (argument.Length > 1 && argument[0] == '-') { // argument is a flag
+                        LaunchFlagHashSet.Add(argument[1..].ToLower()); // add the flag to the hash set
+                    }
+                }
+                headless = HasLaunchFlag(HeadlessLaunchFlag); // check if application was launched in headless mode
+
+                #endregion
+
                 FileSystem.Initialise(); // initialise file system
 
-                try {
-                    ConsoleWindow.Initialise();
-                } catch (Exception exception) {
-                    Quit(QuitReason.FatalCrash, "Failed to construct core console window.", exception, true);
-                    return;
+                if (!headless) { // not in headless mode, therefore console window should be initialized
+                    try {
+                        ConsoleWindow.Initialise();
+                    } catch (Exception exception) {
+                        Quit(QuitReason.FatalCrash, "Failed to construct core console window.", exception, true);
+                        return;
+                    }
                 }
 
                 #region initialise platform
@@ -206,36 +247,40 @@ namespace BlackTundra.Foundation {
 
                 #region bind commands
 
-                // find delegate parameter types:
-                Type[] targetTypes = ObjectUtility.GetDelegateParameterTypes<Console.Command.CommandCallbackDelegate>();
+                if (!headless) { // not headless
 
-                // iterate console commands:
-                IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CommandAttribute>(); // get all console command attributes
-                CommandAttribute attribute;
-                Type[] methodParameterTypes;
-                foreach (MethodInfo method in methods) { // iterate each method
-                    attribute = method.GetCustomAttribute<CommandAttribute>(); // get the command attribute on the method
-                    string signature = string.Concat(method.DeclaringType.FullName, '.', method.Name); // build method signature
-                    methodParameterTypes = ObjectUtility.GetMethodParameterTypes(method); // get method parameter types
-                    if (methodParameterTypes.ContentEquals(targetTypes)) { // parameter cound matches target count
-                        Console.Bind( // bind the method to the console as a command
-                            attribute.name, // use the attribute name
-                            (Console.Command.CommandCallbackDelegate)Delegate.CreateDelegate(typeof(Console.Command.CommandCallbackDelegate), method), // create delegate
-                            attribute.description,
-                            attribute.usage,
-                            attribute.hidden
-                        );
-                        ConsoleFormatter.Info(string.Concat("Bound `", signature, "` -> `", attribute.name, "`.")); // log binding
-                    } else {
-                        string fatalMessage = string.Concat("Console failed to bind `", signature, "` -> `", attribute.name, "`."); // the command was not bound, create error message
+                    // find delegate parameter types:
+                    Type[] targetTypes = ObjectUtility.GetDelegateParameterTypes<Console.Command.CommandCallbackDelegate>();
+
+                    // iterate console commands:
+                    IEnumerable<MethodInfo> methods = ObjectUtility.GetDecoratedMethods<CommandAttribute>(); // get all console command attributes
+                    CommandAttribute attribute;
+                    Type[] methodParameterTypes;
+                    foreach (MethodInfo method in methods) { // iterate each method
+                        attribute = method.GetCustomAttribute<CommandAttribute>(); // get the command attribute on the method
+                        string signature = string.Concat(method.DeclaringType.FullName, '.', method.Name); // build method signature
+                        methodParameterTypes = ObjectUtility.GetMethodParameterTypes(method); // get method parameter types
+                        if (methodParameterTypes.ContentEquals(targetTypes)) { // parameter cound matches target count
+                            Console.Bind( // bind the method to the console as a command
+                                attribute.name, // use the attribute name
+                                (Console.Command.CommandCallbackDelegate)Delegate.CreateDelegate(typeof(Console.Command.CommandCallbackDelegate), method), // create delegate
+                                attribute.description,
+                                attribute.usage,
+                                attribute.hidden
+                            );
+                            ConsoleFormatter.Info(string.Concat("Bound `", signature, "` -> `", attribute.name, "`.")); // log binding
+                        } else {
+                            string fatalMessage = string.Concat("Console failed to bind `", signature, "` -> `", attribute.name, "`."); // the command was not bound, create error message
 #if UNITY_EDITOR
-                        Debug.LogWarning($"Failed to bind method `{signature}` to console. Check the method signature matches that of `{typeof(Console.Command.CommandCallbackDelegate).FullName}`.");
-                        Debug.LogError(fatalMessage);
+                            Debug.LogWarning($"Failed to bind method `{signature}` to console. Check the method signature matches that of `{typeof(Console.Command.CommandCallbackDelegate).FullName}`.");
+                            Debug.LogError(fatalMessage);
 #endif
-                        ConsoleFormatter.Fatal(fatalMessage); // log the failure
-                        Quit(QuitReason.FatalCrash, fatalMessage, null, true); // quit
-                        return;
+                            ConsoleFormatter.Fatal(fatalMessage); // log the failure
+                            Quit(QuitReason.FatalCrash, fatalMessage, null, true); // quit
+                            return;
+                        }
                     }
+
                 }
 
                 #endregion
@@ -252,9 +297,7 @@ namespace BlackTundra.Foundation {
         #region InitialisePostSceneLoad
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-#pragma warning disable IDE0051 // remove unread private members
         private static void InitialisePostSceneLoad() {
-#pragma warning restore IDE0051 // remove unread private members
             IsRunning = true;
             lock (CoreLock) {
 
@@ -269,7 +312,10 @@ namespace BlackTundra.Foundation {
                 if (instance == null) {
                     instance = Object.FindObjectOfType<CoreInstance>();
                     if (instance == null) {
-                        GameObject gameObject = new GameObject("Core", typeof(CoreInstance)) {
+                        GameObject gameObject = new GameObject(
+                            nameof(CoreInstance),
+                            typeof(CoreInstance)
+                        ) {
                             tag = "GameController",
                             layer = LayerMask.NameToLayer("Ignore Raycast"),
                             isStatic = true,
@@ -551,6 +597,21 @@ namespace BlackTundra.Foundation {
             lock (ExecutionQueue) {
                 ExecutionQueue.Enqueue(() => { instance.StartCoroutine(action); });
             }
+        }
+
+        #endregion
+
+        #region HasLaunchFlag
+
+        /// <returns>
+        /// Returns <c>true</c> if the application was launched with a specified <paramref name="argument"/>.
+        /// </returns>
+        /// <remarks>
+        /// Launch flags must have an `-` character prefix in the command line when the application is launched.
+        /// The `-` character should not be included in the <paramref name="argument"/> parameter.
+        /// </remarks>
+        public static bool HasLaunchFlag(in string argument) {
+            return LaunchFlagHashSet.Contains(argument.ToLower());
         }
 
         #endregion

@@ -32,6 +32,11 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
         /// </summary>
         private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter("Steamworks.NET");
 
+        /// <summary>
+        /// Size of an authentication session ticket.
+        /// </summary>
+        public const int AuthTicketSize = 1024;
+
         #endregion
 
         #region variable
@@ -58,6 +63,15 @@ namespace BlackTundra.Foundation.Platform.Steamworks {
         public static EPersonaState OnlineStatus => SteamFriends.GetPersonaState();
 
         public static int FriendCount => SteamFriends.GetFriendCount(EFriendFlags.k_EFriendFlagImmediate);
+
+        public static byte[] AuthSessionTicket {
+            get {
+                byte[] ticketBuffer = new byte[AuthTicketSize];
+                /*HAuthTicket ticket = */SteamUser.GetAuthSessionTicket(ticketBuffer, AuthTicketSize, out uint ticketSize);
+                Array.Resize(ref ticketBuffer, (int)ticketSize);
+                return ticketBuffer;
+            }
+        }
 
         #endregion
 

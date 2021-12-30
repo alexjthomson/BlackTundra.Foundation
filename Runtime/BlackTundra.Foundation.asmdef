@@ -15,7 +15,7 @@
     "versionDefines": [
         {
             "name": "com.rlabrecque.steamworks.net",
-            "expression": "1.0.0",
+            "expression": "15.0.0",
             "define": "USE_STEAMWORKS"
         },
         {

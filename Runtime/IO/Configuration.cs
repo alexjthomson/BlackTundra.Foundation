@@ -689,7 +689,6 @@ namespace BlackTundra.Foundation.IO {
                 map[i] = keys[i].index;
             }
             buffer.Remap(map);
-            UnityEngine.Debug.Log(Parse(string.Empty, true, false, false).ToString());
         }
 
         #endregion
