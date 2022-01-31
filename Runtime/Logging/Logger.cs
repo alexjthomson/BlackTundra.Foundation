@@ -37,6 +37,11 @@ namespace BlackTundra.Foundation.Logging {
         /// </summary>
         internal delegate void LogBufferFullDelegate(in Logger logger, in LogEntry[] buffer);
 
+        /// <summary>
+        /// Delegate used when the <see cref="Logger"/> is cleared.
+        /// </summary>
+        internal delegate void ClearLoggerDelegate(in Logger logger);
+
         #endregion
 
         #region variable
@@ -77,6 +82,11 @@ namespace BlackTundra.Foundation.Logging {
         /// </summary>
         /// <seealso cref="LogBufferFullDelegate"/>
         private readonly LogBufferFullDelegate logBufferFullCallback;
+
+        /// <summary>
+        /// Called when the <see cref="Logger"/> is cleared.
+        /// </summary>
+        private readonly ClearLoggerDelegate clearLoggerCallback;
 
         #endregion
 
@@ -130,18 +140,26 @@ namespace BlackTundra.Foundation.Logging {
         /// This callback is responsible for processing/handling the log buffer data before it
         /// is cleared.
         /// </param>
-        internal Logger(in Type context, in string name, in int capacity, in LogLevel logLevel, in LogBufferFullDelegate logBufferFullCallback) {
+        internal Logger(
+            in Type context,
+            in string name,
+            in int capacity,
+            in LogLevel logLevel,
+            in LogBufferFullDelegate logBufferFullCallback,
+            in ClearLoggerDelegate clearLoggerCallback
+        ) {
             if (context == null) throw new ArgumentNullException(nameof(context));
             //if (name == null) throw new ArgumentNullException(nameof(name));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException(nameof(name));
-            if (capacity < MinCapacity || capacity > MaxCapacity)
-                throw new ArgumentOutOfRangeException(nameof(capacity));
+            if (capacity < MinCapacity || capacity > MaxCapacity) throw new ArgumentOutOfRangeException(nameof(capacity));
             if (logBufferFullCallback == null) throw new ArgumentNullException(nameof(logBufferFullCallback));
+            if (clearLoggerCallback == null) throw new ArgumentNullException(nameof(clearLoggerCallback));
 
             this.name = name;
             this.context = context;
             this.capacity = capacity;
             this.logBufferFullCallback = logBufferFullCallback;
+            this.clearLoggerCallback = clearLoggerCallback;
 
             LogLevel = logLevel;
             logBuffer = new LogEntry[capacity];
@@ -177,7 +195,7 @@ namespace BlackTundra.Foundation.Logging {
         /// <param name="entry"><see cref="LogEntry"/> to push to the <see cref="Logger"/>.</param>
         /// <seealso cref="Push(in LogLevel, in string)"/>
         private void Push(in LogEntry entry) {
-            if (entry.logLevel.priority >= LogLevel.priority) {
+            if (ShouldPush(entry.logLevel)) {
                 lock (_logBufferLock) { // lock the log buffer from being accessed
                     logBuffer[logIndex++] = entry; // insert the entry into the log buffer at the current log index and increment the log index
                     if (logIndex == capacity) { // if the log buffer is full, clear it
@@ -195,10 +213,19 @@ namespace BlackTundra.Foundation.Logging {
                 try {
                     OnPushLogEntry.Invoke(entry);
                 } catch (Exception exception) {
-                    exception.Handle($"An unhandled exception occurred while invoking \"OnPushLogEntry\" for the \"{name}\" logger.");
+                    exception.Handle($"An unhandled exception occurred while invoking `{nameof(OnPushLogEntry)}` for the `{name}` logger.");
                 }
             }
         }
+
+        #endregion
+
+        #region ShouldPush
+
+        /// <returns>
+        /// Returns <c>true</c> if the <see cref="Logger"/> should push a log entry with the specified <paramref name="logLevel"/>.
+        /// </returns>
+        public bool ShouldPush(in LogLevel logLevel) => logLevel.priority >= LogLevel.priority || LogLevel.None.Equals(logLevel);
 
         #endregion
 
@@ -210,19 +237,16 @@ namespace BlackTundra.Foundation.Logging {
         public void Flush() {
             lock (_logBufferLock) {
                 if (logIndex > 0) { // there are entries inside the logger
-                    #region construct buffer for callback to handle
-                    LogEntry[] buffer;
-                    if (logIndex == capacity) buffer = logBuffer; // the buffer has every element filled
-                    else { // not every space in the buffer is occupied, shrink the array
-                        buffer = new LogEntry[logIndex];
-                        Array.Copy(logBuffer, buffer, logIndex);
-                    }
-                    #endregion
+                    // create buffer for callback to process:
+                    LogEntry[] buffer = new LogEntry[logIndex];
+                    Array.Copy(logBuffer, 0, buffer, 0, logIndex);
+                    // invoke callback:
                     try {
                         logBufferFullCallback(this, buffer); // attempt to handle the remaining elements in the logger
                     } catch (Exception exception) { // catch any unhandled exceptions
                         exception.Handle($"An unhandled exception occurred while handling all unhandled log entries while disposing logger \"{name}\"."); // handle
                     }
+                    // clear log buffer:
                     Array.Clear(logBuffer, 0, capacity); // ensure the log buffer is cleared
                 }
             }
@@ -237,6 +261,27 @@ namespace BlackTundra.Foundation.Logging {
         /// </summary>
         public void Dispose() {
             Flush();
+        }
+
+        #endregion
+
+        #region Clear
+
+        /// <summary>
+        /// Clears the <see cref="Logger"/> <see cref="logBuffer"/> and executes the clear callback.
+        /// </summary>
+        public void Clear() {
+            lock (_logBufferLock) {
+                if (logIndex > 0) {
+                    Array.Clear(logBuffer, 0, logIndex);
+                    logIndex = 0;
+                }
+                try {
+                    clearLoggerCallback.Invoke(this);
+                } catch (Exception exception) {
+                    exception.Handle($"An unhandled exception occurred while invoking `{nameof(clearLoggerCallback)}` for the `{name}` logger.");
+                }
+            }
         }
 
         #endregion

@@ -1,9 +1,9 @@
 {
   "name": "com.blacktundra.foundation",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "displayName": "Foundation",
   "description": "A package containing fundamental game mechanics.",
-  "unity": "2020.1",
+  "unity": "2021.2",
   "type": "library",
   "hideInEditor": false,
   "keywords": [
@@ -24,6 +24,7 @@
     }
   ],
   "dependencies": {
+    "com.unity.modules.imgui": "1.0.0",
     "com.unity.inputsystem": "1.1.1"
   }
 }

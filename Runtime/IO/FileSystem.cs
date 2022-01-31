@@ -315,6 +315,31 @@ namespace BlackTundra.Foundation.IO {
 
         #endregion
 
+        #region Delete
+
+        /// <summary>
+        /// Deletes a local <paramref name="fsr">file system reference</paramref>.
+        /// </summary>
+        /// <param name="fsr">Local <see cref="FileSystemReference"/>.</param>
+        /// <returns>Returns <c>true</c> if <paramref name="fsr"/> was deleted.</returns>
+        public static bool Delete(in FileSystemReference fsr) {
+            if (fsr == null) throw new ArgumentNullException(nameof(fsr));
+            if (!fsr.IsLocal) { // file system reference is not local, do not allow deletion of non-local files
+#if UNITY_EDITOR
+                UnityEngine.Debug.LogWarning("Deletion of non-local files is prohibited.");
+#endif
+                return false;
+            }
+            if (fsr.IsFile) {
+                File.Delete(fsr.AbsolutePath);
+            } else if (fsr.IsDirectory) {
+                Directory.Delete(fsr.AbsolutePath, true);
+            }
+            return true;
+        }
+
+        #endregion
+
         #region UpdateConfiguration
 
         internal static bool UpdateConfiguration(in Configuration configuration) {

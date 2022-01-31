@@ -1,5 +1,3 @@
-#if ENABLE_INPUT_SYSTEM
-
 using System;
 using System.Runtime.InteropServices;
 
@@ -39,5 +37,3 @@ namespace BlackTundra.Foundation.Control {
     }
 
 }
-
-#endif

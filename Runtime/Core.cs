@@ -186,8 +186,47 @@ namespace BlackTundra.Foundation {
 
                 if (phase != CorePhase.Idle) return;
                 phase = CorePhase.Init_Stage1;
-                string separator = new string('-', 64);
-                Console.Empty(string.Concat(separator, ' ', DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), ' ', separator));
+
+                #region initialise file system
+
+                /*
+                 * The file system should be initialised first since logging relies on the file system.
+                 * This means the file system needs to be able to be initialised without using any logging.
+                 * The file system code should therefore be highly stable and any code that needs logging
+                 * should be executed after this initialisation.
+                 */
+
+                FileSystem.Initialise();
+                Console.Flush(); // flush the console (ensure buffer is written before initialisation starts)
+
+                #endregion
+
+                #region process configuration
+
+                // load core configuration:
+                Configuration configuration = Configuration.GetConfiguration(ConfigurationName);
+                // check for persistent log file:
+                if (!configuration.ForceGet("console.logger.persistent", false)) { // logger is not persistent
+                    Console.Logger.Clear(); // clear console logger
+                }
+                // assign logger log level:
+                Console.LoggerLogLevel = configuration.ForceGet(
+                    Console.LoggerLogLevelEntryName,
+                    Console.LoggerLogLevelDefaultValue
+                );
+                // save configuration:
+                configuration.Save();
+
+                #endregion
+
+                #region create new log entry
+
+                string separator = new string('-', 64); // create separator string
+                Console.Empty(string.Concat(separator, ' ', DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), ' ', separator)); // format a timestamp for the console
+
+                #endregion
+
+                // start initialisation:
                 ConsoleFormatter.Trace("Init (1/3) STARTED.");
 
                 #region bind play mode shutdown hook
@@ -223,7 +262,7 @@ namespace BlackTundra.Foundation {
 
                 #endregion
 
-                FileSystem.Initialise(); // initialise file system
+                #region initialise console window
 
                 if (!headless) { // not in headless mode, therefore console window should be initialized
                     try {
@@ -233,6 +272,8 @@ namespace BlackTundra.Foundation {
                         return;
                     }
                 }
+
+                #endregion
 
                 #region initialise platform
 #if USE_STEAMWORKS

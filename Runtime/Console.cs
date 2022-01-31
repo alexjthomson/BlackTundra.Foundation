@@ -40,6 +40,16 @@ namespace BlackTundra.Foundation {
         /// </summary>
         private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter(nameof(Console));
 
+        /// <summary>
+        /// Configuration entry name used by <see cref="LoggerLogLevel"/>.
+        /// </summary>
+        internal const string LoggerLogLevelEntryName = "console.logger.log_level";
+
+        /// <summary>
+        /// Default value used by <see cref="LoggerLogLevel"/>.
+        /// </summary>
+        internal const string LoggerLogLevelDefaultValue = "warning";
+
         #endregion
 
         #region nested
@@ -137,8 +147,8 @@ namespace BlackTundra.Foundation {
 
         public static int TotalCommands => Commands.Count;
 
-        [ConfigurationEntry(Core.ConfigurationName, "console.logger.log_level", "warning")]
-        private static string LoggerLogLevel {
+        [ConfigurationEntry(Core.ConfigurationName, LoggerLogLevelEntryName, LoggerLogLevelDefaultValue)]
+        internal static string LoggerLogLevel {
             get => Logger.LogLevel.distinctName;
             set => Logger.LogLevel = LogLevel.Parse(value);
         }
@@ -172,13 +182,16 @@ namespace BlackTundra.Foundation {
         /// </summary>
         private static void PushToUnityDebugConsole(LogEntry entry) {
             if (Core.IsRunning) return; // core is running
-            int priority = entry.logLevel.priority;
-            if (priority <= LogLevel.Info.priority) {
-                UnityEngine.Debug.Log(entry.FormattedPlainTextEntry);
-            } else if (priority <= LogLevel.Warning.priority) {
-                UnityEngine.Debug.LogWarning(entry.FormattedPlainTextEntry);
-            } else {
-                UnityEngine.Debug.LogError(entry.FormattedPlainTextEntry);
+            LogLevel logLevel = entry.logLevel;
+            if (Logger.ShouldPush(logLevel) && !LogLevel.None.Equals(logLevel)) {
+                int priority = logLevel.priority;
+                if (priority <= LogLevel.Info.priority) {
+                    UnityEngine.Debug.Log(entry.FormattedPlainTextEntry);
+                } else if (priority <= LogLevel.Warning.priority) {
+                    UnityEngine.Debug.LogWarning(entry.FormattedPlainTextEntry);
+                } else {
+                    UnityEngine.Debug.LogError(entry.FormattedPlainTextEntry);
+                }
             }
         }
 #endif

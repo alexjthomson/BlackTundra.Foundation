@@ -1,5 +1,3 @@
-#if ENABLE_INPUT_SYSTEM
-
 namespace BlackTundra.Foundation.Control {
 
     /// <summary>
@@ -27,5 +25,3 @@ namespace BlackTundra.Foundation.Control {
     }
 
 }
-
-#endif

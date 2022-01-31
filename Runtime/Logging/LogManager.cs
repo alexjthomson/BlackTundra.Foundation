@@ -25,13 +25,19 @@ namespace BlackTundra.Foundation.Logging {
         /// <summary>
         /// Default <see cref="LogLevel"/> of a <see cref="Logger"/>.
         /// </summary>
-        public static readonly LogLevel DefaultLoggerLogLevel = LogLevel.Info;
+        public static readonly LogLevel DefaultLoggerLogLevel = LogLevel.None;
 
         /// <summary>
         /// Default callback when a <see cref="Logger"/> buffer is full.
         /// This is used by the <see cref="RootLogger"/>.
         /// </summary>
         private static readonly Logger.LogBufferFullDelegate DefaultLoggerBufferFullDelegate = HandleFullLoggerBuffer;
+
+        /// <summary>
+        /// Default callback when <see cref="Logger.Clear"/> is invoked.
+        /// This is used by the <see cref="RootLogger"/>.
+        /// </summary>
+        private static readonly Logger.ClearLoggerDelegate DefaultLoggerClearLoggerDelegate = HandleClearLogger;
 
         /// <summary>
         /// Root <see cref="Logger"/> used as the main logger for the application.
@@ -56,7 +62,14 @@ namespace BlackTundra.Foundation.Logging {
         #region constructor
 
         static LogManager() {
-            RootLogger = new Logger(typeof(LogManager), RootLoggerName, DefaultLoggerCapacity, DefaultLoggerLogLevel, DefaultLoggerBufferFullDelegate);
+            RootLogger = new Logger(
+                typeof(LogManager),
+                RootLoggerName,
+                DefaultLoggerCapacity,
+                DefaultLoggerLogLevel,
+                DefaultLoggerBufferFullDelegate,
+                DefaultLoggerClearLoggerDelegate
+            );
             LoggerDictionary = new Dictionary<string, Logger>() {
                 { RootLoggerName, RootLogger }
             };
@@ -96,7 +109,14 @@ namespace BlackTundra.Foundation.Logging {
             string name = string.Concat("c_", type.FullName); // calculate the name of the context logger
             if (LoggerDictionary.TryGetValue(name, out Logger logger)) return logger; // try find the logger if it already exists
             else { // if no logger exists, create one
-                logger = new Logger(type, name, DefaultLoggerCapacity, DefaultLoggerLogLevel, DefaultLoggerBufferFullDelegate);
+                logger = new Logger(
+                    type,
+                    name,
+                    DefaultLoggerCapacity,
+                    DefaultLoggerLogLevel,
+                    DefaultLoggerBufferFullDelegate,
+                    DefaultLoggerClearLoggerDelegate
+                );
                 LoggerDictionary.Add(name, logger);
                 return logger;
             }
@@ -129,11 +149,20 @@ namespace BlackTundra.Foundation.Logging {
 
         #endregion
 
+        #region
+
+        private static void HandleClearLogger(in Logger logger) {
+            FileSystemReference fsr = GetFileSystemReference(logger);
+            FileSystem.Delete(fsr);
+        }
+
+        #endregion
+
         #region FormatBufferToString
 
         private static StringBuilder FormatBufferToString(in LogEntry[] buffer) {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-            StringBuilder stringBuilder = new StringBuilder(buffer.Length * 32);
+            StringBuilder stringBuilder = new StringBuilder(buffer.Length * 128);
             LogEntry entry;
             for (int i = 0; i < buffer.Length; i++) {
                 entry = buffer[i];

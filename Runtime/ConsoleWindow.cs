@@ -2,14 +2,9 @@
 using System.Text;
 
 using UnityEngine;
-
-#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-#endif
 
-#if ENABLE_INPUT_SYSTEM
 using BlackTundra.Foundation.Control;
-#endif
 using BlackTundra.Foundation.Utility;
 using BlackTundra.Foundation.Logging;
 using BlackTundra.Foundation.Collections.Generic;
@@ -36,19 +31,16 @@ namespace BlackTundra.Foundation {
 
         private const int DefaultHistoryBufferSize = 32;
 
-#if ENABLE_INPUT_SYSTEM
         /// <summary>
         /// Used so the control system can control the <see cref="ConsoleWindow"/>.
         /// </summary>
         private static readonly ConsoleWindowControlHandle ControlHandle = new ConsoleWindowControlHandle();
-#endif
 
         private static readonly ConsoleFormatter ConsoleFormatter = new ConsoleFormatter(nameof(ConsoleWindow));
 
         #endregion
 
         #region nested
-#if ENABLE_INPUT_SYSTEM
 
         /// <summary>
         /// Class used simply to allow the control system to see the <see cref="ConsoleWindow"/> as something it can control.
@@ -61,7 +53,6 @@ namespace BlackTundra.Foundation {
             public void OnControlRevoked() { }
         }
 
-#endif
         #endregion
 
         #region variable
@@ -255,7 +246,6 @@ namespace BlackTundra.Foundation {
         /// </summary>
         internal static void Update() {
             if (!_enabled) return;
-#if ENABLE_INPUT_SYSTEM
             Keyboard keyboard = Keyboard.current; // get the current keyboard
             if (keyboard != null) { // the current keyboard is not null
                 if (draw) { // the console window should be drawn
@@ -275,24 +265,6 @@ namespace BlackTundra.Foundation {
                     }
                 }
             }
-#else
-            if (draw) { // drawing console window
-                if (Input.GetKeyDown(KeyCode.Escape)) { // exit
-                    draw = false;
-                } else if (Input.GetKeyDown(KeyCode.Return)) { // execute
-                    ExecuteInput();
-                } else if (Input.GetKeyDown(KeyCode.UpArrow)) { // previous command
-                    PreviousCommand();
-                } else if (Input.GetKeyDown(KeyCode.DownArrow)) { // next command
-                    NextCommand();
-                }
-            } else if (Input.GetKeyDown(KeyCode.Slash)) { // not drawing console, open console
-                UpdateRect();
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                draw = true;
-            }
-#endif
         }
 
         #endregion
