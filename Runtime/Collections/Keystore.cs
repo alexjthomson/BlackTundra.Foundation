@@ -197,7 +197,7 @@ namespace BlackTundra.Foundation.Collections {
                     buffer[i] = KeystoreEntry.FromBytes(bytes, endIndex, out int nextIndex); // construct the current keystore entry from bytes
                     endIndex = nextIndex; // assign the new end index (which is used as the next start index)
                 }
-                return new Keystore(new PackedBuffer<KeystoreEntry>(buffer)); // return a keystore constructed from the found entries
+                return new Keystore(new PackedBuffer<KeystoreEntry>(buffer, 0, entryCount, entryCount)); // return a keystore constructed from the found entries
             } else { // there are no elements in the keystore
                 return new Keystore(); // return an empty keystore
             }

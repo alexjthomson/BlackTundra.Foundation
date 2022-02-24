@@ -177,22 +177,24 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// Constructs a packed buffer with an initial capacity.
         /// </summary>
         public PackedBuffer(in int capacity) {
-            if (capacity < 0) throw new ArgumentOutOfRangeException("capacity");
+            if (capacity < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
             buffer = new T[capacity];
             lastIndex = 0;
             emptyValue = default;
         }
 
         /// <inheritdoc cref="PackedBuffer{T}.PackedBuffer(in int, in T)"/>
-        public PackedBuffer(in T[] array) {
-            if (array == null) throw new ArgumentNullException("array");
-            int elementCount = array.Length;
-            if (elementCount > 0) {
-                buffer = new T[elementCount];
-                Array.Copy(array, 0, buffer, 0, elementCount);
+        public PackedBuffer(in T[] array, in int startIndex, in int length, in int capacity) {
+            if (array == null) throw new ArgumentNullException(nameof(array));
+            int count = array.Length;
+            if (startIndex < 0 || startIndex >= count) throw new ArgumentOutOfRangeException(nameof(startIndex));
+            if (length < 0 || length > count - startIndex) throw new ArgumentOutOfRangeException(nameof(length));
+            if (capacity < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+            if (length > capacity) throw new ArgumentException($"{nameof(length)} cannot be greater than {nameof(capacity)}");
+            buffer = new T[capacity];
+            if (length > 0) {
+                Array.Copy(array, 0, buffer, startIndex, length);
                 Pack();
-            } else {
-                buffer = new T[0];
             }
             emptyValue = default;
         }
