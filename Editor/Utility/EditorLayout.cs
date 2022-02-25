@@ -443,6 +443,17 @@ namespace BlackTundra.Foundation.Editor.Utility {
 
         #endregion
 
+        #region EnumFlagsField
+
+        public static T EnumFlagsField<T>(in T value) where T : Enum => (T)EditorGUILayout.EnumFlagsField(value);
+        public static T EnumFlagsField<T>(in T value, params GUILayoutOption[] options) where T : Enum => (T)EditorGUILayout.EnumFlagsField(value, options);
+        public static T EnumFlagsField<T>(in string content, in T value) where T : Enum => (T)EditorGUILayout.EnumFlagsField(content, value);
+        public static T EnumFlagsField<T>(in string content, in T value, params GUILayoutOption[] options) where T : Enum => (T)EditorGUILayout.EnumFlagsField(content, value, options);
+        public static T EnumFlagsField<T>(in GUIContent content, in T value) where T : Enum => (T)EditorGUILayout.EnumFlagsField(content, value);
+        public static T EnumFlagsField<T>(in GUIContent content, in T value, params GUILayoutOption[] options) where T : Enum => (T)EditorGUILayout.EnumFlagsField(content, value, options);
+
+        #endregion
+
         #region DropdownField
 
         public static int DropdownField(in int value, in string[] options, in int[] optionValues) => EditorGUILayout.IntPopup(value, options, optionValues);
