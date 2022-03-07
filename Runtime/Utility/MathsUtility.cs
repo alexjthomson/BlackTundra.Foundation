@@ -94,12 +94,56 @@ namespace BlackTundra.Foundation.Utility {
 
         #region ClosestPointOnLine
 
-        public static Vector3 ClosestPointOnLine(in Vector3 point, in Vector3 lineStart, in Vector3 lineEnd) {
-            Vector3 line = lineEnd - lineStart;
-            Vector3 startToPoint = point - lineStart;
-            float sqrLength = line.sqrMagnitude;
-            if (sqrLength == 0.0f) return lineStart;
-            return lineStart + (line * Mathf.Clamp01(Vector3.Dot(startToPoint, line) / sqrLength));
+        /// <param name="lineStart">Start of the line.</param>
+        /// <param name="lineEnd">End of the line.</param>
+        /// <param name="point">Point to sample the closest point on the line to.</param>
+        /// <returns>Returns the closest point to the specified <paramref name="point"/> on a finite line.</returns>
+        public static Vector3 ClosestPointOnFiniteLine(in Vector3 lineStart, in Vector3 lineEnd, in Vector3 point) {
+            Vector3 direction = lineEnd - lineStart;
+            float sqrLength = direction.sqrMagnitude;
+            if (sqrLength < Mathf.Epsilon) return lineStart;
+            float length = Mathf.Sqrt(sqrLength);
+            float projectedLength = Mathf.Clamp(
+                Vector3.Dot(
+                    point - lineStart,
+                    direction * (1.0f / length)
+                ),
+                0.0f, length
+            );
+            return lineStart + (direction * projectedLength);
+        }
+
+        /// <param name="origin">Start of the line.</param>
+        /// <param name="direction">Normalized direction of the line.</param>
+        /// <param name="length">Length of the line.</param>
+        /// <param name="point">Point to sample the closest point on the line to.</param>
+        /// <returns>Returns the closest point to the specified <paramref name="point"/> on a finite line.</returns>
+        public static Vector3 ClosestPointOnFiniteLine(in Vector3 origin, in Vector3 direction, in float length, in Vector3 point) {
+            if (length < Mathf.Epsilon) return origin;
+            float projectedLength = Mathf.Clamp(
+                Vector3.Dot(
+                    point - origin,
+                    direction
+                ),
+                0.0f, length
+            );
+            return origin + (direction * projectedLength);
+        }
+
+        #endregion
+
+        #region ClosestPointOnInfiniteLine
+
+        /// <param name="origin">A random point on the line.</param>
+        /// <param name="direction">Normalized direction that the line points in.</param>
+        /// <param name="point">Point to sample the closest point on the line to.</param>
+        /// <returns>Returns the closest point to the specified <paramref name="point"/> on an infinite line.</returns>
+        public static Vector3 ClosestPointOnInfiniteLine(in Vector3 origin, in Vector3 direction, in Vector3 point) {
+            float projectedLength = Vector3.Dot(
+                point - origin,
+                direction
+            );
+            return origin + (direction * projectedLength);
         }
 
         #endregion
