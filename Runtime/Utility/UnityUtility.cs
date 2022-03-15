@@ -71,6 +71,28 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
+        #region GetPoint
+
+        public static Vector3 GetPoint(this Collision collision) {
+            if (collision == null) throw new ArgumentNullException(nameof(collision));
+            return GetPoint(collision.contacts);
+        }
+
+        public static Vector3 GetPoint(this ContactPoint[] contactPoints) {
+            if (contactPoints == null) throw new ArgumentNullException(nameof(contactPoints));
+            int pointCount = contactPoints.Length;
+            if (pointCount == 0) return Vector3.zero;
+            ContactPoint point = contactPoints[0];
+            Vector3 total = point.point;
+            for (int i = 1; i < pointCount; i++) {
+                point = contactPoints[i];
+                total += point.point;
+            }
+            return total * (1.0f / pointCount);
+        }
+
+        #endregion
+
         #region GetCollider
 
         public static Collider GetCollider(this GameObject gameObject) => gameObject != null ? gameObject.GetComponent<Collider>() : null;
@@ -129,6 +151,7 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
+
         #region CalculateBounds
 
         /// <summary>
@@ -154,9 +177,10 @@ namespace BlackTundra.Foundation.Utility {
             if (length == 0) return new Bounds();
             else {
                 Collider collider = colliders[0];
-                Bounds bounds = collider.bounds;
+                Bounds bounds = collider != null ? collider.bounds : new Bounds();
                 for (int i = colliders.Length - 1; i > 0; i--) {
                     collider = colliders[i];
+                    if (collider == null) continue;
                     bounds.Encapsulate(collider.bounds);
                 }
                 return bounds;
