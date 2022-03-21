@@ -3,6 +3,7 @@
 using UnityEngine;
 
 using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 namespace BlackTundra.Foundation.Utility {
 
@@ -330,6 +331,52 @@ namespace BlackTundra.Foundation.Utility {
                 materials[i] = i == index ? material : originalMaterials[i];
             }
             renderer.materials = materials;
+        }
+
+        #endregion
+
+        #region PlayRandomTime
+
+        public static void PlayRandomTime(this AudioSource source) {
+            if (source == null) return;
+            AudioClip clip = source.clip;
+            if (clip == null) return;
+            source.time = clip.length * Random.value;
+            source.Play();
+        }
+
+        #endregion
+
+        #region PlayRandomTime
+
+        public static void PlayRandomTime(this AudioSource source, in float minPitch, in float maxPitch) {
+            if (source == null) return;
+            AudioClip clip = source.clip;
+            if (clip == null) return;
+            source.time = clip.length * Random.value;
+            source.pitch = Random.Range(minPitch, maxPitch);
+            source.Play();
+        }
+
+        #endregion
+
+        #region PlayRandomPitch
+
+        public static void PlayRandomPitch(this AudioSource source, in float minPitch, in float maxPitch) {
+            if (source == null) return;
+            source.pitch = Random.Range(minPitch, maxPitch);
+            source.Play();
+        }
+
+        #endregion
+
+        #region SetRandomTime
+
+        public static void SetRandomTime(this AudioSource source) {
+            if (source == null) return;
+            AudioClip clip = source.clip;
+            if (clip == null) return;
+            source.time = clip.length * Random.value;
         }
 
         #endregion

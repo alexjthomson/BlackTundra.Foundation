@@ -289,7 +289,14 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
         #region Pack
 
-        private void Pack() {
+        /// <summary>
+        /// Re-packs the <see cref="PackedBuffer{T}"/> by removing any empty references.
+        /// </summary>
+        /// <remarks>
+        /// This is called automatically and should only be invoked if an object contained in the buffer is
+        /// removed from memory but not removed from the buffer.
+        /// </remarks>
+        public void Pack() {
             if (buffer.Length == 0) return;
             lastIndex = -1; // last index that was null
             for (int i = 0; i < buffer.Length; i++) { // iterate buffer
