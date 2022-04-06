@@ -17,44 +17,32 @@ namespace BlackTundra.Foundation.Utility {
 
         #region ToFormattedString
 
-        public static string ToFormattedString(this DateTime instance) => new string(instance.ToFormattedCharArray());
+        public static string ToFormattedString(this DateTime dateTime) => new string(dateTime.ToFormattedCharArray());
 
         #endregion
 
         #region ToFormattedCharArray
 
-        public static char[] ToFormattedCharArray(this DateTime instance) {
-
+        public static char[] ToFormattedCharArray(this DateTime dateTime) {
             char[] timestamp = new char[19];
-
             // date:
-
-            int year = instance.Year; // entire year
+            int year = dateTime.Year; // entire year
             int yearFrag = year / 100; // first 2 characters of the year
-
             Append2CharIntToCharArray(timestamp, 0, yearFrag); // first 2 digits
             Append2CharIntToCharArray(timestamp, 2, year - (yearFrag * 100)); // last 2 digits
-
             timestamp[4] = '-';
-            Append2CharIntToCharArray(timestamp, 5, instance.Month);
-
+            Append2CharIntToCharArray(timestamp, 5, dateTime.Month);
             timestamp[7] = '-';
-            Append2CharIntToCharArray(timestamp, 8, instance.Day);
-
+            Append2CharIntToCharArray(timestamp, 8, dateTime.Day);
             // seperator:
-
             timestamp[10] = ' ';
-
             // time:
-
-            Append2CharIntToCharArray(timestamp, 11, instance.Hour);
+            Append2CharIntToCharArray(timestamp, 11, dateTime.Hour);
             timestamp[13] = ':';
-            Append2CharIntToCharArray(timestamp, 14, instance.Minute);
+            Append2CharIntToCharArray(timestamp, 14, dateTime.Minute);
             timestamp[16] = ':';
-            Append2CharIntToCharArray(timestamp, 17, instance.Second);
-
+            Append2CharIntToCharArray(timestamp, 17, dateTime.Second);
             return timestamp;
-
         }
 
         #endregion
@@ -62,11 +50,9 @@ namespace BlackTundra.Foundation.Utility {
         #region Append2CharIntToCharArray
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void Append2CharIntToCharArray(in char[] instance, in int index, in int value) {
-
-            instance[index] = (char)((value / 10) + '0');
-            instance[index + 1] = (char)((value % 10) + '0');
-
+        private static void Append2CharIntToCharArray(in char[] chars, in int index, in int value) {
+            chars[index] = (char)((value / 10) + '0');
+            chars[index + 1] = (char)((value % 10) + '0');
         }
 
         #endregion
