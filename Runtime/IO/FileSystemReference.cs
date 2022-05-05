@@ -60,8 +60,15 @@ namespace BlackTundra.Foundation.IO {
         /// Gets the file name with the file extension of this reference.
         /// </summary>
         public string FileName => isDirectory
-            ? throw new NotSupportedException("Cannot get file name of directory.")
+            ? throw new NotSupportedException("Cannot get file name of a directory.")
             : Path.GetFileName(path);
+
+        /// <summary>
+        /// Gets the directory name of this reference.
+        /// </summary>
+        public string DirectoryName => isDirectory
+            ? new DirectoryInfo(path).Name
+            : throw new NotSupportedException("Cannot get directory name of a file.");
 
         /// <summary>
         /// Gets the file name without the file extension of this reference.
@@ -137,6 +144,77 @@ namespace BlackTundra.Foundation.IO {
             if (isDirectory) return this; // already a directory
             return GetParent();
 
+        }
+
+        #endregion
+
+        #region GetFiles
+
+        public FileSystemReference[] GetFiles() {
+            if (!isDirectory) throw new Exception($"{nameof(FileSystemReference)} is not a directory.");
+            return ToFSRArray(Directory.GetFiles(AbsolutePath), false, false);
+        }
+
+        public FileSystemReference[] GetFiles(in string searchPattern) {
+            if (searchPattern == null) throw new ArgumentNullException(nameof(searchPattern));
+            if (!isDirectory) throw new Exception($"{nameof(FileSystemReference)} is not a directory.");
+            return ToFSRArray(Directory.GetFiles(AbsolutePath, searchPattern), false, false);
+        }
+
+        public FileSystemReference[] GetFiles(in string searchPattern, in EnumerationOptions enumerationOptions) {
+            if (searchPattern == null) throw new ArgumentNullException(nameof(searchPattern));
+            if (enumerationOptions == null) throw new ArgumentNullException(nameof(enumerationOptions));
+            if (!isDirectory) throw new Exception($"{nameof(FileSystemReference)} is not a directory.");
+            return ToFSRArray(Directory.GetFiles(AbsolutePath, searchPattern, enumerationOptions), false, false);
+        }
+
+        public FileSystemReference[] GetFiles(in string searchPattern, in SearchOption searchOptions) {
+            if (searchPattern == null) throw new ArgumentNullException(nameof(searchPattern));
+            if (!isDirectory) throw new Exception($"{nameof(FileSystemReference)} is not a directory.");
+            return ToFSRArray(Directory.GetFiles(AbsolutePath, searchPattern, searchOptions), false, false);
+        }
+
+        #endregion
+
+        #region GetDirectories
+
+        public FileSystemReference[] GetDirectories() {
+            if (!isDirectory) throw new Exception($"{nameof(FileSystemReference)} is not a directory.");
+            return ToFSRArray(Directory.GetDirectories(AbsolutePath), false, true);
+        }
+
+        public FileSystemReference[] GetDirectories(in string searchPattern) {
+            if (searchPattern == null) throw new ArgumentNullException(nameof(searchPattern));
+            if (!isDirectory) throw new Exception($"{nameof(FileSystemReference)} is not a directory.");
+            return ToFSRArray(Directory.GetDirectories(AbsolutePath, searchPattern), false, true);
+        }
+
+        public FileSystemReference[] GetDirectories(in string searchPattern, in EnumerationOptions enumerationOptions) {
+            if (searchPattern == null) throw new ArgumentNullException(nameof(searchPattern));
+            if (enumerationOptions == null) throw new ArgumentNullException(nameof(enumerationOptions));
+            if (!isDirectory) throw new Exception($"{nameof(FileSystemReference)} is not a directory.");
+            return ToFSRArray(Directory.GetDirectories(AbsolutePath, searchPattern, enumerationOptions), false, true);
+        }
+
+        public FileSystemReference[] GetDirectories(in string searchPattern, in SearchOption searchOptions) {
+            if (searchPattern == null) throw new ArgumentNullException(nameof(searchPattern));
+            if (!isDirectory) throw new Exception($"{nameof(FileSystemReference)} is not a directory.");
+            return ToFSRArray(Directory.GetDirectories(AbsolutePath, searchPattern, searchOptions), false, true);
+        }
+
+        #endregion
+
+        #region ToFSRArray
+
+        private FileSystemReference[] ToFSRArray(in string[] paths, in bool isLocal, in bool isDirectory) {
+            if (paths == null) throw new ArgumentNullException(nameof(paths));
+            int pathCount = paths.Length;
+            FileSystemReference[] buffer = new FileSystemReference[pathCount];
+            if (pathCount == 0) return buffer;
+            for (int i = 0; i < pathCount; i++) {
+                buffer[i] = new FileSystemReference(paths[i], isLocal, isDirectory);
+            }
+            return buffer;
         }
 
         #endregion

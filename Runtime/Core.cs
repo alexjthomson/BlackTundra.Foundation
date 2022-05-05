@@ -205,6 +205,7 @@ namespace BlackTundra.Foundation {
 
                 // load core configuration:
                 Configuration configuration = Configuration.GetConfiguration(ConfigurationName);
+                configuration.Load(); // load the configuration
                 // check for persistent log file:
                 if (!configuration.ForceGet("console.logger.persistent", false)) { // logger is not persistent
                     Console.Logger.Clear(); // clear console logger
@@ -215,7 +216,7 @@ namespace BlackTundra.Foundation {
                     Console.LoggerLogLevelDefaultValue
                 );
                 // save configuration:
-                configuration.Save();
+                if (configuration.IsDirty) configuration.Save();
 
                 #endregion
 

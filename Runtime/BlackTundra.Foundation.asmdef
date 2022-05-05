@@ -27,6 +27,11 @@
             "name": "com.unity.xr.interaction.toolkit",
             "expression": "1.0.0",
             "define": "USE_XR_TOOLKIT"
+        },
+        {
+            "name": "com.blacktundra.modframework",
+            "expression": "1.0.0",
+            "define": "USE_MOD_FRAMEWORK"
         }
     ],
     "noEngineReferences": false

@@ -239,7 +239,13 @@ namespace BlackTundra.Foundation.IO {
                 attribute = (ConfigurationEntryAttribute)property.GetCustomAttribute(context, false); // get the attribute
                 int configurationHash = attribute.configuration.GetHashCode(); // find the hash of the configuration name
                 if (!ConfigurationDictionary.TryGetValue(configurationHash, out Configuration configuration)) { // check if the configuration entry exists yet
-                    configuration = new Configuration(attribute.configuration, FileFormat.Standard, DefaultConfigurationBufferCapacity, DefaultConfigurationBufferExpandSize); // create the configuration entry
+                    // create configuration:
+                    configuration = new Configuration(
+                        attribute.configuration, // configuration name
+                        FileFormat.Standard, // use standard file format
+                        DefaultConfigurationBufferCapacity,
+                        DefaultConfigurationBufferExpandSize
+                    );
                     configuration.Load(); // load any existing values
                 }
                 int index = configuration.IndexOf(attribute.key); // get the position of the target configuration key that the property aims to bind to

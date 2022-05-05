@@ -51,6 +51,9 @@ namespace BlackTundra.Foundation.IO {
         public const string LocalConfigDirectory = LocalResourcesDirectory + "Config/";
         public const string LocalDataDirectory = LocalResourcesDirectory + "Data/";
         public const string LocalSavesDirectory = LocalResourcesDirectory + "Saves/";
+#if USE_MOD_FRAMEWORK
+        public const string LocalModsDirectory = LocalResourcesDirectory + "Mods/";
+#endif
 
         /// <summary>
         /// Order that every local directory is created in.
@@ -63,7 +66,10 @@ namespace BlackTundra.Foundation.IO {
             LocalCacheDirectory,
             LocalConfigDirectory,
             LocalDataDirectory,
-            LocalSavesDirectory
+            LocalSavesDirectory,
+#if USE_MOD_FRAMEWORK
+            LocalModsDirectory,
+#endif
         };
 
         /// <summary>

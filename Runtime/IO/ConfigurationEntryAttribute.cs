@@ -64,10 +64,6 @@ namespace BlackTundra.Foundation.IO {
 
         #endregion
 
-        #region logic
-
-        #endregion
-
     }
 
 }
