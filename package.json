@@ -1,30 +1,31 @@
 {
-  "name": "com.blacktundra.foundation",
-  "version": "2.0.1",
-  "displayName": "Foundation",
-  "description": "A package containing fundamental game mechanics.",
-  "unity": "2021.2",
-  "type": "library",
-  "hideInEditor": false,
-  "keywords": [
-    "core",
-    "utility",
-    "console"
-  ],
-  "author": {
-    "name": "Black Tundra",
-    "email": "contact@blacktundra.com",
-    "url": "https://blacktundra.com"
-  },
-  "samples": [
-    {
-      "displayName": "Console Window Settings",
-      "description": "Pre-configured settings for the console window, including a font.",
-      "path": "Samples~/ConsoleWindowSettings"
-    }
-  ],
-  "dependencies": {
-    "com.unity.modules.imgui": "1.0.0",
-    "com.unity.inputsystem": "1.1.1"
-  }
+	"name": "com.blacktundra.foundation",
+	"version": "2.0.1",
+	"displayName": "Foundation",
+	"description": "A package containing fundamental game mechanics.",
+	"unity": "2021.2",
+	"type": "library",
+	"hideInEditor": false,
+	"author": {
+		"name": "Alex Thomson",
+		"email": "alexjthomson1882@gmail.com",
+		"url": "https://github.com/alexjthomson1882"
+	},
+	"keywords": [
+		"foundation",
+		"core",
+		"utility",
+		"console"
+	],
+	"samples": [
+		{
+			"displayName": "Console Window Settings",
+			"description": "Pre-configured settings for the console window, including a font.",
+			"path": "Samples~/ConsoleWindowSettings"
+		}
+	],
+	"dependencies": {
+		"com.unity.modules.imgui": "1.0.0",
+		"com.unity.inputsystem": "1.1.1"
+	}
 }
