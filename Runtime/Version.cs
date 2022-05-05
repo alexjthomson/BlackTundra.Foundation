@@ -182,6 +182,13 @@ namespace BlackTundra.Foundation {
 
         #endregion
 
+        #region operators
+
+        public static bool operator <(Version lhs, Version rhs) => lhs.major < rhs.major || (lhs.major == rhs.major && (lhs.minor < rhs.minor || (lhs.minor == rhs.minor && lhs.release < rhs.release)));
+        public static bool operator >(Version lhs, Version rhs) => lhs.major > rhs.major || (lhs.major == rhs.major && (lhs.minor > rhs.minor || (lhs.minor == rhs.minor && lhs.release > rhs.release)));
+
+        #endregion
+
     }
 
 }
