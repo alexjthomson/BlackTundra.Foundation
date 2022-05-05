@@ -77,6 +77,13 @@ namespace BlackTundra.Foundation.IO {
             ? throw new NotSupportedException("Cannot get file name of directory.")
             : Path.GetFileNameWithoutExtension(path);
 
+        /// <summary>
+        /// Gets the file extension.
+        /// </summary>
+        public string FileExtension => isDirectory
+            ? throw new NotSupportedException("Cannot get file extension of a directory.")
+            : Path.GetExtension(path)[1..];
+
         #endregion
 
         #region constructor
