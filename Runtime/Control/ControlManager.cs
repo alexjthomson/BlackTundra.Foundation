@@ -63,7 +63,7 @@ namespace BlackTundra.Foundation.Control {
 
         #region Initialise
 
-        [CoreInitialise]
+        [CoreInitialise(-25000)]
         private static void Initialise() {
             InputSystem.onDeviceChange += OnInputDeviceChange;
         }
