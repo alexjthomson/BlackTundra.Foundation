@@ -24,7 +24,9 @@ namespace BlackTundra.Foundation.Utility {
         /// <summary>
         /// An array containing a reference to every <see cref="Type"/>.
         /// </summary>
-        private static readonly Type[] types;
+        private static readonly Type[] Types;
+
+        private static readonly Dictionary<string, Type> TypeMap;
 
         /// <summary>
         /// <see cref="ConsoleFormatter"/> used by the <see cref="ObjectUtility"/>
@@ -36,8 +38,14 @@ namespace BlackTundra.Foundation.Utility {
         #region constructor
 
         static ObjectUtility() {
-            types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes()).ToArray();
-            if (types == null) throw new ApplicationException("No types found in assemblies in current domain.");
+            Types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes()).ToArray();
+            if (Types == null) throw new ApplicationException("No types found in assemblies in current domain.");
+            TypeMap = new Dictionary<string, Type>();
+            Type type;
+            for (int i = Types.Length - 1; i >= 0; i--) {
+                type = Types[i];
+                TypeMap[type.FullName] = type;
+            }
             SizeOfDictionary = new Dictionary<Type, int>();
         }
 
@@ -155,8 +163,8 @@ namespace BlackTundra.Foundation.Utility {
         public static IEnumerable<Type> GetDecoratedTypes<T>() where T : Attribute {
             Type context = typeof(T);
             Type type;
-            for (int i = types.Length - 1; i >= 0; i--) {
-                type = types[i];
+            for (int i = Types.Length - 1; i >= 0; i--) {
+                type = Types[i];
                 if (type.GetCustomAttributes(context, true).Length > 0)
                     yield return type;
             }
@@ -172,8 +180,8 @@ namespace BlackTundra.Foundation.Utility {
         public static IEnumerable<Type> GetImplementations<T>() where T : class {
             Type context = typeof(T);
             Type type;
-            for (int i = types.Length - 1; i >= 0; i--) {
-                type = types[i];
+            for (int i = Types.Length - 1; i >= 0; i--) {
+                type = Types[i];
                 if (type.IsClass && type.IsSubclassOf(context))
                     yield return type;
             }
@@ -185,7 +193,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static IEnumerable<PropertyInfo> GetDecoratedProperties<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute {
             Type type = typeof(T);
-            return types.SelectMany(x => x.GetProperties(bindingFlags)).Where(x => Attribute.IsDefined(x, type));
+            return Types.SelectMany(x => x.GetProperties(bindingFlags)).Where(x => Attribute.IsDefined(x, type));
         }
 
         #endregion
@@ -194,7 +202,7 @@ namespace BlackTundra.Foundation.Utility {
 
         public static IEnumerable<MethodInfo> GetDecoratedMethods<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : Attribute {
             Type type = typeof(T);
-            return types.SelectMany(x => x.GetMethods(bindingFlags)).Where(x => Attribute.IsDefined(x, type)); // find methods decorated with correct attribute
+            return Types.SelectMany(x => x.GetMethods(bindingFlags)).Where(x => Attribute.IsDefined(x, type)); // find methods decorated with correct attribute
         }
 
         #endregion
@@ -202,7 +210,7 @@ namespace BlackTundra.Foundation.Utility {
         #region GetDecoratedMethodsOrdered
 
         public static OrderedList<int, MethodInfo> GetDecoratedMethodsOrdered<T>(BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) where T : OrderedAttribute {
-            IEnumerable<MethodInfo> methods = types.SelectMany(x => x.GetMethods(bindingFlags));
+            IEnumerable<MethodInfo> methods = Types.SelectMany(x => x.GetMethods(bindingFlags));
             OrderedList<int, MethodInfo> list = new OrderedList<int, MethodInfo>();
             IEnumerable<T> attributes;
             foreach (MethodInfo info in methods) {
@@ -240,8 +248,8 @@ namespace BlackTundra.Foundation.Utility {
             MethodImplementsAttribute implementation;
             Type[] signature;
             bool valid = false;
-            for (int i = types.Length - 1; i >= 0; i--) { // iterate each type that exists in the application
-                type = types[i]; // get the current type
+            for (int i = Types.Length - 1; i >= 0; i--) { // iterate each type that exists in the application
+                type = Types[i]; // get the current type
                 if (type.IsClass) { // the type is a class
                     methods = type.GetMethods(bindingFlags); // get each method implemented in the method
                     for (int j = methods.Length - 1; j >= 0; j--) { // iterate each method in the class
@@ -365,6 +373,15 @@ namespace BlackTundra.Foundation.Utility {
         /// Returns a <see cref="Type"/> array matching the expected types of the delegate of type <typeparamref name="T"/> provided.
         /// </returns>
         public static Type[] GetDelegateParameterTypes<T>() where T : Delegate => GetMethodParameterTypes(GetDelegateInfo<T>());
+
+        #endregion
+
+        #region FindType
+
+        /// <summary>
+        /// Finds a <see cref="Type"/> by the full <paramref name="name"/>.
+        /// </summary>
+        public static Type FindType(in string name) => TypeMap[name];
 
         #endregion
 

@@ -355,13 +355,13 @@ namespace BlackTundra.Foundation {
                     instance = Object.FindObjectOfType<CoreInstance>();
                     if (instance == null) {
                         GameObject gameObject = new GameObject(
-                            nameof(CoreInstance),
+                            "__" + nameof(CoreInstance),
                             typeof(CoreInstance)
                         ) {
                             tag = "GameController",
                             layer = LayerMask.NameToLayer("Ignore Raycast"),
                             isStatic = true,
-                            hideFlags = HideFlags.DontSave
+                            hideFlags = HideFlags.HideAndDontSave
                         };
                         Object.DontDestroyOnLoad(gameObject);
                         instance = gameObject.GetComponent<CoreInstance>();
@@ -855,10 +855,10 @@ namespace BlackTundra.Foundation {
                     { $"<color=#{Colour.Gray.hex}>Display Name</color>", Platform.Steamworks.SteamManager.DisplayName.ToString() },
                     { $"<color=#{Colour.Gray.hex}>Online Status</color>", Platform.Steamworks.SteamManager.OnlineStatus.ToString() },
                     { $"<color=#{Colour.Gray.hex}>Friend Count</color>", Platform.Steamworks.SteamManager.FriendCount.ToString() },
-                    { string.Empty, string.Empty },
 #else
                     { "<i>unknown platform</i>", string.Empty },
 #endif
+                    { string.Empty, string.Empty },
                     { "<b>System Information</b>", string.Empty },
                     { $"<color=#{Colour.Gray.hex}>System Name</color>", SystemInfo.deviceName },
                     { $"<color=#{Colour.Gray.hex}>System ID</color>", SystemInfo.deviceUniqueIdentifier },
