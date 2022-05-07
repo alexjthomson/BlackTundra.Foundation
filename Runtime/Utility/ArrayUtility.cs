@@ -445,6 +445,19 @@ namespace BlackTundra.Foundation.Utility {
 
         }
 
+        public static bool ContentEquals<T>(
+            this T[] lhs, in int lhsStartIndex, in T[] rhs, in int rhsStartIndex, in int length
+        ) where T : IEquatable<T> {
+            if (lhs == null) throw new ArgumentNullException(nameof(lhs));
+            if (rhs == null) throw new ArgumentNullException(nameof(rhs));
+            if (lhsStartIndex < 0) throw new ArgumentOutOfRangeException(nameof(lhsStartIndex));
+            if (rhsStartIndex < 0) throw new ArgumentOutOfRangeException(nameof(rhsStartIndex));
+            if (length < 1) throw new ArgumentOutOfRangeException(nameof(length));
+            ReadOnlySpan<T> lhsSpan = lhs.AsSpan(lhsStartIndex, length);
+            ReadOnlySpan<T> rhsSpan = rhs.AsSpan(rhsStartIndex, length);
+            return lhsSpan.SequenceEqual(rhsSpan);
+        }
+
         #endregion
 
         #endregion
