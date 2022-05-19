@@ -64,6 +64,12 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
             #endregion
 
+            #region logic
+
+            public static implicit operator T(WeightValuePair wvp) => wvp._value;
+
+            #endregion
+
         }
 
         [Serializable]
