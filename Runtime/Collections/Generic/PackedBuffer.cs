@@ -693,8 +693,8 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// </summary>
         public void Swap(in int i0, in int i1) {
             int count = lastIndex == -1 ? buffer.Length : lastIndex;
-            if (i0 < 0 || i0 >= count) throw new ArgumentOutOfRangeException("i0");
-            if (i1 < 0 || i1 >= count) throw new ArgumentOutOfRangeException("i1");
+            if (i0 < 0 || i0 >= count) throw new ArgumentOutOfRangeException(nameof(i0));
+            if (i1 < 0 || i1 >= count) throw new ArgumentOutOfRangeException(nameof(i1));
             if (i0 == i1) return;
             T temp = buffer[i0];
             buffer[i0] = buffer[i1];

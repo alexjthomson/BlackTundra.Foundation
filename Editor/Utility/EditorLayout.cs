@@ -1,4 +1,7 @@
-﻿using System;
+﻿using BlackTundra.Foundation.Collections.Generic;
+
+using System;
+using System.Collections.Generic;
 
 using UnityEditor;
 
@@ -6,6 +9,8 @@ using UnityEditorInternal;
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+using Object = UnityEngine.Object;
 
 namespace BlackTundra.Foundation.Editor.Utility {
 
@@ -725,6 +730,62 @@ namespace BlackTundra.Foundation.Editor.Utility {
         public static Vector3Int Vector3IntField(in GUIContent content, in Vector3Int value) => EditorGUILayout.Vector3IntField(content, value);
 
         public static Vector3Int Vector3IntField(in GUIContent content, in int x, int y, int z) => EditorGUILayout.Vector3IntField(content, new Vector3Int(x, y, z));
+
+        #endregion
+
+        #region WeightedListField
+
+        public static bool WeightedListField<T>(in WeightedList<T> weightedList, in bool allowSceneObjects = false, params GUILayoutOption[] options) where T : Object {
+            EditorGUILayout.BeginVertical(options);
+            List<WeightedList<T>.CumulativeWeightValuePair> list = weightedList.list;
+            int elementCount = list.Count;
+            bool dirty = false;
+            WeightedList<T>.CumulativeWeightValuePair cwvp;
+            for (int i = 0; i < elementCount; i++) {
+                cwvp = list[i];
+                EditorGUILayout.BeginHorizontal();
+                // cumulative weight:
+                EditorGUILayout.LabelField($"{i}:{cwvp.cumulativeWeight}", GUILayout.Width(64.0f));
+                // weight:
+                int weight = EditorGUILayout.IntField(cwvp.wvp._weight, GUILayout.Width(64.0f));
+                if (weight != cwvp.wvp._weight) {
+                    cwvp.wvp._weight = weight;
+                    dirty = true;
+                }
+                // value:
+                T value = ReferenceField(cwvp.wvp._value, allowSceneObjects);
+                if (!Equals(value, cwvp.wvp._value)) {
+                    cwvp.wvp._value = value;
+                    dirty = true;
+                }
+                // dirty:
+                if (dirty) list[i] = cwvp;
+                // buttons:
+                if (GUILayout.Button(@"/\", XButtonStyle, GUILayout.Width(20.0f), GUILayout.Height(18.0f))) {
+                    weightedList.Swap(i, i - 1);
+                    dirty = true;
+                    break;
+                }
+                if (GUILayout.Button(@"\/", XButtonStyle, GUILayout.Width(20.0f), GUILayout.Height(18.0f))) {
+                    weightedList.Swap(i, i + 1);
+                    dirty = true;
+                    break;
+                }
+                if (GUILayout.Button("\u2715", XButtonStyle, GUILayout.Width(20.0f), GUILayout.Height(18.0f))) {
+                    weightedList.RemoveAt(i);
+                    dirty = true;
+                    break;
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            if (GUILayout.Button("Add")) {
+                weightedList.Add(0, default);
+                dirty = true;
+            }
+            EditorGUILayout.EndVertical();
+            if (dirty) weightedList.RecalculateWeights();
+            return dirty;
+        }
 
         #endregion
 
