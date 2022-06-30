@@ -152,7 +152,6 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
-
         #region CalculateBounds
 
         /// <summary>
@@ -235,6 +234,27 @@ namespace BlackTundra.Foundation.Utility {
             if (gameObject == null) throw new ArgumentNullException("gameObject");
             Collider[] components = gameObject.GetComponentsInChildren<Collider>();
             for (int i = 0; i < components.Length; i++) components[i].enabled = enabled;
+        }
+
+        #endregion
+
+        #region SetCollisionStates
+
+        /// <summary>
+        /// Sets the collision <paramref name="state"/> between a set of <paramref name="colliders"/> and a <paramref name="target"/> <see cref="Collider"/>.
+        /// </summary>
+        /// <param name="state">When <c>true</c> the <paramref name="colliders"/> and the <paramref name="target"/> <see cref="Collider"/> can collide; otherwise, they will not.</param>
+        public static void SetCollisionStates(this Collider[] colliders, in Collider target, in bool state) {
+            if (colliders == null) throw new ArgumentNullException(nameof(colliders));
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            int colliderCount = colliders.Length;
+            if (colliderCount == 0) return;
+            Collider collider;
+            for (int i = 0; i < colliderCount; i++) {
+                collider = colliders[i];
+                if (collider == null) continue;
+                Physics.IgnoreCollision(collider, target, state);
+            }
         }
 
         #endregion

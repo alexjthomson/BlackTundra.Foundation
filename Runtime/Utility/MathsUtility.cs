@@ -148,6 +148,22 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
+        #region IsPointBetween
+
+        /// <returns>
+        /// Returns <c>true</c> if the <paramref name="sample"/> is between point <paramref name="p1"/> and <paramref name="p2"/>.
+        /// </returns>
+        public static bool IsPointBetween(in Vector3 sample, in Vector3 p1, in Vector3 p2) {
+            Vector3 normalizedSample = sample - p1; // localize the sample relative to p1
+            Vector3 direction = p2 - p1; // calculate the direction from p1 to p2
+            float directionLength = direction.magnitude;
+            direction *= 1.0f / directionLength; // normalize direction
+            float projectionAmount = Vector3.Dot(normalizedSample, direction); // calculate how much p1Sample projects onto p1p2
+            return projectionAmount >= 0.0f & projectionAmount < directionLength; // calculate if the sample is between p1 and p2
+        }
+
+        #endregion
+
         #region IsNormalized
 
         public static bool IsNormalized(this Vector2 v) { return Mathf.Approximately((v.x * v.x) + (v.y * v.y), 1.0f); }
@@ -674,6 +690,50 @@ namespace BlackTundra.Foundation.Utility {
         /// This is never greater than 180deg.
         /// </summary>
         public static float MinAngle(in Vector3 p0, in Vector3 p1, in Vector3 p2) => Vector3.Angle(p0 - p1, p2 - p1);
+
+        #endregion
+
+        #region ToLocalPoint
+
+        /// <summary>
+        /// Converts a world-space <paramref name="point"/> into a local-space <paramref name="point"/> relative to the provided <paramref name="transform"/>.
+        /// </summary>
+        public static Vector3 ToLocalPoint(this Transform transform, in Vector3 point) {
+            return transform != null ? transform.InverseTransformPoint(point) : point;
+        }
+
+        #endregion
+
+        #region ToLocalPoint
+
+        /// <summary>
+        /// Converts a local-space <paramref name="point"/> into a world-space <paramref name="point"/> relative to the provided <paramref name="transform"/>.
+        /// </summary>
+        public static Vector3 ToWorldPoint(this Transform transform, in Vector3 point) {
+            return transform != null ? transform.TransformPoint(point) : point;
+        }
+
+        #endregion
+
+        #region ToLocalRotation
+
+        /// <summary>
+        /// Converts a world-space <paramref name="rotation"/> into a local-space rotation relative to the provided <paramref name="transform"/>.
+        /// </summary>
+        public static Quaternion ToLocalRotation(this Transform transform, in Quaternion rotation) {
+            return transform != null ? Quaternion.Inverse(transform.rotation) * rotation : rotation;
+        }
+
+        #endregion
+
+        #region ToWorldRotation
+
+        /// <summary>
+        /// Converts a local-space <paramref name="rotation"/> into a world-space rotation relative to the provided <paramref name="transform"/>.
+        /// </summary>
+        public static Quaternion ToWorldRotation(this Transform transform, in Quaternion rotation) {
+            return transform != null ? transform.rotation * rotation : rotation;
+        }
 
         #endregion
 
