@@ -2,6 +2,11 @@ using NUnit.Framework;
 
 namespace BlackTundra.Foundation.RuntimeTests {
 
+    [TestFixture(
+        Author = "Alex James Thomson",
+        Description = "Tests the Version struct.",
+        TestOf = typeof(Version)
+    )]
     public sealed class VersionTest {
 
         [Test(

@@ -4,6 +4,10 @@ using NUnit.Framework;
 
 namespace BlackTundra.Foundation.RuntimeTests.Collections {
 
+    [TestFixture(
+        Author = "Alex James Thomson",
+        Description = "Tests the Keystore class."
+    )]
     public sealed class KeystoreTest {
 
         [Test(

@@ -10,24 +10,47 @@ namespace BlackTundra.Foundation.Utility {
 
         #region variable
 
+        /// <summary>
+        /// Target <see cref="Stream"/> to read bytes from.
+        /// </summary>
         private readonly Stream stream;
+
+        /// <summary>
+        /// Maximum number of bytes that can be read from the <see cref="stream"/>.
+        /// </summary>
         private readonly long maxLength;
+
+        /// <summary>
+        /// Current number of bytes that have been read from the <see cref="stream"/>.
+        /// </summary>
         private long length;
 
         #endregion
 
         #region property
 
+        /// <summary>
+        /// Maximum number of bytes that can be read from the read stream.
+        /// </summary>
         public long MaxLength => maxLength;
 
+        /// <summary>
+        /// Current number of bytes that have been read from the read stream.
+        /// </summary>
         public sealed override long Length => length;
 
+        /// <summary>
+        /// <c>true</c> if the read stream can be read from.
+        /// </summary>
         public sealed override bool CanRead => stream.CanRead;
 
         public sealed override bool CanSeek => false;
 
         public sealed override bool CanWrite => false;
 
+        /// <summary>
+        /// Position through the read stream.
+        /// </summary>
         public sealed override long Position {
             get => stream.Position;
             set => throw new NotSupportedException();

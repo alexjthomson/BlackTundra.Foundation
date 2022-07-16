@@ -7,6 +7,11 @@ using UnityEngine;
 
 namespace BlackTundra.Foundation.RuntimeTests.Utility {
 
+    [TestFixture(
+        Author = "Alex James Thomson",
+        Description = "Tests the serialization utilities packaged with the foundation package.",
+        TestOf = typeof(ObjectUtility)
+    )]
     public sealed class SerializationUtilityTest {
 
         [Test(

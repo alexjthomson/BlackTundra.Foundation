@@ -4,6 +4,10 @@ using NUnit.Framework;
 
 namespace BlackTundra.Foundation.RuntimeTests.Security {
 
+    [TestFixture(
+        Author = "Alex James Thomson",
+        Description = "Tests each of the secure type implementations."
+    )]
     public sealed class SecureTypesTest {
 
         [Test(

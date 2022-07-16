@@ -152,9 +152,9 @@ namespace BlackTundra.Foundation.Collections.Generic {
         public void Add(in int weight, in T value) {
             if (weight < 0) throw new ArgumentOutOfRangeException(nameof(weight));
             WeightValuePair wvp = new WeightValuePair(weight, value);
+            totalWeight += weight;
             CumulativeWeightValuePair cwvp = new CumulativeWeightValuePair(totalWeight, wvp);
             list.Add(cwvp);
-            totalWeight += weight;
         }
 
         #endregion
@@ -214,17 +214,20 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// Thrown if the <see cref="WeightedList{T}"/> is empty.
         /// </exception>
         public WeightValuePair GetRandomWeighted() {
+            // get number of elements in list:
             int elementCount = list.Count;
             if (elementCount == 0) throw new NotSupportedException($"{nameof(WeightedList<T>)} is empty.");
-            int weight = Random.Next(0, totalWeight + 1);
+            // generate a random weight:
+            int weight = Random.Next(1, totalWeight);
+            // find the element corresponding to the target weight:
             CumulativeWeightValuePair cwvp;
-            for (int i = elementCount - 1; i >= 0; i--) {
+            for (int i = 0; i < elementCount; i++) {
                 cwvp = list[i];
-                if (weight >= cwvp.cumulativeWeight) {
+                if (cwvp.cumulativeWeight >= weight) {
                     return cwvp.wvp;
                 }
             }
-            return list[0].wvp;
+            throw new NotSupportedException($"{nameof(WeightedList<T>)} must contain at least one element with a non-zero weight.");
         }
 
         #endregion
