@@ -11,15 +11,39 @@ namespace BlackTundra.Foundation.Collections.Generic {
         #region nested
 
         /// <summary>
-        /// Associates an order to a value.
+        /// Associates an order (non-unique key) to a value.
         /// </summary>
         public struct SortedListEntry {
+
+            #region variable
+
+            /// <summary>
+            /// Key that the entry is ordered by.
+            /// </summary>
             public readonly TKey order;
+
+            /// <summary>
+            /// Value of the entry.
+            /// </summary>
             public readonly TValue value;
+
+            #endregion
+
+            #region constructor
+
             internal SortedListEntry(in TKey order, in TValue value) {
                 this.order = order;
                 this.value = value;
             }
+
+            #endregion
+
+            #region logic
+
+            public static implicit operator TValue(SortedListEntry entry) => entry.value;
+
+            #endregion
+
         }
 
         #endregion
@@ -35,9 +59,39 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
         #region property
 
+        /// <summary>
+        /// Number of elements in the <see cref="OrderedList{TKey, TValue}"/>.
+        /// </summary>
+        /// <seealso cref="IsEmpty"/>
         public int Count => values.Count;
 
-        public TValue this[in int index] => values[index].value;
+        /// <summary>
+        /// <c>true</c> if the <see cref="OrderedList{TKey, TValue}"/> is empty.
+        /// </summary>
+        /// <seealso cref="Count"/>
+        public bool IsEmpty => values.Count == 0;
+
+        /// <summary>
+        /// Lowest key (value to order by) in the <see cref="OrderedList{TKey, TValue}"/>.
+        /// </summary>
+        public TKey LowestKey => values[0].order;
+
+        /// <summary>
+        /// Highest key (value to order by) in the <see cref="OrderedList{TKey, TValue}"/>.
+        /// </summary>
+        public TKey HighestKey => values[^1].order;
+
+        /// <summary>
+        /// Value with the lowest key (value to order by) in the <see cref="OrderedList{TKey, TValue}"/>.
+        /// </summary>
+        public SortedListEntry LowestEntry => values[0];
+
+        /// <summary>
+        /// Value with the highest key (value to order by) in the <see cref="OrderedList{TKey, TValue}"/>.
+        /// </summary>
+        public SortedListEntry HighestEntry => values[^1];
+
+        public SortedListEntry this[in int index] => values[index];
 
         #endregion
 
@@ -105,6 +159,45 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
         #endregion
 
+        #region RemoveAt
+
+        public SortedListEntry RemoveAt(in int index) {
+            if (index < 0 || index >= values.Count) throw new ArgumentOutOfRangeException(nameof(index));
+            SortedListEntry entry = values[index];
+            values.RemoveAt(index);
+            return entry;
+        }
+
+        #endregion
+
+        #region RemoveFirst
+
+        /// <summary>
+        /// Removes the first element from the <see cref="OrderedList{TKey, TValue}"/>. The first element is the least significant (lowest ordered) element.
+        /// </summary>
+        public SortedListEntry RemoveFirst() => RemoveAt(0);
+
+        #endregion
+
+        #region RemoveLast
+
+        /// <summary>
+        /// Removes the last element from the <see cref="OrderedList{TKey, TValue}"/>. The last element is the most significant (highest ordered) element.
+        /// </summary>
+        public SortedListEntry RemoveLast() => RemoveAt(values.Count - 1);
+
+        #endregion
+
+        #region Pop
+
+        /// <summary>
+        /// Synonymous with <see cref="RemoveLast"/>.
+        /// </summary>
+        /// <seealso cref="RemoveLast"/>
+        public SortedListEntry Pop() => RemoveLast();
+
+        #endregion
+
         #region GetWeightAtIndex
 
         public TKey GetWeightAtIndex(in int index) {
@@ -113,6 +206,8 @@ namespace BlackTundra.Foundation.Collections.Generic {
         }
 
         #endregion
+
+        #region operators
 
         public static explicit operator OrderedList<TKey, TValue>(OrderedList<TKey, object> list) {
             if (list == null) throw new ArgumentNullException(nameof(list));
@@ -126,6 +221,8 @@ namespace BlackTundra.Foundation.Collections.Generic {
             }
             return new OrderedList<TKey, TValue>(newValues);
         }
+
+        #endregion
 
         #endregion
 
@@ -146,7 +243,7 @@ namespace BlackTundra.Foundation.Collections.Generic {
             OrderedList<K, V0>.SortedListEntry entry;
             for (int i = 0; i < count; i++) {
                 entry = values[i];
-                newValues.Add(new OrderedList<K, V1>.SortedListEntry(entry.order, (V1)entry.value));
+                newValues.Add(new OrderedList<K, V1>.SortedListEntry(entry.order, entry.value));
             }
             return new OrderedList<K, V1>(newValues);
         }
