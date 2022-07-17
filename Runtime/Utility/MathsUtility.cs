@@ -704,7 +704,7 @@ namespace BlackTundra.Foundation.Utility {
 
         #endregion
 
-        #region ToLocalPoint
+        #region ToWorldPoint
 
         /// <summary>
         /// Converts a local-space <paramref name="point"/> into a world-space <paramref name="point"/> relative to the provided <paramref name="transform"/>.
