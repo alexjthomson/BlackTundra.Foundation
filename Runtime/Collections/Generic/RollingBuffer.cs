@@ -103,7 +103,6 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// <param name="oldValue">Value that was overridden as a result of the push operation.</param>
         /// <returns>The index that the value was inserted at.</returns>
         public int Push(in T value, out T oldValue) {
-
             oldValue = buffer[nextIndex];
             if (oldValue != null && !overrideExisting) { // this entry cannot be overridden, skip until a null entry is found
 
@@ -123,20 +122,15 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
                     }
 
-                    if (oldValue != null) // no null entry found
-                        throw new BufferException("Buffer full and cannot override existing entries.");
-
+                    if (oldValue != null) { // no null entry found, buffer is full and cannot override existing entries
+                        throw new IndexOutOfRangeException("The rolling buffer is full. Existing entries cannot be overridden.", null);
+                    }
                 }
-
             }
-
             int insertedIndex = nextIndex;
             buffer[insertedIndex] = value;
-
             if (++nextIndex >= buffer.Length) nextIndex = 0; // move to next index
-
             return insertedIndex;
-
         }
 
         #endregion

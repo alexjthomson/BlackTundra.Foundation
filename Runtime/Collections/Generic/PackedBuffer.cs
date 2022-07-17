@@ -18,15 +18,6 @@ namespace BlackTundra.Foundation.Collections.Generic {
     [Serializable]
     public sealed class PackedBuffer<T> : IEquatable<PackedBuffer<T>>, IEnumerable<T> {
 
-        #region constant
-
-        /// <summary>
-        /// <see cref="BufferException"/> message when the buffer is full.
-        /// </summary>
-        private const string BufferFullMessage = "PackedBuffer reached maximum capacity.";
-
-        #endregion
-
         #region nested
 
         public sealed class Enumerator : IEnumerator<T>, IEnumerator {
@@ -336,7 +327,7 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// <returns>Returns the index that the object was added at or if the object is already added and allowOneInstance is true the lowest index </returns>
         public int AddFirst(in T obj) {
             if (obj == null || obj.Equals(emptyValue)) throw new ArgumentException("obj");
-            if (lastIndex >= buffer.Length) throw new BufferException(BufferFullMessage, null);
+            if (lastIndex >= buffer.Length) throw new IndexOutOfRangeException("The packed buffer has reached maximum capacity.");
             buffer.ShiftRight();
             buffer[0] = obj;
             return 0;
@@ -363,7 +354,7 @@ namespace BlackTundra.Foundation.Collections.Generic {
 
             int count = objs.Length;
             if (count == 0) return;
-            if (count > RemainingSpace) throw new BufferException(BufferFullMessage, null);
+            if (count > RemainingSpace) throw new IndexOutOfRangeException("The packed buffer has reached maximum capacity.", null);
 
             buffer.ShiftRight(count);
             bool requiresPack = false;
@@ -392,7 +383,7 @@ namespace BlackTundra.Foundation.Collections.Generic {
         /// <returns>Returns the index that the object was added at.</returns>
         public int AddLast(in T obj) {
             if (obj == null) throw new ArgumentNullException("obj");
-            if (lastIndex >= buffer.Length) throw new BufferException(BufferFullMessage, null);
+            if (lastIndex >= buffer.Length) throw new IndexOutOfRangeException("The packed buffer has reached maximum capacity.", null);
             buffer[lastIndex] = obj;
             return lastIndex++;
         }
@@ -430,7 +421,7 @@ namespace BlackTundra.Foundation.Collections.Generic {
             if (objs == null) throw new ArgumentNullException("objs");
             int count = objs.Length;
             if (count == 0) return;
-            if (count > RemainingSpace) throw new BufferException(BufferFullMessage, null);
+            if (count > RemainingSpace) throw new IndexOutOfRangeException("The packed buffer has reached maximum capacity.", null);
             for (int i = 0; i < count; i++) {
                 T obj = objs[i];
                 if ((obj != null || (emptyValue == null || emptyValue.Equals(obj))) && (!allowOneInstance || this[obj] == -1)) // check instance can be added to the buffer
@@ -458,9 +449,9 @@ namespace BlackTundra.Foundation.Collections.Generic {
             if (index < 0 || index > bufferSize) throw new ArgumentOutOfRangeException("index");
             #endregion
 
-            if (lastIndex == -1) throw new BufferException(BufferFullMessage, null); // buffer is full
+            if (lastIndex == -1) throw new IndexOutOfRangeException("The packed buffer has reached maximum capacity.", null);
             int remainingSpace = bufferSize - lastIndex; // calculate the space remaining inside the buffer
-            if (remainingSpace < 1) throw new BufferException(BufferFullMessage, null); // not enough space to insert into the buffer
+            if (remainingSpace < 1) throw new IndexOutOfRangeException("The packed buffer has reached maximum capacity.", null);
             if (index < lastIndex) { // object needs to be inserted before the last element of the buffer
                 Array.Copy(buffer, index, buffer, index + 1, buffer.Length - index); // shift all elements to the right
                 buffer[index] = obj; // insert at target index
@@ -500,9 +491,9 @@ namespace BlackTundra.Foundation.Collections.Generic {
             }
             #endregion
 
-            if (lastIndex == -1) throw new BufferException(BufferFullMessage, null); // buffer is full
+            if (lastIndex == -1) throw new IndexOutOfRangeException("The packed buffer has reached maximum capacity.", null);
             int remainingSpace = bufferSize - lastIndex; // calculate the space remaining inside the buffer
-            if (remainingSpace < 1) throw new BufferException(BufferFullMessage, null); // not enough space to insert into the buffer
+            if (remainingSpace < 1) throw new IndexOutOfRangeException("The packed buffer has reached maximum capacity.", null);
             if (index < lastIndex) {
                 Array.Copy(buffer, index, buffer, index + 1, buffer.Length - index); // shift all elements to the right
                 buffer[index] = obj; // insert at target index
