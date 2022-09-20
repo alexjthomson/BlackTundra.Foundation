@@ -50,7 +50,7 @@ namespace BlackTundra.Foundation.Editor.Utility {
         /// <summary>
         /// Marks the object that CustomInspector is targeting as dirty.
         /// </summary>
-        public void MarkAsDirty() => modified = true;
+        public virtual void MarkAsDirty() => modified = true;
 
         public static void MarkAsDirty(in Object target, in SerializedObject serializedObject = null) {
             Undo.FlushUndoRecordObjects();
