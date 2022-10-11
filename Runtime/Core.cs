@@ -1,14 +1,8 @@
-﻿#region namespace defines
-
-// SYSTEM:
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
-
-// ENGINE:
 
 using UnityEngine;
 
@@ -16,18 +10,12 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-// FOUNDATION:
-
 using BlackTundra.Foundation.IO;
 using BlackTundra.Foundation.Utility;
 using BlackTundra.Foundation.Collections.Generic;
 
-// DEFINES:
-
 using Object = UnityEngine.Object;
 using Colour = BlackTundra.Foundation.ConsoleColour;
-
-#endregion
 
 namespace BlackTundra.Foundation {
 
@@ -38,7 +26,7 @@ namespace BlackTundra.Foundation {
         /// <summary>
         /// Object used to ensure all methods execute in the correct order.
         /// </summary>
-        private static readonly object CoreLock = new object();
+        private static readonly object CoreLock = new();
 
         /// <summary>
         /// Name of the <see cref="Core"/> configuration object.

@@ -222,7 +222,12 @@ namespace BlackTundra.Foundation {
 
         internal static void Initialise() {
             if (settings == null) settings = SettingsManager.GetSettings<ConsoleWindowSettings>();
-            if (settings.font == null) throw new NullReferenceException("settings.font");
+            if (settings.font == null) {
+#if UNITY_EDITOR
+                Debug.LogWarning("Make sure a mono-spaced font asset is assigned within `Resources/Settings/ConsoleWindowSettings`. A sample settings asset can be imported from the package manager.", settings);
+#endif
+                throw new NullReferenceException("settings.font");
+            }
             settings.font.RequestCharactersInTexture(" ", settings.fontSize);
             if (!settings.font.GetCharacterInfo(' ', out CharacterInfo info, settings.fontSize)) throw new NotSupportedException("Invalid font.");
             fontWidth = info.advance;

@@ -152,7 +152,7 @@ namespace BlackTundra.Foundation.IO {
 #pragma warning restore IDE0051 // remove unused private members
 
             buildPath = Path.GetDirectoryName(buildPath).Replace('\\', '/');
-            if (buildPath[buildPath.Length - 1] != '/') buildPath += '/';
+            if (buildPath[^1] != '/') buildPath += '/';
             UnityEngine.Debug.Log($"Build location: \"{buildPath}\", target: {buildTarget}.");
 
             #region check directory structure
@@ -202,7 +202,7 @@ namespace BlackTundra.Foundation.IO {
         public static string ToCanonicalPath(in string localPath, in bool formatAsDirectory = false) {
             if (localPath == null) throw new ArgumentNullException(nameof(localPath));
             string path = Path.GetFullPath(localPath).Replace('\\', '/');
-            if (formatAsDirectory && path[path.Length - 1] != '/') path += '/';
+            if (formatAsDirectory && path[^1] != '/') path += '/';
             return path;
         }
 

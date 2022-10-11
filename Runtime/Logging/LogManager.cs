@@ -51,14 +51,6 @@ namespace BlackTundra.Foundation.Logging {
 
         #endregion
 
-        #region variable
-
-        #endregion
-
-        #region property
-
-        #endregion
-
         #region constructor
 
         static LogManager() {
@@ -149,7 +141,7 @@ namespace BlackTundra.Foundation.Logging {
 
         #endregion
 
-        #region
+        #region HandleClearLogger
 
         private static void HandleClearLogger(in Logger logger) {
             FileSystemReference fsr = GetFileSystemReference(logger);
